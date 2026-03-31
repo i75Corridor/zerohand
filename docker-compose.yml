@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: zerohand
+      POSTGRES_PASSWORD: zerohand
+      POSTGRES_DB: zerohand
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zerohand"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://zerohand:zerohand@postgres:5432/zerohand
+      PORT: 3009
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SKILLS_DIR: /app/skills
+      PIPELINES_DIR: /app/pipelines
+      OUTPUT_DIR: /app/output
+    volumes:
+      - output_data:/app/output
+    ports:
+      - "3009:3009"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  output_data:

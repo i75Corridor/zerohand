@@ -1,0 +1,9 @@
+.env
+output/*
+!output/.gitkeep
+node_modules/
+dist/
+.data/
+/tmp/daily-absurdist/
+/tmp/zerohand/
+.DS_Store

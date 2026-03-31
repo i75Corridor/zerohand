@@ -1,0 +1,26 @@
+{
+  "name": "@zerohand/db",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "build": "tsc && cp -r src/migrations dist/migrations",
+    "typecheck": "tsc --noEmit",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/migrate.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.38.4",
+    "embedded-postgres": "^18.1.0-beta.16",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1,0 +1,96 @@
+name: The Daily Absurdist
+description: "Satirical news pipeline: research → write → edit → publish"
+status: active
+
+inputSchema:
+  type: object
+  properties:
+    topic:
+      type: string
+      description: Topic for the satirical article
+  required:
+    - topic
+
+# Context files — loaded and available as {{context.<key>}} in system prompts
+context:
+  company: ./COMPANY.md
+
+workers:
+  researcher:
+    name: Researcher
+    description: Research Director — finds raw material for satirical articles via web search
+    workerType: pi
+    modelProvider: google
+    modelName: gemini-2.5-flash
+    customTools:
+      - web_search
+    systemPromptFile: ./prompts/researcher.md
+
+  writer:
+    name: Writer
+    description: Staff Writer — turns research into Onion-style satirical news articles
+    workerType: pi
+    modelProvider: google
+    modelName: gemini-2.5-flash
+    systemPromptFile: ./prompts/writer.md
+
+  editor:
+    name: Editor
+    description: Editor — reviews articles and generates image prompts
+    workerType: pi
+    modelProvider: google
+    modelName: gemini-2.5-flash
+    systemPromptFile: ./prompts/editor.md
+
+  image_generator:
+    name: Image Generator
+    description: Generates the cover illustration via Google Imagen
+    workerType: imagen
+    modelProvider: google
+    modelName: imagen-4.0-generate-001
+
+  publisher:
+    name: Publisher
+    description: Assembles the final markdown article with cover image
+    workerType: publish
+    modelProvider: none
+    modelName: none
+
+steps:
+  - name: Research
+    worker: researcher
+    timeoutSeconds: 120
+    promptTemplate: |
+      Research the following topic for The Daily Absurdist: "{{input.topic}}"
+
+      Run exactly 3 web searches as instructed, then compile the structured research report.
+
+  - name: Write
+    worker: writer
+    timeoutSeconds: 180
+    promptTemplate: |
+      Write a satirical article based on the following research:
+
+      {{steps.0.output}}
+
+      Remember: 2,000–2,500 words, dry deadpan throughout, non-obvious satirical angle.
+
+  - name: Edit
+    worker: editor
+    timeoutSeconds: 60
+    promptTemplate: |
+      Review and edit this article. Respond with the JSON object as instructed:
+
+      {{steps.1.output}}
+
+  - name: Illustrate
+    worker: image_generator
+    timeoutSeconds: 120
+    promptTemplate: "{{steps.2.output.imagePrompt}}"
+
+  - name: Publish
+    worker: publisher
+    timeoutSeconds: 30
+    promptTemplate: "{{steps.1.output}}"
+    metadata:
+      imageStepIndex: 3

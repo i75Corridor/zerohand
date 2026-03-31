@@ -1,0 +1,29 @@
+{
+  "name": "zerohand",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "dev": "concurrently -n server,ui -c blue,green \"pnpm --filter server dev\" \"pnpm --filter ui dev\"",
+    "build": "pnpm --filter @zerohand/db build && pnpm --filter server build && pnpm --filter ui build",
+    "db:generate": "pnpm --filter @zerohand/db generate",
+    "db:reset": "rm -rf server/.data/postgres && echo 'Database reset. Run pnpm dev to re-seed.'",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "typescript": "^5.8.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@embedded-postgres/darwin-arm64",
+      "@embedded-postgres/linux-arm64",
+      "@embedded-postgres/linux-x64",
+      "@embedded-postgres/win32-x64",
+      "esbuild",
+      "koffi",
+      "protobufjs"
+    ]
+  }
+}
