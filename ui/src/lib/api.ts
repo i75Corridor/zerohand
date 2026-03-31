@@ -1,4 +1,12 @@
-import type { ApiPipelineRun, ApiStepRun, ApiWorker, ApiPipeline } from "@zerohand/shared";
+import type {
+  ApiPipelineRun,
+  ApiStepRun,
+  ApiWorker,
+  ApiPipeline,
+  ApiTrigger,
+  ApiApproval,
+  ApiBudgetPolicy,
+} from "@zerohand/shared";
 
 const BASE = "/api";
 
@@ -47,4 +55,42 @@ export const api = {
   getRunSteps: (runId: string) => request<ApiStepRun[]>(`/runs/${runId}/steps`),
   getStepEvents: (runId: string, stepRunId: string) =>
     request<unknown[]>(`/runs/${runId}/steps/${stepRunId}/events`),
+
+  // Triggers
+  listTriggers: (pipelineId: string) =>
+    request<ApiTrigger[]>(`/pipelines/${pipelineId}/triggers`),
+  createTrigger: (pipelineId: string, body: Partial<ApiTrigger>) =>
+    request<ApiTrigger>(`/pipelines/${pipelineId}/triggers`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateTrigger: (id: string, body: Partial<ApiTrigger>) =>
+    request<ApiTrigger>(`/triggers/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteTrigger: (id: string) => request<void>(`/triggers/${id}`, { method: "DELETE" }),
+
+  // Approvals
+  listApprovals: (status = "pending") =>
+    request<ApiApproval[]>(`/approvals?status=${status}`),
+  approveStep: (id: string, note?: string) =>
+    request<ApiApproval>(`/approvals/${id}/approve`, { method: "POST", body: JSON.stringify({ note }) }),
+  rejectStep: (id: string, note?: string) =>
+    request<ApiApproval>(`/approvals/${id}/reject`, { method: "POST", body: JSON.stringify({ note }) }),
+
+  // Stats
+  getStats: () =>
+    request<{ runsThisMonth: number; activeRuns: number; costCentsThisMonth: number }>("/stats"),
+
+  // Budgets
+  listBudgets: (scopeType?: string, scopeId?: string) => {
+    const params = new URLSearchParams();
+    if (scopeType) params.set("scopeType", scopeType);
+    if (scopeId) params.set("scopeId", scopeId);
+    const qs = params.toString();
+    return request<ApiBudgetPolicy[]>(`/budgets${qs ? `?${qs}` : ""}`);
+  },
+  createBudget: (body: Partial<ApiBudgetPolicy>) =>
+    request<ApiBudgetPolicy>("/budgets", { method: "POST", body: JSON.stringify(body) }),
+  updateBudget: (id: string, body: Partial<ApiBudgetPolicy>) =>
+    request<ApiBudgetPolicy>(`/budgets/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteBudget: (id: string) => request<void>(`/budgets/${id}`, { method: "DELETE" }),
 };

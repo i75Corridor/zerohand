@@ -7,7 +7,7 @@ export const STEP_RUN_STATUS = ["queued", "running", "awaiting_approval", "compl
 export type StepRunStatus = (typeof STEP_RUN_STATUS)[number];
 
 // Worker types
-export const WORKER_TYPE = ["pi", "function", "api"] as const;
+export const WORKER_TYPE = ["pi", "imagen", "publish", "function", "api"] as const;
 export type WorkerType = (typeof WORKER_TYPE)[number];
 
 // Worker statuses
@@ -90,6 +90,43 @@ export interface ApiPipelineStep {
   workerName?: string;
   promptTemplate: string;
   approvalRequired: boolean;
+}
+
+export interface ApiTrigger {
+  id: string;
+  pipelineId: string;
+  type: "cron" | "webhook";
+  enabled: boolean;
+  cronExpression: string | null;
+  timezone: string;
+  defaultInputs: Record<string, unknown>;
+  nextRunAt: string | null;
+  lastFiredAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiApproval {
+  id: string;
+  pipelineRunId: string;
+  stepRunId: string | null;
+  status: ApprovalStatus;
+  payload: Record<string, unknown>;
+  decisionNote: string | null;
+  decidedAt: string | null;
+  pipelineName?: string;
+  stepName?: string;
+  createdAt: string;
+}
+
+export interface ApiBudgetPolicy {
+  id: string;
+  scopeType: "worker" | "pipeline";
+  scopeId: string;
+  amountCents: number;
+  windowKind: "calendar_month" | "lifetime";
+  warnPercent: number;
+  hardStopEnabled: boolean;
+  createdAt: string;
 }
 
 // WebSocket message types

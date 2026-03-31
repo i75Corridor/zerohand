@@ -1,6 +1,37 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, Bot, Zap } from "lucide-react";
+import { LayoutDashboard, GitBranch, Bot, Zap, CheckSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+import { api } from "../lib/api.ts";
+
+function ApprovalsNavItem() {
+  const { data: pending = [] } = useQuery({
+    queryKey: ["approvals"],
+    queryFn: () => api.listApprovals("pending"),
+    refetchInterval: 15_000,
+  });
+
+  return (
+    <NavLink
+      to="/approvals"
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+          isActive
+            ? "bg-indigo-600 text-white"
+            : "text-gray-400 hover:text-white hover:bg-gray-800"
+        }`
+      }
+    >
+      <CheckSquare size={16} />
+      <span className="flex-1">Approvals</span>
+      {pending.length > 0 && (
+        <span className="bg-yellow-500 text-black text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
+          {pending.length}
+        </span>
+      )}
+    </NavLink>
+  );
+}
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -34,6 +65,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               {label}
             </NavLink>
           ))}
+          <ApprovalsNavItem />
         </nav>
       </aside>
 

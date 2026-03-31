@@ -61,6 +61,10 @@ Create a worker.
 
 Update any fields on a worker. Returns the updated worker.
 
+#### `DELETE /api/workers/:id`
+
+Delete a worker.
+
 ---
 
 ### Pipelines
@@ -217,6 +221,158 @@ Get all recorded events for a step run (for replay).
 
 ---
 
+### Triggers
+
+Cron triggers schedule a pipeline to run automatically on a recurring schedule.
+
+#### `GET /api/pipelines/:pipelineId/triggers`
+
+List all triggers for a pipeline.
+
+```json
+[
+  {
+    "id": "uuid",
+    "pipelineId": "uuid",
+    "type": "cron",
+    "enabled": true,
+    "cronExpression": "0 9 * * *",
+    "timezone": "America/New_York",
+    "defaultInputs": { "topic": "today's news" },
+    "nextRunAt": "2026-04-01T13:00:00Z",
+    "lastFiredAt": "2026-03-31T13:00:00Z",
+    "createdAt": "..."
+  }
+]
+```
+
+#### `POST /api/pipelines/:pipelineId/triggers`
+
+Create a cron trigger. `nextRunAt` is computed automatically from the expression and timezone.
+
+```json
+{
+  "type": "cron",
+  "cronExpression": "0 9 * * *",
+  "timezone": "America/New_York",
+  "defaultInputs": { "topic": "today's news" }
+}
+```
+
+#### `PATCH /api/triggers/:id`
+
+Update a trigger (e.g. enable/disable, change expression).
+
+```json
+{ "enabled": false }
+```
+
+#### `DELETE /api/triggers/:id`
+
+Delete a trigger.
+
+---
+
+### Approvals
+
+Human-in-the-loop decision gates. An approval is created automatically when a pipeline run reaches a step with `approvalRequired: true`.
+
+#### `GET /api/approvals?status=pending`
+
+List approvals by status. `status` can be `pending`, `approved`, or `rejected`. Defaults to `pending`.
+
+```json
+[
+  {
+    "id": "uuid",
+    "stepRunId": "uuid",
+    "pipelineRunId": "uuid",
+    "pipelineName": "The Daily Absurdist",
+    "stepName": "Publish",
+    "status": "pending",
+    "payload": { "text": "Article text preview..." },
+    "createdAt": "..."
+  }
+]
+```
+
+#### `POST /api/approvals/:id/approve`
+
+Approve an approval gate. Re-queues the pipeline run so execution resumes. Optional note.
+
+```json
+{ "note": "Looks good, publish it." }
+```
+
+Returns the updated approval object.
+
+#### `POST /api/approvals/:id/reject`
+
+Reject an approval gate. Marks the pipeline run as failed. Optional note.
+
+```json
+{ "note": "Too controversial, don't publish." }
+```
+
+Returns the updated approval object.
+
+---
+
+### Budgets
+
+Budget policies enforce spending caps on workers or pipelines.
+
+#### `GET /api/budgets`
+
+List budget policies. Optional filters: `?scopeType=worker&scopeId=uuid`
+
+```json
+[
+  {
+    "id": "uuid",
+    "scopeType": "worker",
+    "scopeId": "uuid",
+    "amountCents": 500,
+    "windowKind": "calendar_month",
+    "warnPercent": 80,
+    "hardStopEnabled": true,
+    "createdAt": "..."
+  }
+]
+```
+
+#### `POST /api/budgets`
+
+Create a budget policy.
+
+```json
+{
+  "scopeType": "worker",
+  "scopeId": "uuid",
+  "amountCents": 500,
+  "windowKind": "calendar_month",
+  "warnPercent": 80,
+  "hardStopEnabled": true
+}
+```
+
+- `scopeType`: `"worker"` or `"pipeline"`
+- `scopeId`: ID of the worker or pipeline
+- `amountCents`: monthly cap in USD cents (e.g. `500` = $5.00)
+- `windowKind`: `"calendar_month"` (resets on the 1st) or `"lifetime"`
+- `warnPercent`: percentage at which to log a warning (not yet surfaced in UI)
+- `hardStopEnabled`: if `true`, the step fails when the cap is hit
+
+#### `PATCH /api/budgets/:id`
+
+Update a budget policy.
+
+#### `DELETE /api/budgets/:id`
+
+Delete a budget policy.
+
+---
+
 ## WebSocket
 
 Connect to `ws://localhost:3009`. All messages are JSON.
@@ -264,3 +420,16 @@ Emitted for each streaming event during step execution.
 ```
 
 The UI accumulates `text_delta` messages to build the live step output display.
+
+### `trigger_fired`
+
+Emitted when the trigger manager fires a cron trigger.
+
+```ts
+{
+  type: "trigger_fired"
+  triggerId: string
+  pipelineId: string
+  pipelineRunId: string
+}
+```

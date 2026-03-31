@@ -1,0 +1,95 @@
+import { Router } from "express";
+import { asc, eq } from "drizzle-orm";
+import type { Db } from "@zerohand/db";
+import { triggers } from "@zerohand/db";
+import type { ApiTrigger } from "@zerohand/shared";
+import { computeNextRun } from "../services/trigger-manager.js";
+
+function toApi(row: typeof triggers.$inferSelect): ApiTrigger {
+  return {
+    id: row.id,
+    pipelineId: row.pipelineId,
+    type: row.type as "cron" | "webhook",
+    enabled: row.enabled,
+    cronExpression: row.cronExpression,
+    timezone: row.timezone,
+    defaultInputs: (row.defaultInputs as Record<string, unknown>) ?? {},
+    nextRunAt: row.nextRunAt?.toISOString() ?? null,
+    lastFiredAt: row.lastFiredAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function createTriggersRouter(db: Db): Router {
+  const router = Router();
+
+  router.get("/pipelines/:pipelineId/triggers", async (req, res, next) => {
+    try {
+      const rows = await db
+        .select()
+        .from(triggers)
+        .where(eq(triggers.pipelineId, req.params.pipelineId))
+        .orderBy(asc(triggers.createdAt));
+      res.json(rows.map(toApi));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post("/pipelines/:pipelineId/triggers", async (req, res, next) => {
+    try {
+      const body = req.body as Partial<typeof triggers.$inferInsert>;
+      const tz = body.timezone ?? "UTC";
+      const nextRunAt = body.cronExpression ? computeNextRun(body.cronExpression, tz) : null;
+      const [row] = await db
+        .insert(triggers)
+        .values({
+          pipelineId: req.params.pipelineId,
+          type: body.type ?? "cron",
+          enabled: body.enabled ?? true,
+          cronExpression: body.cronExpression,
+          timezone: tz,
+          nextRunAt,
+          defaultInputs: body.defaultInputs,
+        })
+        .returning();
+      res.status(201).json(toApi(row));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.patch("/triggers/:id", async (req, res, next) => {
+    try {
+      const body = req.body as Partial<typeof triggers.$inferInsert>;
+      const updates: Record<string, unknown> = { ...body, updatedAt: new Date() };
+      if (body.cronExpression) {
+        updates.nextRunAt = computeNextRun(body.cronExpression, (body.timezone as string) ?? "UTC");
+      }
+      const [row] = await db
+        .update(triggers)
+        .set(updates)
+        .where(eq(triggers.id, req.params.id))
+        .returning();
+      if (!row) return res.status(404).json({ error: "Trigger not found" });
+      res.json(toApi(row));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.delete("/triggers/:id", async (req, res, next) => {
+    try {
+      const deleted = await db
+        .delete(triggers)
+        .where(eq(triggers.id, req.params.id))
+        .returning();
+      if (deleted.length === 0) return res.status(404).json({ error: "Trigger not found" });
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  return router;
+}

@@ -113,6 +113,7 @@ export async function runWorkerStep(
   worker: WorkerConfig,
   prompt: string,
   onEvent: (eventType: StepRunEventType, message?: string, payload?: Record<string, unknown>) => void,
+  sessionDir?: string,
   signal?: AbortSignal,
 ): Promise<PiRunResult> {
   const model = getModel(worker.modelProvider as any, worker.modelName as any);
@@ -130,6 +131,10 @@ export async function runWorkerStep(
     customTools.push(makeWebSearchTool());
   }
 
+  const sessionManager = sessionDir
+    ? SessionManager.create(sessionDir)
+    : SessionManager.inMemory();
+
   const { session } = await createAgentSession({
     model,
     thinkingLevel: "off",
@@ -138,7 +143,7 @@ export async function runWorkerStep(
     resourceLoader,
     tools: [],
     customTools,
-    sessionManager: SessionManager.inMemory(),
+    sessionManager,
   });
 
   const unsub = session.subscribe((event: any) => {

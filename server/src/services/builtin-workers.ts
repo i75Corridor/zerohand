@@ -25,14 +25,21 @@ const FALLBACK_PROMPTS = [
     "crosshatch ink style, exaggerated features, newspaper print aesthetic.",
 ];
 
-async function generateImage(prompt: string, outputPath: string, model: string): Promise<number> {
+async function generateImage(
+  prompt: string,
+  outputPath: string,
+  model: string,
+  aspectRatio: string,
+  personGeneration: string,
+): Promise<number> {
   const { GoogleGenAI } = await import("@google/genai");
   const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
   const response = await client.models.generateImages({
     model,
     prompt,
-    config: { numberOfImages: 1, outputMimeType: "image/png" },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config: { numberOfImages: 1, outputMimeType: "image/png", aspectRatio, personGeneration: personGeneration as any },
   });
 
   if (!response.generatedImages || response.generatedImages.length === 0) {
@@ -53,19 +60,21 @@ export async function runImagenWorker(
   outputDir: string,
   slug: string,
   onUpdate: (msg: string) => void,
+  aspectRatio = "1:1",
+  personGeneration = "allow_all",
 ): Promise<string> {
   const imagePath = join(resolve(outputDir), `${slug}.png`);
   const styledPrompt = imagePrompt.trim() + STYLE_SUFFIX;
   const promptsToTry = [styledPrompt, ...FALLBACK_PROMPTS];
 
-  onUpdate(`Generating cover image with model: ${modelName}`);
+  onUpdate(`Generating cover image with model: ${modelName} (${aspectRatio}, ${personGeneration})`);
 
   let lastError = "";
   for (let i = 0; i < promptsToTry.length; i++) {
     const label = i === 0 ? "primary prompt" : `fallback ${i}`;
     onUpdate(`Attempting ${label}...`);
     try {
-      const bytes = await generateImage(promptsToTry[i], imagePath, modelName);
+      const bytes = await generateImage(promptsToTry[i], imagePath, modelName, aspectRatio, personGeneration);
       onUpdate(`Image saved: ${imagePath} (${bytes} bytes)`);
       return imagePath;
     } catch (err: unknown) {
