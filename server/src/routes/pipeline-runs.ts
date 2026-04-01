@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq, desc, asc } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { pipelineRuns, stepRuns, stepRunEvents, pipelines, workers } from "@zerohand/db";
+import { pipelineRuns, stepRuns, stepRunEvents, pipelines } from "@zerohand/db";
 import type { ApiPipelineRun, ApiStepRun } from "@zerohand/shared";
 
 function toApiRun(row: typeof pipelineRuns.$inferSelect, pipelineName?: string): ApiPipelineRun {
@@ -20,12 +20,11 @@ function toApiRun(row: typeof pipelineRuns.$inferSelect, pipelineName?: string):
   };
 }
 
-function toApiStepRun(row: typeof stepRuns.$inferSelect, workerName?: string): ApiStepRun {
+function toApiStepRun(row: typeof stepRuns.$inferSelect): ApiStepRun {
   return {
     id: row.id,
     pipelineRunId: row.pipelineRunId,
     stepIndex: row.stepIndex,
-    workerName,
     status: row.status as ApiStepRun["status"],
     output: row.output as Record<string, unknown> | null,
     error: row.error,
@@ -112,13 +111,12 @@ export function createPipelineRunsRouter(db: Db): Router {
   router.get("/runs/:id/steps", async (req, res, next) => {
     try {
       const rows = await db
-        .select({ stepRun: stepRuns, workerName: workers.name })
+        .select()
         .from(stepRuns)
-        .leftJoin(workers, eq(stepRuns.workerId, workers.id))
         .where(eq(stepRuns.pipelineRunId, req.params.id))
         .orderBy(asc(stepRuns.stepIndex));
 
-      res.json(rows.map((r) => toApiStepRun(r.stepRun, r.workerName ?? undefined)));
+      res.json(rows.map((r) => toApiStepRun(r)));
     } catch (err) {
       next(err);
     }

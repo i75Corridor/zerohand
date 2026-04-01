@@ -1,13 +1,12 @@
 import { pgTable, uuid, text, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { stepRuns, pipelineRuns } from "./pipeline-runs.js";
-import { workers } from "./workers.js";
 
 export const costEvents = pgTable(
   "cost_events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     stepRunId: uuid("step_run_id").references(() => stepRuns.id),
-    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    skillName: text("skill_name"),
     pipelineRunId: uuid("pipeline_run_id").notNull().references(() => pipelineRuns.id),
     provider: text("provider").notNull(),
     model: text("model").notNull(),
@@ -18,7 +17,7 @@ export const costEvents = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    workerDateIdx: index("cost_events_worker_date_idx").on(t.workerId, t.occurredAt),
+    skillDateIdx: index("cost_events_skill_date_idx").on(t.skillName, t.occurredAt),
     pipelineRunIdx: index("cost_events_pipeline_run_idx").on(t.pipelineRunId),
   }),
 );

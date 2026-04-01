@@ -1,6 +1,6 @@
-import { and, eq, gte, sum } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { budgetPolicies, costEvents, settings } from "@zerohand/db";
+import { costEvents, settings } from "@zerohand/db";
 import type { ModelCostEntry } from "@zerohand/shared";
 
 const SETTINGS_KEY = "model_costs";
@@ -58,79 +58,11 @@ export function estimateCostCents(
   );
 }
 
-function startOfMonth(): Date {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-async function spentCents(
-  db: Db,
-  scopeType: string,
-  scopeId: string,
-  windowKind: string,
-): Promise<number> {
-  const conditions = [
-    eq(costEvents.workerId, scopeId),
-  ];
-
-  if (scopeType === "pipeline") {
-    conditions[0] = eq(costEvents.pipelineRunId, scopeId);
-  }
-
-  if (windowKind === "calendar_month") {
-    conditions.push(gte(costEvents.occurredAt, startOfMonth()));
-  }
-
-  const [row] = await db
-    .select({ total: sum(costEvents.costCents) })
-    .from(costEvents)
-    .where(and(...conditions));
-
-  return Number(row?.total ?? 0);
-}
-
-export async function checkBudget(
-  db: Db,
-  workerId: string,
-  pipelineRunId: string,
-): Promise<void> {
-  const policies = await db
-    .select()
-    .from(budgetPolicies)
-    .where(
-      and(
-        eq(budgetPolicies.scopeType, "worker"),
-        eq(budgetPolicies.scopeId, workerId),
-      ),
-    );
-
-  for (const policy of policies) {
-    const spent = await spentCents(db, "worker", workerId, policy.windowKind);
-    const pct = policy.amountCents > 0 ? (spent / policy.amountCents) * 100 : 0;
-
-    if (pct >= policy.warnPercent) {
-      console.warn(
-        `[BudgetGuard] Worker ${workerId} at ${pct.toFixed(0)}% of budget ` +
-          `($${(spent / 100).toFixed(2)} / $${(policy.amountCents / 100).toFixed(2)})`,
-      );
-    }
-
-    if (policy.hardStopEnabled && spent >= policy.amountCents) {
-      throw new Error(
-        `Budget exceeded for worker ${workerId}: ` +
-          `$${(spent / 100).toFixed(2)} spent of $${(policy.amountCents / 100).toFixed(2)} limit`,
-      );
-    }
-  }
-
-  void pipelineRunId; // referenced for tracing, not used in query
-}
-
 export async function recordCost(
   db: Db,
   stepRunId: string,
-  workerId: string,
-  pipelineRunId: string,
+  skillName: string,
+  runId: string,
   provider: string,
   modelName: string,
   usage: Record<string, unknown>,
@@ -144,8 +76,8 @@ export async function recordCost(
 
   await db.insert(costEvents).values({
     stepRunId,
-    workerId,
-    pipelineRunId,
+    skillName,
+    pipelineRunId: runId,
     provider,
     model: modelName,
     inputTokens,

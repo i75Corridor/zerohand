@@ -1,5 +1,4 @@
 import { pgTable, uuid, text, integer, jsonb, timestamp, boolean, index, unique } from "drizzle-orm/pg-core";
-import { workers } from "./workers.js";
 
 export const pipelines = pgTable("pipelines", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -22,7 +21,6 @@ export const pipelineSteps = pgTable(
     pipelineId: uuid("pipeline_id").notNull().references(() => pipelines.id, { onDelete: "cascade" }),
     stepIndex: integer("step_index").notNull(),
     name: text("name").notNull(),
-    workerId: uuid("worker_id").references(() => workers.id),
     skillName: text("skill_name"),
     // Template supports {{input.key}}, {{steps.N.output}}, {{steps.N.output.field}}
     promptTemplate: text("prompt_template").notNull(),

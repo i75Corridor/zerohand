@@ -43,9 +43,9 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-white">{step.name}</div>
-          {(step.skillName || step.workerName) && (
+          {step.skillName && (
             <div className="text-xs text-indigo-400 mt-0.5">
-              {step.skillName ? `skill: ${step.skillName}` : step.workerName}
+              skill: {step.skillName}
             </div>
           )}
           {preview && (

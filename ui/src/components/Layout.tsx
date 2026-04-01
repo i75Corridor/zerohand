@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, Bot, CheckSquare, Image, Settings, MessageSquare } from "lucide-react";
+import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare } from "lucide-react";
 
 function ZerohandIcon({ size = 20, className = "" }: { size?: number; className?: string }) {
   return (
@@ -61,7 +61,6 @@ function ApprovalsNavItem() {
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/pipelines", label: "Pipelines", icon: GitBranch },
-  { to: "/workers", label: "Workers", icon: Bot },
   { to: "/canvas", label: "Canvas", icon: Image },
 ];
 

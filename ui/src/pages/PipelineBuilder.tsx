@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useCallback } from "react";
 import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, GitBranch, CheckSquare } from "lucide-react";
 import { api } from "../lib/api.ts";
-import type { ApiPipeline, ApiPipelineStep, ApiWorker, ApiSkill } from "@zerohand/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiSkill } from "@zerohand/shared";
 
 // ── Draft step type (before saving) ───────────────────────────────────────────
 
@@ -11,8 +11,7 @@ interface DraftStep {
   /** undefined = new step not yet persisted */
   id?: string;
   name: string;
-  workerId: string;
-  skillName?: string;
+  skillName: string;
   promptTemplate: string;
   timeoutSeconds: number;
   approvalRequired: boolean;
@@ -57,7 +56,6 @@ function schemaToFields(schema: Record<string, unknown> | null): SchemaField[] {
 
 function StepForm({
   step,
-  workers,
   skills,
   inputKeys,
   stepIndex,
@@ -65,7 +63,6 @@ function StepForm({
   onChange,
 }: {
   step: DraftStep;
-  workers: ApiWorker[];
   skills: ApiSkill[];
   inputKeys: string[];
   stepIndex: number;
@@ -94,46 +91,17 @@ function StepForm({
       </div>
 
       <div>
-        <label className="block text-xs text-gray-400 mb-1">Capability</label>
-        <div className="flex gap-2 mb-2">
-          <button
-            type="button"
-            className={`text-xs px-2 py-1 rounded ${step.skillName === undefined && step.workerId ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-400"}`}
-            onClick={() => onChange({ ...step, skillName: undefined })}
-          >
-            Worker
-          </button>
-          <button
-            type="button"
-            className={`text-xs px-2 py-1 rounded ${step.skillName !== undefined ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-400"}`}
-            onClick={() => onChange({ ...step, workerId: "", skillName: step.skillName ?? "" })}
-          >
-            Skill
-          </button>
-        </div>
-        {step.skillName !== undefined ? (
-          <select
-            className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-            value={step.skillName}
-            onChange={(e) => onChange({ ...step, skillName: e.target.value })}
-          >
-            <option value="">— select skill —</option>
-            {skills.map((s) => (
-              <option key={s.name} value={s.name}>{s.name}</option>
-            ))}
-          </select>
-        ) : (
-          <select
-            className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-            value={step.workerId}
-            onChange={(e) => onChange({ ...step, workerId: e.target.value })}
-          >
-            <option value="">— select worker —</option>
-            {workers.map((w) => (
-              <option key={w.id} value={w.id}>{w.name}</option>
-            ))}
-          </select>
-        )}
+        <label className="block text-xs text-gray-400 mb-1">Skill</label>
+        <select
+          className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+          value={step.skillName}
+          onChange={(e) => onChange({ ...step, skillName: e.target.value })}
+        >
+          <option value="">— select skill —</option>
+          {skills.map((s) => (
+            <option key={s.name} value={s.name}>{s.name}</option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -198,7 +166,6 @@ function StepForm({
 function StepList({
   steps,
   selectedIndex,
-  workers,
   onSelect,
   onAdd,
   onRemove,
@@ -206,14 +173,11 @@ function StepList({
 }: {
   steps: DraftStep[];
   selectedIndex: number | null;
-  workers: ApiWorker[];
   onSelect: (i: number) => void;
   onAdd: () => void;
   onRemove: (i: number) => void;
   onMove: (from: number, to: number) => void;
 }) {
-  const workerMap = new Map(workers.map((w) => [w.id, w.name]));
-
   return (
     <div className="space-y-2">
       {steps.map((step, i) => (
@@ -232,11 +196,9 @@ function StepList({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white truncate">{step.name || "Unnamed step"}</div>
-                {(step.skillName !== undefined || step.workerId) && (
+                {step.skillName && (
                   <div className="text-xs text-indigo-400 mt-0.5 truncate">
-                    {step.skillName !== undefined
-                      ? (step.skillName ? `skill: ${step.skillName}` : "skill: —")
-                      : (workerMap.get(step.workerId) ?? step.workerId)}
+                    skill: {step.skillName}
                   </div>
                 )}
               </div>
@@ -362,12 +324,7 @@ export default function PipelineBuilder() {
     enabled: isEdit,
   });
 
-  const { data: workers = [], isLoading: loadingWorkers } = useQuery({
-    queryKey: ["workers"],
-    queryFn: () => api.listWorkers(),
-  });
-
-  const { data: skills = [] } = useQuery({
+  const { data: skills = [], isLoading: loadingSkills } = useQuery({
     queryKey: ["skills"],
     queryFn: () => api.listSkills(),
   });
@@ -396,8 +353,7 @@ export default function PipelineBuilder() {
       .map((s) => ({
         id: s.id,
         name: s.name,
-        workerId: s.workerId ?? "",
-        skillName: s.skillName ?? undefined,
+        skillName: s.skillName ?? "",
         promptTemplate: s.promptTemplate,
         timeoutSeconds: s.timeoutSeconds,
         approvalRequired: s.approvalRequired,
@@ -413,8 +369,7 @@ export default function PipelineBuilder() {
         .map((s) => ({
           id: s.id,
           name: s.name,
-          workerId: s.workerId ?? "",
-          skillName: s.skillName ?? undefined,
+          skillName: s.skillName ?? "",
           promptTemplate: s.promptTemplate,
           timeoutSeconds: s.timeoutSeconds,
           approvalRequired: s.approvalRequired,
@@ -432,14 +387,14 @@ export default function PipelineBuilder() {
   const addStep = useCallback(() => {
     const newStep: DraftStep = {
       name: `Step ${steps.length + 1}`,
-      workerId: workers[0]?.id ?? "",
+      skillName: "",
       promptTemplate: "",
       timeoutSeconds: 300,
       approvalRequired: false,
     };
     setSteps((prev) => [...prev, newStep]);
     setSelectedStep(steps.length);
-  }, [steps.length, workers]);
+  }, [steps.length]);
 
   const removeStep = useCallback((i: number) => {
     setSteps((prev) => prev.filter((_, j) => j !== i));
@@ -482,11 +437,10 @@ export default function PipelineBuilder() {
 
         for (let i = 0; i < steps.length; i++) {
           const draft = steps[i];
-          const body: Partial<ApiPipelineStep> & { skillName?: string } = {
+          const body: Partial<ApiPipelineStep> = {
             stepIndex: i,
             name: draft.name,
-            workerId: draft.skillName !== undefined ? undefined : draft.workerId,
-            skillName: draft.skillName,
+            skillName: draft.skillName || null,
             promptTemplate: draft.promptTemplate,
             timeoutSeconds: draft.timeoutSeconds,
             approvalRequired: draft.approvalRequired,
@@ -513,12 +467,11 @@ export default function PipelineBuilder() {
           await api.createStep(pipeline.id, {
             stepIndex: i,
             name: draft.name,
-            workerId: draft.skillName !== undefined ? undefined : draft.workerId,
-            skillName: draft.skillName,
+            skillName: draft.skillName || null,
             promptTemplate: draft.promptTemplate,
             timeoutSeconds: draft.timeoutSeconds,
             approvalRequired: draft.approvalRequired,
-          } as Partial<ApiPipelineStep> & { skillName?: string });
+          });
         }
       }
 
@@ -533,7 +486,7 @@ export default function PipelineBuilder() {
   };
 
   if (isEdit && loadingPipeline) return <div className="p-8 text-gray-500">Loading...</div>;
-  const loading = loadingWorkers;
+  const loading = loadingSkills;
 
   return (
     <div className="p-8 max-w-6xl">
@@ -603,7 +556,6 @@ export default function PipelineBuilder() {
             <StepList
               steps={steps}
               selectedIndex={selectedStep}
-              workers={workers}
               onSelect={setSelectedStep}
               onAdd={addStep}
               onRemove={removeStep}
@@ -623,7 +575,6 @@ export default function PipelineBuilder() {
                 <StepForm
                   key={selectedStep}
                   step={steps[selectedStep]}
-                  workers={workers}
                   skills={skills}
                   inputKeys={inputKeys}
                   stepIndex={selectedStep}

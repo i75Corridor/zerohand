@@ -12,7 +12,6 @@ import { ExecutionEngine } from "./services/execution-engine.js";
 import { TriggerManager } from "./services/trigger-manager.js";
 import { importAllPackages } from "./services/pipeline-import.js";
 import { createHealthRouter } from "./routes/health.js";
-import { createWorkersRouter } from "./routes/workers.js";
 import { createPipelinesRouter } from "./routes/pipelines.js";
 import { createPipelineRunsRouter } from "./routes/pipeline-runs.js";
 import { createTriggersRouter } from "./routes/triggers.js";
@@ -115,7 +114,6 @@ async function main() {
 
   // Routes (approvals needs ws for re-queuing after approve/reject)
   app.use("/api", createHealthRouter());
-  app.use("/api", createWorkersRouter(db));
   app.use("/api", createPipelinesRouter(db));
   app.use("/api", createPipelineRunsRouter(db));
   app.use("/api", createTriggersRouter(db));

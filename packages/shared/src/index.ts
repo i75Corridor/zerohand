@@ -6,14 +6,6 @@ export type PipelineRunStatus = (typeof PIPELINE_RUN_STATUS)[number];
 export const STEP_RUN_STATUS = ["queued", "running", "awaiting_approval", "completed", "failed", "cancelled"] as const;
 export type StepRunStatus = (typeof STEP_RUN_STATUS)[number];
 
-// Worker types
-export const WORKER_TYPE = ["pi", "imagen", "publish", "function", "api"] as const;
-export type WorkerType = (typeof WORKER_TYPE)[number];
-
-// Worker statuses
-export const WORKER_STATUS = ["idle", "active", "paused", "error"] as const;
-export type WorkerStatus = (typeof WORKER_STATUS)[number];
-
 // Trigger types
 export const TRIGGER_TYPE = ["cron", "webhook", "channel"] as const;
 export type TriggerType = (typeof TRIGGER_TYPE)[number];
@@ -52,28 +44,11 @@ export interface ApiStepRun {
   id: string;
   pipelineRunId: string;
   stepIndex: number;
-  workerName?: string;
   status: StepRunStatus;
   output: Record<string, unknown> | null;
   error: string | null;
   startedAt: string | null;
   finishedAt: string | null;
-}
-
-export interface ApiWorker {
-  id: string;
-  name: string;
-  description: string | null;
-  workerType: WorkerType;
-  modelProvider: string;
-  modelName: string;
-  status: WorkerStatus;
-  skills: string[];
-  customTools: string[];
-  systemPrompt: string | null;
-  metadata: Record<string, unknown> | null;
-  budgetMonthlyCents: number;
-  spentMonthlyCents: number;
 }
 
 export interface ApiSkill {
@@ -102,8 +77,6 @@ export interface ApiPipelineStep {
   id: string;
   stepIndex: number;
   name: string;
-  workerId?: string;
-  workerName?: string;
   skillName: string | null;
   promptTemplate: string;
   timeoutSeconds: number;
@@ -205,12 +178,12 @@ export interface WsIncomingGlobalChat {
   type: "global_chat";
   action: "prompt" | "abort" | "reset";
   message?: string;
-  context?: { path: string; pipelineId?: string; runId?: string; workerId?: string };
+  context?: { path: string; pipelineId?: string; runId?: string };
 }
 
 export interface WsDataChanged {
   type: "data_changed";
-  entity: "pipeline" | "worker" | "step";
+  entity: "pipeline" | "step";
   action: "created" | "updated" | "deleted";
   id: string;
 }

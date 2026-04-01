@@ -8,26 +8,30 @@ import {
 } from "@mariozechner/pi-coding-agent";
 import { getModel, Type } from "@mariozechner/pi-ai";
 import { eq, desc, gte, and, count, sql } from "drizzle-orm";
-import { join } from "node:path";
-import { mkdirSync, rmSync, existsSync } from "node:fs";
+import { join, resolve, sep } from "node:path";
+import { mkdirSync, rmSync, existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import type { Db } from "@zerohand/db";
-import { pipelines, pipelineRuns, pipelineSteps, workers, stepRuns, costEvents } from "@zerohand/db";
+import { pipelines, pipelineRuns, pipelineSteps, stepRuns, costEvents } from "@zerohand/db";
 import type { WsGlobalAgentEvent, WsDataChanged, WsIncomingGlobalChat } from "@zerohand/shared";
 import { makeAuthStorage, makeResourceLoader } from "./pi-executor.js";
 
 const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
 
 ## Concepts
-- **Pipeline**: an orchestration graph of sequential steps, each referencing a worker. Defines what happens and in what order. Has a name, input schema, and ordered steps.
-- **Worker**: a configured AI agent or processor. Defines who does the work. Has a model, system prompt, skills, and budget. Types: pi (LLM), imagen (image generation), publish (markdown writer), function, api.
-- **Skill**: a reusable capability definition (SKILL.md files on disk) assigned to workers by name.
+- **Pipeline**: an orchestration graph of sequential steps executed in order. Each step references a skill by name. Has a name, input schema, a top-level model, and a system prompt shared across all steps.
+- **Skill**: a folder in SKILLS_DIR containing a SKILL.md file (YAML frontmatter + system prompt body) and an optional scripts/ directory of executable tools. Skills are the primary unit of execution — pipelines compose them.
 
 ## Capabilities
-You can list, create, edit, and delete pipelines, steps, and workers. You can trigger and cancel runs, check status and stats, and navigate the UI.
+- **Pipelines**: list, create, edit, delete; add/update/remove steps
+- **Skills**: list, read, create, update (writes SKILL.md to disk)
+- **Runs**: trigger, cancel, check status and recent history
+- **Navigation**: navigate the UI to any page
 
-When the user's message includes context about which page they are viewing, use that to provide relevant assistance — e.g. if they are on a pipeline page and say "add a step", you know which pipeline to edit. After making changes, offer to navigate to the relevant page.
+When creating a skill, write a focused system prompt body that clearly defines the skill's role, input expectations, and output format — this is what the LLM sees at runtime.
 
-Be concise and action-oriented. Use your tools — don't ask permission to do things, just do them. Confirm what you did briefly.`;
+When the user's message includes context about which page they are viewing, use that to provide relevant assistance. After making changes, offer to navigate to the relevant page.
+
+Be concise and action-oriented. Use your tools — don't ask permission, just do it. Confirm briefly what you did.`;
 
 export class GlobalAgentService {
   private session: AgentSession | null = null;
@@ -80,7 +84,6 @@ export class GlobalAgentService {
           } catch { /* ignore */ }
         }
         if (context.runId) contextLines += ` — run id: ${context.runId}`;
-        if (context.workerId) contextLines += ` — worker id: ${context.workerId}`;
         contextLines += "]";
         fullMessage = `${contextLines}\n\n${message}`;
       }
@@ -300,26 +303,6 @@ export class GlobalAgentService {
       },
     };
 
-    const list_workers: ToolDefinition = {
-      name: "list_workers",
-      label: "List Workers",
-      description: "List all configured AI workers with their models and status.",
-      parameters: Type.Object({}),
-      execute: async () => {
-        const rows = await db.select().from(workers);
-        const result = rows.map((w) => ({
-          id: w.id,
-          name: w.name,
-          workerType: w.workerType,
-          modelProvider: w.modelProvider,
-          modelName: w.modelName,
-          status: w.status,
-          skills: w.skills,
-        }));
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }], details: {} };
-      },
-    };
-
     const get_system_stats: ToolDefinition = {
       name: "get_system_stats",
       label: "Get System Stats",
@@ -382,9 +365,6 @@ export class GlobalAgentService {
         const pipeline = await db.query.pipelines.findFirst({ where: eq(pipelines.id, params.pipelineId) });
         if (!pipeline) return { content: [{ type: "text" as const, text: "Pipeline not found." }], details: {} };
         const steps = await db.query.pipelineSteps.findMany({ where: eq(pipelineSteps.pipelineId, params.pipelineId) });
-        const workerIds = [...new Set(steps.map((s) => s.workerId))];
-        const workerRows = workerIds.length ? await db.select({ id: workers.id, name: workers.name }).from(workers) : [];
-        const workerNames = new Map(workerRows.map((w) => [w.id, w.name]));
         return {
           content: [{
             type: "text" as const,
@@ -393,7 +373,7 @@ export class GlobalAgentService {
               status: pipeline.status, inputSchema: pipeline.inputSchema,
               steps: steps.map((s) => ({
                 id: s.id, stepIndex: s.stepIndex, name: s.name,
-                workerId: s.workerId, workerName: s.workerId ? workerNames.get(s.workerId) : undefined,
+                skillName: s.skillName,
                 promptTemplate: s.promptTemplate, timeoutSeconds: s.timeoutSeconds,
                 approvalRequired: s.approvalRequired,
               })),
@@ -462,18 +442,18 @@ export class GlobalAgentService {
       parameters: Type.Object({
         pipelineId: Type.String({ description: "The pipeline ID" }),
         name: Type.String({ description: "Step name" }),
-        workerId: Type.String({ description: "Worker ID for this step" }),
+        skillName: Type.String({ description: "Skill name for this step" }),
         promptTemplate: Type.String({ description: "Prompt template text" }),
         stepIndex: Type.Number({ description: "Position in the pipeline (0-based)" }),
         timeoutSeconds: Type.Optional(Type.Number({ description: "Timeout in seconds (default 300)" })),
         approvalRequired: Type.Optional(Type.Boolean({ description: "Whether human approval is required before executing (default false)" })),
       }),
-      execute: async (_id, params: { pipelineId: string; name: string; workerId: string; promptTemplate: string; stepIndex: number; timeoutSeconds?: number; approvalRequired?: boolean }) => {
+      execute: async (_id, params: { pipelineId: string; name: string; skillName: string; promptTemplate: string; stepIndex: number; timeoutSeconds?: number; approvalRequired?: boolean }) => {
         const [row] = await db.insert(pipelineSteps).values({
           pipelineId: params.pipelineId,
           stepIndex: params.stepIndex,
           name: params.name,
-          workerId: params.workerId,
+          skillName: params.skillName,
           promptTemplate: params.promptTemplate,
           timeoutSeconds: params.timeoutSeconds ?? 300,
           approvalRequired: params.approvalRequired ?? false,
@@ -491,12 +471,12 @@ export class GlobalAgentService {
       parameters: Type.Object({
         stepId: Type.String({ description: "The step ID" }),
         name: Type.Optional(Type.String()),
-        workerId: Type.Optional(Type.String()),
+        skillName: Type.Optional(Type.String()),
         promptTemplate: Type.Optional(Type.String()),
         timeoutSeconds: Type.Optional(Type.Number()),
         approvalRequired: Type.Optional(Type.Boolean()),
       }),
-      execute: async (_id, params: { stepId: string; name?: string; workerId?: string; promptTemplate?: string; timeoutSeconds?: number; approvalRequired?: boolean }) => {
+      execute: async (_id, params: { stepId: string; name?: string; skillName?: string; promptTemplate?: string; timeoutSeconds?: number; approvalRequired?: boolean }) => {
         const { stepId, ...fields } = params;
         const [row] = await db.update(pipelineSteps).set({ ...fields, updatedAt: new Date() }).where(eq(pipelineSteps.id, stepId)).returning();
         if (!row) return { content: [{ type: "text" as const, text: "Step not found." }], details: {} };
@@ -522,54 +502,133 @@ export class GlobalAgentService {
       },
     };
 
-    const create_worker: ToolDefinition = {
-      name: "create_worker",
-      label: "Create Worker",
-      description: "Create a new worker.",
-      parameters: Type.Object({
-        name: Type.String({ description: "Worker name" }),
-        workerType: Type.Optional(Type.String({ description: "Worker type: pi, imagen, publish, function, api (default: pi)" })),
-        modelProvider: Type.Optional(Type.String({ description: "Model provider (e.g. anthropic, google)" })),
-        modelName: Type.Optional(Type.String({ description: "Model name" })),
-        systemPrompt: Type.Optional(Type.String({ description: "System prompt for pi workers" })),
-        skills: Type.Optional(Type.Array(Type.String(), { description: "List of skill names" })),
-        description: Type.Optional(Type.String({ description: "Worker description" })),
-      }),
-      execute: async (_id, params: { name: string; workerType?: string; modelProvider?: string; modelName?: string; systemPrompt?: string; skills?: string[]; description?: string }) => {
-        const [row] = await db.insert(workers).values({
-          name: params.name,
-          description: params.description,
-          workerType: (params.workerType ?? "pi") as any,
-          modelProvider: params.modelProvider ?? "anthropic",
-          modelName: params.modelName ?? "claude-sonnet-4-5-20251001",
-          systemPrompt: params.systemPrompt,
-          skills: params.skills ?? [],
-          customTools: [],
-        }).returning();
-        this.broadcastDataChanged("worker", "created", row.id);
-        return { content: [{ type: "text" as const, text: JSON.stringify({ id: row.id, name: row.name }, null, 2) }], details: {} };
+    // ── Skill tools (file-based, no DB) ───────────────────────────────────────
+    const skillsDir = process.env.SKILLS_DIR ?? join(process.cwd(), "..", "skills");
+
+    function safeSkillDir(skillName: string): string | null {
+      const skillDir = join(skillsDir, skillName);
+      const resolvedBase = resolve(skillsDir);
+      const resolvedTarget = resolve(skillDir);
+      if (!resolvedTarget.startsWith(resolvedBase + sep)) return null;
+      return skillDir;
+    }
+
+    function buildSkillMd(params: {
+      name: string;
+      description: string;
+      type: string;
+      model?: string;
+      body: string;
+      network?: boolean;
+    }): string {
+      const fm: string[] = [
+        `name: ${params.name}`,
+        `version: "1.0.0"`,
+        `description: "${params.description.replace(/"/g, '\\"')}"`,
+        `type: ${params.type}`,
+      ];
+      if (params.model) fm.push(`model: ${params.model}`);
+      if (params.network) fm.push(`network: true`);
+      return `---\n${fm.join("\n")}\n---\n${params.body.trim()}\n`;
+    }
+
+    const list_skills: ToolDefinition = {
+      name: "list_skills",
+      label: "List Skills",
+      description: "List all available skills in the skills directory.",
+      parameters: Type.Object({}),
+      execute: async () => {
+        if (!existsSync(skillsDir)) return { content: [{ type: "text" as const, text: "[]" }], details: {} };
+        const entries = readdirSync(skillsDir, { withFileTypes: true })
+          .filter((e) => e.isDirectory())
+          .map((e) => {
+            const skillPath = join(skillsDir, e.name, "SKILL.md");
+            if (!existsSync(skillPath)) return null;
+            const content = readFileSync(skillPath, "utf-8");
+            const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+            const desc = fm?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
+            const type = fm?.[1].match(/type:\s*(\S+)/m)?.[1] ?? "pi";
+            const hasScripts = existsSync(join(skillsDir, e.name, "scripts"));
+            return { name: e.name, description: desc, type, hasScripts };
+          })
+          .filter(Boolean);
+        return { content: [{ type: "text" as const, text: JSON.stringify(entries, null, 2) }], details: {} };
       },
     };
 
-    const update_worker: ToolDefinition = {
-      name: "update_worker",
-      label: "Update Worker",
-      description: "Update an existing worker.",
+    const get_skill: ToolDefinition = {
+      name: "get_skill",
+      label: "Get Skill",
+      description: "Read the full SKILL.md content for a skill.",
       parameters: Type.Object({
-        workerId: Type.String({ description: "The worker ID" }),
-        name: Type.Optional(Type.String()),
-        description: Type.Optional(Type.String()),
-        systemPrompt: Type.Optional(Type.String()),
-        skills: Type.Optional(Type.Array(Type.String())),
-        modelProvider: Type.Optional(Type.String()),
-        modelName: Type.Optional(Type.String()),
+        skillName: Type.String({ description: "The skill folder name" }),
       }),
-      execute: async (_id, params: { workerId: string; name?: string; description?: string; systemPrompt?: string; skills?: string[]; modelProvider?: string; modelName?: string }) => {
-        const { workerId, ...fields } = params;
-        const [row] = await db.update(workers).set({ ...fields, updatedAt: new Date() }).where(eq(workers.id, workerId)).returning();
-        if (!row) return { content: [{ type: "text" as const, text: "Worker not found." }], details: {} };
-        this.broadcastDataChanged("worker", "updated", row.id);
-        return { content: [{ type: "text" as const, text: `Updated worker "${row.name}".` }], details: {} };
+      execute: async (_id, params: { skillName: string }) => {
+        const skillDir = safeSkillDir(params.skillName);
+        if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name." }], details: {} };
+        const skillPath = join(skillDir, "SKILL.md");
+        if (!existsSync(skillPath)) return { content: [{ type: "text" as const, text: `Skill "${params.skillName}" not found.` }], details: {} };
+        return { content: [{ type: "text" as const, text: readFileSync(skillPath, "utf-8") }], details: {} };
+      },
+    };
+
+    const create_skill: ToolDefinition = {
+      name: "create_skill",
+      label: "Create Skill",
+      description: "Create a new skill by writing a SKILL.md file to the skills directory.",
+      parameters: Type.Object({
+        skillName: Type.String({ description: "Folder name for the skill (lowercase, hyphens ok)" }),
+        description: Type.String({ description: "One-line description of what the skill does" }),
+        type: Type.String({ description: "Skill type: pi (LLM agent), imagen, or publish" }),
+        body: Type.String({ description: "The system prompt body — the main instructions for this skill" }),
+        model: Type.Optional(Type.String({ description: "Model override in provider/name format, e.g. google/gemini-2.5-flash" })),
+        network: Type.Optional(Type.Boolean({ description: "Whether scripts in this skill need network access (default false)" })),
+      }),
+      execute: async (_id, params: { skillName: string; description: string; type: string; body: string; model?: string; network?: boolean }) => {
+        const skillDir = safeSkillDir(params.skillName);
+        if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name — must not contain path separators." }], details: {} };
+        if (existsSync(skillDir)) return { content: [{ type: "text" as const, text: `Skill "${params.skillName}" already exists. Use update_skill to modify it.` }], details: {} };
+        mkdirSync(skillDir, { recursive: true });
+        const content = buildSkillMd({ name: params.skillName, ...params });
+        writeFileSync(join(skillDir, "SKILL.md"), content, "utf-8");
+        return { content: [{ type: "text" as const, text: `Created skill "${params.skillName}" at ${skillDir}.` }], details: {} };
+      },
+    };
+
+    const update_skill: ToolDefinition = {
+      name: "update_skill",
+      label: "Update Skill",
+      description: "Overwrite the SKILL.md for an existing skill. Provide the full new body — partial updates are not supported.",
+      parameters: Type.Object({
+        skillName: Type.String({ description: "The skill folder name to update" }),
+        description: Type.Optional(Type.String({ description: "Updated description" })),
+        type: Type.Optional(Type.String({ description: "Updated type: pi, imagen, or publish" })),
+        body: Type.String({ description: "The full new system prompt body" }),
+        model: Type.Optional(Type.String({ description: "Model override in provider/name format" })),
+        network: Type.Optional(Type.Boolean({ description: "Whether scripts need network access" })),
+      }),
+      execute: async (_id, params: { skillName: string; description?: string; type?: string; body: string; model?: string; network?: boolean }) => {
+        const skillDir = safeSkillDir(params.skillName);
+        if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name." }], details: {} };
+        const skillPath = join(skillDir, "SKILL.md");
+        if (!existsSync(skillPath)) return { content: [{ type: "text" as const, text: `Skill "${params.skillName}" not found. Use create_skill to create it.` }], details: {} };
+
+        // Merge: read existing frontmatter for fields not provided
+        const existing = readFileSync(skillPath, "utf-8");
+        const fm = existing.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+        const existingDesc = fm?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
+        const existingType = fm?.[1].match(/type:\s*(\S+)/m)?.[1] ?? "pi";
+
+        const content = buildSkillMd({
+          name: params.skillName,
+          description: params.description ?? existingDesc,
+          type: params.type ?? existingType,
+          body: params.body,
+          model: params.model,
+          network: params.network,
+        });
+        writeFileSync(skillPath, content, "utf-8");
+        return { content: [{ type: "text" as const, text: `Updated skill "${params.skillName}".` }], details: {} };
       },
     };
 
@@ -579,7 +638,6 @@ export class GlobalAgentService {
       cancel_run,
       list_recent_runs,
       get_run_status,
-      list_workers,
       get_system_stats,
       navigate_ui,
       get_pipeline_detail,
@@ -589,8 +647,10 @@ export class GlobalAgentService {
       add_pipeline_step,
       update_pipeline_step,
       remove_pipeline_step,
-      create_worker,
-      update_worker,
+      list_skills,
+      get_skill,
+      create_skill,
+      update_skill,
     ];
   }
 }

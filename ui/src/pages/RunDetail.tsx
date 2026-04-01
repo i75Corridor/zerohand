@@ -64,7 +64,6 @@ function StepCard({
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span className="text-sm font-medium text-gray-200">
           Step {step.stepIndex + 1}
-          {step.workerName && <span className="text-gray-400 font-normal"> · {step.workerName}</span>}
         </span>
         <span className={`ml-auto text-xs font-medium ${colorClass.split(" ").slice(1).join(" ")}`}>
           {step.status}

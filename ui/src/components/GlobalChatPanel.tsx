@@ -19,12 +19,10 @@ interface GlobalChatPanelProps {
 function getContext(path: string): WsIncomingGlobalChat["context"] {
   const pipelineMatch = path.match(/^\/pipelines\/([^/]+)/);
   const runMatch = path.match(/^\/runs\/([^/]+)/);
-  const workerMatch = path.match(/^\/workers\/([^/]+)/);
   return {
     path,
     pipelineId: pipelineMatch?.[1],
     runId: runMatch?.[1],
-    workerId: workerMatch?.[1],
   };
 }
 
@@ -46,7 +44,6 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         queryClient.invalidateQueries({ queryKey: ["pipelines"] });
         queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       }
-      if (msg.entity === "worker") queryClient.invalidateQueries({ queryKey: ["workers"] });
       if (msg.entity === "step") queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       return;
     }
@@ -141,7 +138,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {messages.length === 0 && !streamingText && !isStreaming && (
           <div className="flex items-center justify-center h-full">
             <p className="text-gray-600 text-sm text-center px-4">
-              Ask me about pipelines, runs, workers, or tell me to trigger a run.
+              Ask me about pipelines, runs, skills, or tell me to trigger a run.
             </p>
           </div>
         )}

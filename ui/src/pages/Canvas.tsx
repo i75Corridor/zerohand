@@ -29,7 +29,7 @@ function OutputCard({
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium text-gray-200 truncate">{pipelineName}</div>
           <div className="text-xs text-gray-500">
-            {step.workerName ?? `Step ${step.stepIndex + 1}`} · {new Date(runDate).toLocaleDateString()}
+            Step {step.stepIndex + 1} · {new Date(runDate).toLocaleDateString()}
           </div>
         </div>
         <Link

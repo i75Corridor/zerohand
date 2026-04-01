@@ -1,7 +1,6 @@
 import type {
   ApiPipelineRun,
   ApiStepRun,
-  ApiWorker,
   ApiPipeline,
   ApiPipelineStep,
   ApiTrigger,
@@ -26,15 +25,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  // Workers
-  listWorkers: () => request<ApiWorker[]>("/workers"),
-  getWorker: (id: string) => request<ApiWorker>(`/workers/${id}`),
-  createWorker: (body: Partial<ApiWorker>) =>
-    request<ApiWorker>("/workers", { method: "POST", body: JSON.stringify(body) }),
-  updateWorker: (id: string, body: Partial<ApiWorker>) =>
-    request<ApiWorker>(`/workers/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  deleteWorker: (id: string) => request<void>(`/workers/${id}`, { method: "DELETE" }),
-
   // Pipelines
   listPipelines: () => request<ApiPipeline[]>("/pipelines"),
   getPipeline: (id: string) => request<ApiPipeline>(`/pipelines/${id}`),
