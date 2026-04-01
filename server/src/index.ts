@@ -19,6 +19,10 @@ import { createTriggersRouter } from "./routes/triggers.js";
 import { createApprovalsRouter } from "./routes/approvals.js";
 import { createBudgetsRouter } from "./routes/budgets.js";
 import { createStatsRouter } from "./routes/stats.js";
+import { createSettingsRouter } from "./routes/settings.js";
+import { createFilesRouter } from "./routes/files.js";
+import { createWebhooksRouter } from "./routes/webhooks.js";
+import { ChannelManager } from "./services/channel-manager.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), ".data");
@@ -115,6 +119,8 @@ async function main() {
   app.use("/api", createTriggersRouter(db));
   app.use("/api", createBudgetsRouter(db));
   app.use("/api", createStatsRouter(db));
+  app.use("/api", createSettingsRouter(db));
+  app.use("/api", createFilesRouter());
 
   // 404 handler
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
@@ -133,9 +139,15 @@ async function main() {
 
   const engine = new ExecutionEngine(db, ws);
   const triggers = new TriggerManager(db, ws);
+  const channels = new ChannelManager(db, ws);
+  app.use("/", createWebhooksRouter(channels));
+
+  // Wire bidirectional WebSocket → engine chat handler
+  ws.onChatMessage((msg) => engine.handleChatMessage(msg));
 
   engine.start();
   triggers.start();
+  void channels.start();
   console.log("[Engine] Execution engine started.");
 
   httpServer.listen(PORT, () => {

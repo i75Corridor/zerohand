@@ -9,7 +9,7 @@ function toApi(row: typeof triggers.$inferSelect): ApiTrigger {
   return {
     id: row.id,
     pipelineId: row.pipelineId,
-    type: row.type as "cron" | "webhook",
+    type: row.type as "cron" | "webhook" | "channel",
     enabled: row.enabled,
     cronExpression: row.cronExpression,
     timezone: row.timezone,
@@ -17,6 +17,8 @@ function toApi(row: typeof triggers.$inferSelect): ApiTrigger {
     nextRunAt: row.nextRunAt?.toISOString() ?? null,
     lastFiredAt: row.lastFiredAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
+    channelType: row.channelType ?? null,
+    channelConfig: row.channelConfig ?? null,
   };
 }
 
@@ -38,14 +40,36 @@ export function createTriggersRouter(db: Db): Router {
 
   router.post("/pipelines/:pipelineId/triggers", async (req, res, next) => {
     try {
-      const body = req.body as Partial<typeof triggers.$inferInsert>;
+      const body = req.body as Partial<typeof triggers.$inferInsert> & {
+        channelType?: string;
+        channelConfig?: Record<string, unknown>;
+      };
+      const type = body.type ?? "cron";
       const tz = body.timezone ?? "UTC";
+
+      if (type === "channel") {
+        const [row] = await db
+          .insert(triggers)
+          .values({
+            pipelineId: req.params.pipelineId,
+            type: "channel",
+            enabled: body.enabled ?? true,
+            channelType: body.channelType,
+            channelConfig: body.channelConfig,
+            timezone: tz,
+            defaultInputs: body.defaultInputs,
+          })
+          .returning();
+        res.status(201).json(toApi(row));
+        return;
+      }
+
       const nextRunAt = body.cronExpression ? computeNextRun(body.cronExpression, tz) : null;
       const [row] = await db
         .insert(triggers)
         .values({
           pipelineId: req.params.pipelineId,
-          type: body.type ?? "cron",
+          type,
           enabled: body.enabled ?? true,
           cronExpression: body.cronExpression,
           timezone: tz,

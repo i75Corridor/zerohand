@@ -11,6 +11,7 @@ function toApiRun(row: typeof pipelineRuns.$inferSelect, pipelineName?: string):
     pipelineName,
     status: row.status as ApiPipelineRun["status"],
     inputParams: row.inputParams as Record<string, unknown>,
+    output: (row.output as Record<string, unknown> | null) ?? null,
     triggerType: row.triggerType,
     startedAt: row.startedAt?.toISOString() ?? null,
     finishedAt: row.finishedAt?.toISOString() ?? null,

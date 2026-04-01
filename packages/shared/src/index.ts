@@ -40,6 +40,7 @@ export interface ApiPipelineRun {
   pipelineName?: string;
   status: PipelineRunStatus;
   inputParams: Record<string, unknown>;
+  output: Record<string, unknown> | null;
   triggerType: string;
   startedAt: string | null;
   finishedAt: string | null;
@@ -95,14 +96,27 @@ export interface ApiPipelineStep {
 export interface ApiTrigger {
   id: string;
   pipelineId: string;
-  type: "cron" | "webhook";
+  type: "cron" | "webhook" | "channel";
   enabled: boolean;
   cronExpression: string | null;
   timezone: string;
   defaultInputs: Record<string, unknown>;
   nextRunAt: string | null;
   lastFiredAt: string | null;
+  channelType: string | null;
+  channelConfig: Record<string, unknown> | null;
   createdAt: string;
+}
+
+export interface ModelCostEntry {
+  inputPerM: number;  // cents per 1M input tokens
+  outputPerM: number; // cents per 1M output tokens
+}
+
+export interface ApiSetting {
+  key: string;
+  value: unknown;
+  updatedAt: string;
 }
 
 export interface ApiApproval {
@@ -154,4 +168,18 @@ export interface WsStepStatusChange {
   status: StepRunStatus;
 }
 
-export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange;
+export interface WsChatAck {
+  type: "chat_ack";
+  stepRunId: string;
+  accepted: boolean;
+  error?: string;
+}
+
+export interface WsIncomingChat {
+  type: "chat";
+  stepRunId: string;
+  action: "steer" | "followUp" | "abort";
+  message?: string;
+}
+
+export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck;

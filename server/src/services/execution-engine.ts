@@ -11,11 +11,12 @@ import {
   approvals,
   workerSessions,
 } from "@zerohand/db";
-import type { StepRunEventType } from "@zerohand/shared";
+import type { StepRunEventType, WsIncomingChat } from "@zerohand/shared";
 import type { WsManager } from "../ws/index.js";
 import { runWorkerStep } from "./pi-executor.js";
 import { runImagenWorker, runPublishWorker } from "./builtin-workers.js";
 import { checkBudget, recordCost } from "./budget-guard.js";
+import { SessionRegistry } from "./session-registry.js";
 
 function resolvePrompt(
   template: string,
@@ -56,7 +57,8 @@ function resolvePrompt(
 export class ExecutionEngine {
   private polling = false;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  private activeRunIds = new Set<string>();
+  private activeRunIds = new Map<string, AbortController>();
+  private sessionRegistry = new SessionRegistry();
   private sessionsDir: string;
 
   constructor(
@@ -91,16 +93,18 @@ export class ExecutionEngine {
         where: eq(pipelineRuns.status, "queued"),
         orderBy: [asc(pipelineRuns.createdAt)],
       });
-      if (!run || this.activeRunIds.has(run.id)) return;
+      if (!run) return;
+      if (this.activeRunIds.has(run.id)) return;
 
-      this.activeRunIds.add(run.id);
+      const abortController = new AbortController();
+      this.activeRunIds.set(run.id, abortController);
       await this.db
         .update(pipelineRuns)
         .set({ status: "running", startedAt: new Date(), updatedAt: new Date() })
         .where(eq(pipelineRuns.id, run.id));
       this.ws.broadcast({ type: "run_status", pipelineRunId: run.id, status: "running" });
 
-      this.executeRun(run.id).catch(async (err) => {
+      this.executeRun(run.id, abortController.signal).catch(async (err) => {
         console.error(`[ExecutionEngine] Run ${run.id} failed:`, err);
         await this.db
           .update(pipelineRuns)
@@ -132,7 +136,33 @@ export class ExecutionEngine {
     return sessionDir;
   }
 
-  private async executeRun(runId: string): Promise<void> {
+  handleChatMessage(msg: WsIncomingChat): void {
+    const entry = this.sessionRegistry.get(msg.stepRunId);
+    if (!entry) {
+      this.ws.broadcast({ type: "chat_ack", stepRunId: msg.stepRunId, accepted: false, error: "No active session for this step" });
+      return;
+    }
+    const { session } = entry;
+    if (msg.action === "abort") {
+      void session.abort();
+    } else if (msg.action === "steer" && msg.message) {
+      void session.steer(msg.message);
+    } else if (msg.action === "followUp" && msg.message) {
+      void session.followUp(msg.message);
+    }
+    this.ws.broadcast({ type: "chat_ack", stepRunId: msg.stepRunId, accepted: true });
+  }
+
+  cancelRun(runId: string): void {
+    const controller = this.activeRunIds.get(runId);
+    if (controller) controller.abort();
+    // Also abort any active sessions for this run
+    for (const { session } of this.sessionRegistry.getByRunId(runId)) {
+      void session.abort();
+    }
+  }
+
+  private async executeRun(runId: string, signal?: AbortSignal): Promise<void> {
     const run = await this.db.query.pipelineRuns.findFirst({
       where: eq(pipelineRuns.id, runId),
     });
@@ -323,7 +353,16 @@ export class ExecutionEngine {
             resolvedPrompt,
             onEvent,
             sessionDir,
+            signal,
+            (session) => {
+              this.sessionRegistry.register(stepRun.id, {
+                session,
+                pipelineRunId: runId,
+                workerId: worker.id,
+              });
+            },
           );
+          this.sessionRegistry.unregister(stepRun.id);
           output = result.output;
           usage = result.usage;
 
@@ -386,6 +425,7 @@ export class ExecutionEngine {
           status: "completed",
         });
       } catch (err) {
+        this.sessionRegistry.unregister(stepRun.id);
         const errMsg = String(err);
         await this.db
           .update(stepRuns)

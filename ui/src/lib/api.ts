@@ -80,6 +80,21 @@ export const api = {
   getStats: () =>
     request<{ runsThisMonth: number; activeRuns: number; costCentsThisMonth: number }>("/stats"),
 
+  // Settings
+  getSettings: () => request<import("@zerohand/shared").ApiSetting[]>("/settings"),
+  getSetting: (key: string) => request<import("@zerohand/shared").ApiSetting>(`/settings/${key}`),
+  updateSetting: (key: string, value: unknown) =>
+    request<import("@zerohand/shared").ApiSetting>(`/settings/${key}`, {
+      method: "PUT",
+      body: JSON.stringify({ value }),
+    }),
+
+  // Files
+  getFileUrl: (serverPath: string): string => {
+    const filename = serverPath.split("/").pop() ?? serverPath;
+    return `/api/files/${encodeURIComponent(filename)}`;
+  },
+
   // Budgets
   listBudgets: (scopeType?: string, scopeId?: string) => {
     const params = new URLSearchParams();

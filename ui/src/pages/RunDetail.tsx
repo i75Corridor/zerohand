@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { api } from "../lib/api.ts";
 import { useWebSocket } from "../lib/ws.ts";
-import type { WsMessage, WsStepEvent, ApiStepRun } from "@zerohand/shared";
+import OutputPreview from "../components/OutputPreview.tsx";
+import ChatPanel from "../components/ChatPanel.tsx";
+import type { WsMessage, ApiStepRun, WsIncomingChat } from "@zerohand/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   queued: "border-gray-600 text-gray-400",
@@ -22,13 +24,22 @@ interface LiveStep {
   text: string;
 }
 
-function StepCard({ step, liveData }: { step: ApiStepRun; liveData?: LiveStep }) {
+function StepCard({
+  step,
+  liveData,
+  onSend,
+}: {
+  step: ApiStepRun;
+  liveData?: LiveStep;
+  onSend: (msg: WsIncomingChat) => void;
+}) {
   const [expanded, setExpanded] = useState(step.status === "running" || step.status === "failed");
   const prevStatus = useRef(step.status);
   const colorClass = STATUS_COLORS[step.status] ?? "border-gray-600 text-gray-400";
-  const textRef = useRef<HTMLPreElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
 
   const displayText = liveData?.text ?? (step.output as { text?: string })?.text ?? step.error ?? "";
+  const isRunning = step.status === "running";
 
   useEffect(() => {
     if (prevStatus.current !== step.status) {
@@ -39,10 +50,10 @@ function StepCard({ step, liveData }: { step: ApiStepRun; liveData?: LiveStep })
   }, [step.status]);
 
   useEffect(() => {
-    if (step.status === "running" && textRef.current) {
+    if (isRunning && textRef.current) {
       textRef.current.scrollTop = textRef.current.scrollHeight;
     }
-  }, [displayText, step.status]);
+  }, [displayText, isRunning]);
 
   return (
     <div className={`border rounded-lg overflow-hidden ${colorClass.split(" ")[0]}`}>
@@ -66,15 +77,23 @@ function StepCard({ step, liveData }: { step: ApiStepRun; liveData?: LiveStep })
           </span>
         )}
       </button>
+
+      {expanded && isRunning && liveData?.stepRunId && (
+        <div className="bg-gray-900 px-4 pt-3 pb-2 border-b border-gray-800">
+          <ChatPanel stepRunId={liveData.stepRunId} onSend={onSend} />
+        </div>
+      )}
+
       {expanded && (
-        <div className="bg-gray-950 p-4">
+        <div className="bg-gray-950 p-4" ref={textRef}>
           {displayText ? (
-            <pre
-              ref={textRef}
-              className="text-xs text-gray-300 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed"
-            >
-              {displayText}
-            </pre>
+            isRunning ? (
+              <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed">
+                {displayText}
+              </pre>
+            ) : (
+              <OutputPreview text={displayText} compact />
+            )
           ) : (
             <span className="text-xs text-gray-600 italic">
               {step.status === "queued" ? "Waiting to start..." : "No output yet"}
@@ -112,7 +131,7 @@ export default function RunDetail() {
     enabled: !!run,
   });
 
-  useWebSocket((msg: WsMessage) => {
+  const { send: wsSend } = useWebSocket((msg: WsMessage) => {
     if (msg.type === "run_status" && msg.pipelineRunId === id) {
       queryClient.invalidateQueries({ queryKey: ["run", id] });
       queryClient.invalidateQueries({ queryKey: ["run-steps", id] });
@@ -201,6 +220,7 @@ export default function RunDetail() {
             key={step.id}
             step={step}
             liveData={liveSteps.get(step.stepIndex)}
+            onSend={wsSend}
           />
         ))}
         {steps.length === 0 && run.status === "queued" && (

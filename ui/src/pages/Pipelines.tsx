@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { Play, GitBranch, Clock, Trash2, ToggleLeft, ToggleRight, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, GitBranch, Clock, Trash2, ToggleLeft, ToggleRight, Plus, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 import cronstrue from "cronstrue";
 import { api } from "../lib/api.ts";
 import type { ApiPipeline, ApiTrigger } from "@zerohand/shared";
@@ -214,12 +214,67 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
 
 // ── Triggers Modal ─────────────────────────────────────────────────────────
 
+function TriggerRow({ t, onToggle, onRemove, serverBase }: {
+  t: ApiTrigger;
+  onToggle: (t: ApiTrigger) => void;
+  onRemove: (id: string) => void;
+  serverBase: string;
+}) {
+  const isCron = t.type === "cron";
+  const isChannel = t.type === "channel";
+
+  return (
+    <div className="flex items-start gap-3 bg-gray-800 rounded-lg px-3 py-2">
+      <button onClick={() => onToggle(t)} className="text-gray-400 hover:text-white mt-0.5">
+        {t.enabled ? <ToggleRight size={18} className="text-indigo-400" /> : <ToggleLeft size={18} />}
+      </button>
+      <div className="flex-1 min-w-0">
+        {isCron && (
+          <>
+            <div className="text-xs font-mono text-gray-200">{t.cronExpression}</div>
+            <div className="text-xs text-gray-500">
+              {parseCron(t.cronExpression ?? "")}
+              {" · "}{t.timezone}
+              {t.nextRunAt && ` · next: ${new Date(t.nextRunAt).toLocaleString()}`}
+              {t.lastFiredAt && ` · last: ${new Date(t.lastFiredAt).toLocaleString()}`}
+            </div>
+          </>
+        )}
+        {isChannel && (
+          <>
+            <div className="flex items-center gap-1.5 text-xs text-gray-200">
+              <MessageSquare size={11} className="text-purple-400" />
+              <span className="font-medium capitalize">{t.channelType ?? "channel"}</span> trigger
+            </div>
+            <div className="text-xs text-gray-500 mt-0.5 font-mono break-all">
+              {serverBase}/webhooks/{t.channelType}/{t.id}
+            </div>
+            {t.lastFiredAt && (
+              <div className="text-xs text-gray-600">last: {new Date(t.lastFiredAt).toLocaleString()}</div>
+            )}
+          </>
+        )}
+      </div>
+      <button
+        onClick={() => onRemove(t.id)}
+        className="text-gray-600 hover:text-red-400 transition-colors mt-0.5"
+      >
+        <Trash2 size={13} />
+      </button>
+    </div>
+  );
+}
+
 function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () => void }) {
   const queryClient = useQueryClient();
   const schema = (pipeline.inputSchema ?? null) as JsonSchema | null;
   const fields = schema?.properties ? Object.entries(schema.properties) : [];
   const required = new Set(schema?.required ?? []);
 
+  // Tab: "cron" | "channel"
+  const [tab, setTab] = useState<"cron" | "channel">("cron");
+
+  // Cron form
   const [cron, setCron] = useState("");
   const [tz, setTz] = useState("UTC");
   const [showBuilder, setShowBuilder] = useState(false);
@@ -227,10 +282,19 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
     () => Object.fromEntries(fields.map(([key]) => [key, ""])),
   );
 
+  // Channel form
+  const [channelType, setChannelType] = useState<"telegram" | "slack">("telegram");
+  const [botToken, setBotToken] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [channelId, setChannelId] = useState("");
+  const [signingSecret, setSigningSecret] = useState("");
+
   const cronDescription = useMemo(() => parseCron(cron), [cron]);
   const cronInvalid = cron.trim() !== "" && cronDescription === "Invalid expression";
 
-  const { data: triggers = [] } = useQuery({
+  const serverBase = window.location.origin.replace(/:\d+$/, ":3009");
+
+  const { data: existingTriggers = [] } = useQuery({
     queryKey: ["triggers", pipeline.id],
     queryFn: () => api.listTriggers(pipeline.id),
   });
@@ -240,16 +304,34 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
       const parsed = Object.fromEntries(
         Object.entries(defaultInputs).filter(([, v]) => v.trim() !== ""),
       );
+      if (tab === "cron") {
+        return api.createTrigger(pipeline.id, {
+          type: "cron",
+          cronExpression: cron,
+          timezone: tz,
+          defaultInputs: parsed,
+        });
+      }
+      // Channel trigger
+      const config: Record<string, string> = { botToken };
+      if (channelType === "telegram" && webhookSecret) config.webhookSecret = webhookSecret;
+      if (channelType === "telegram" && channelId) config.chatId = channelId;
+      if (channelType === "slack" && signingSecret) config.signingSecret = signingSecret;
+      if (channelType === "slack" && channelId) config.channelId = channelId;
       return api.createTrigger(pipeline.id, {
-        type: "cron",
-        cronExpression: cron,
-        timezone: tz,
+        type: "channel",
+        channelType,
+        channelConfig: config,
         defaultInputs: parsed,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["triggers", pipeline.id] });
       setCron("");
+      setBotToken("");
+      setWebhookSecret("");
+      setChannelId("");
+      setSigningSecret("");
       setDefaultInputs(Object.fromEntries(fields.map(([key]) => [key, ""])));
     },
   });
@@ -264,6 +346,10 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["triggers", pipeline.id] }),
   });
 
+  const canSubmit = tab === "cron"
+    ? cron.trim() !== "" && !cronInvalid && !create.isPending
+    : botToken.trim() !== "" && !create.isPending;
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
       <div
@@ -276,83 +362,159 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
         </h2>
 
         {/* Existing triggers */}
-        {triggers.length > 0 && (
+        {existingTriggers.length > 0 && (
           <div className="mb-5 space-y-2">
-            {triggers.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 bg-gray-800 rounded-lg px-3 py-2">
-                <button onClick={() => toggle.mutate(t)} className="text-gray-400 hover:text-white">
-                  {t.enabled ? <ToggleRight size={18} className="text-indigo-400" /> : <ToggleLeft size={18} />}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-mono text-gray-200">{t.cronExpression}</div>
-                  <div className="text-xs text-gray-500">
-                    {parseCron(t.cronExpression ?? "")}
-                    {" · "}{t.timezone}
-                    {t.nextRunAt && ` · next: ${new Date(t.nextRunAt).toLocaleString()}`}
-                    {t.lastFiredAt && ` · last: ${new Date(t.lastFiredAt).toLocaleString()}`}
-                  </div>
-                </div>
-                <button
-                  onClick={() => remove.mutate(t.id)}
-                  className="text-gray-600 hover:text-red-400 transition-colors"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
+            {existingTriggers.map((t) => (
+              <TriggerRow
+                key={t.id}
+                t={t}
+                serverBase={serverBase}
+                onToggle={(tr) => toggle.mutate(tr)}
+                onRemove={(id) => remove.mutate(id)}
+              />
             ))}
           </div>
         )}
 
-        {/* New trigger form */}
-        <div className="border-t border-gray-700 pt-4 space-y-3">
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Add cron trigger</div>
-
-          {/* Cron expression + timezone */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <input
-                className={`w-full bg-gray-800 border rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 font-mono focus:outline-none focus:border-indigo-500 ${
-                  cronInvalid ? "border-red-500" : "border-gray-600"
+        {/* Tab bar */}
+        <div className="border-t border-gray-700 pt-4">
+          <div className="flex gap-1 mb-4">
+            {(["cron", "channel"] as const).map((t) => (
+              <button
+                key={t}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  tab === t ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"
                 }`}
-                placeholder="0 9 * * *"
-                value={cron}
-                onChange={(e) => setCron(e.target.value)}
-              />
-              {cronDescription && (
-                <p className={`text-xs mt-1 ${cronInvalid ? "text-red-400" : "text-indigo-300"}`}>
-                  {cronDescription}
-                </p>
-              )}
-            </div>
-            <input
-              className="w-28 bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
-              placeholder="UTC"
-              value={tz}
-              onChange={(e) => setTz(e.target.value)}
-            />
+                onClick={() => setTab(t)}
+              >
+                {t === "cron" ? "Cron Schedule" : "Channel Bot"}
+              </button>
+            ))}
           </div>
 
-          {/* Schedule builder toggle */}
-          <button
-            className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-            onClick={() => setShowBuilder((v) => !v)}
-          >
-            {showBuilder ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            {showBuilder ? "Hide" : "Show"} schedule builder
-          </button>
+          {/* ── Cron form ── */}
+          {tab === "cron" && (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <input
+                    className={`w-full bg-gray-800 border rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 font-mono focus:outline-none focus:border-indigo-500 ${
+                      cronInvalid ? "border-red-500" : "border-gray-600"
+                    }`}
+                    placeholder="0 9 * * *"
+                    value={cron}
+                    onChange={(e) => setCron(e.target.value)}
+                  />
+                  {cronDescription && (
+                    <p className={`text-xs mt-1 ${cronInvalid ? "text-red-400" : "text-indigo-300"}`}>
+                      {cronDescription}
+                    </p>
+                  )}
+                </div>
+                <input
+                  className="w-28 bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  placeholder="UTC"
+                  value={tz}
+                  onChange={(e) => setTz(e.target.value)}
+                />
+              </div>
 
-          {showBuilder && (
-            <QuickScheduleBuilder
-              onSelect={(c) => {
-                setCron(c);
-                setShowBuilder(false);
-              }}
-            />
+              <button
+                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                onClick={() => setShowBuilder((v) => !v)}
+              >
+                {showBuilder ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                {showBuilder ? "Hide" : "Show"} schedule builder
+              </button>
+
+              {showBuilder && (
+                <QuickScheduleBuilder
+                  onSelect={(c) => {
+                    setCron(c);
+                    setShowBuilder(false);
+                  }}
+                />
+              )}
+            </div>
           )}
 
-          {/* Default inputs */}
+          {/* ── Channel form ── */}
+          {tab === "channel" && (
+            <div className="space-y-3">
+              <div className="flex gap-1">
+                {(["telegram", "slack"] as const).map((ct) => (
+                  <button
+                    key={ct}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
+                      channelType === ct ? "bg-purple-700 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                    }`}
+                    onClick={() => setChannelType(ct)}
+                  >
+                    {ct}
+                  </button>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Bot Token <span className="text-red-400">*</span></label>
+                <input
+                  type="password"
+                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  placeholder={channelType === "telegram" ? "1234567890:ABC..." : "xoxb-..."}
+                  value={botToken}
+                  onChange={(e) => setBotToken(e.target.value)}
+                />
+              </div>
+
+              {channelType === "telegram" && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Webhook Secret <span className="text-gray-600">(optional, recommended)</span></label>
+                  <input
+                    className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                    placeholder="Random secret string"
+                    value={webhookSecret}
+                    onChange={(e) => setWebhookSecret(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {channelType === "slack" && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Signing Secret <span className="text-red-400">*</span></label>
+                  <input
+                    type="password"
+                    className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                    placeholder="Slack app signing secret"
+                    value={signingSecret}
+                    onChange={(e) => setSigningSecret(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  {channelType === "telegram" ? "Chat ID filter" : "Channel ID filter"}
+                  {" "}<span className="text-gray-600">(optional)</span>
+                </label>
+                <input
+                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  placeholder={channelType === "telegram" ? "-100123456789" : "C01234567"}
+                  value={channelId}
+                  onChange={(e) => setChannelId(e.target.value)}
+                />
+              </div>
+
+              <p className="text-xs text-gray-600">
+                {channelType === "telegram"
+                  ? "Set PUBLIC_URL env var to auto-register the Telegram webhook. Otherwise register manually."
+                  : "Point your Slack app's Event Subscriptions to the webhook URL shown above."}
+              </p>
+            </div>
+          )}
+
+          {/* Default inputs (shared) */}
           {fields.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 mt-3">
               <div className="text-xs text-gray-500 font-medium">Default inputs</div>
               {fields.map(([key, prop]) => (
                 <div key={key}>
@@ -365,9 +527,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                     className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
                     placeholder={prop.description ?? key}
                     value={defaultInputs[key] ?? ""}
-                    onChange={(e) =>
-                      setDefaultInputs((v) => ({ ...v, [key]: e.target.value }))
-                    }
+                    onChange={(e) => setDefaultInputs((v) => ({ ...v, [key]: e.target.value }))}
                   />
                 </div>
               ))}
@@ -375,8 +535,8 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
           )}
 
           <button
-            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
-            disabled={!cron.trim() || cronInvalid || create.isPending}
+            className="mt-3 flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
+            disabled={!canSubmit}
             onClick={() => create.mutate()}
           >
             <Plus size={13} />

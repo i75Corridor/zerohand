@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, Bot, Zap, CheckSquare } from "lucide-react";
+import { LayoutDashboard, GitBranch, Bot, Zap, CheckSquare, Image, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api.ts";
@@ -37,6 +37,11 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/pipelines", label: "Pipelines", icon: GitBranch },
   { to: "/workers", label: "Workers", icon: Bot },
+  { to: "/canvas", label: "Canvas", icon: Image },
+];
+
+const bottomNav = [
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -67,6 +72,24 @@ export default function Layout({ children }: { children: ReactNode }) {
           ))}
           <ApprovalsNavItem />
         </nav>
+        <div className="px-3 py-3 border-t border-gray-800 space-y-1">
+          {bottomNav.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-800"
+                }`
+              }
+            >
+              <Icon size={16} />
+              {label}
+            </NavLink>
+          ))}
+        </div>
       </aside>
 
       {/* Main content */}

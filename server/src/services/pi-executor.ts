@@ -5,6 +5,7 @@ import {
   createAgentSession,
   createExtensionRuntime,
   loadSkillsFromDir,
+  type AgentSession,
   type ToolDefinition,
   type ResourceLoader,
   type Skill,
@@ -115,6 +116,7 @@ export async function runWorkerStep(
   onEvent: (eventType: StepRunEventType, message?: string, payload?: Record<string, unknown>) => void,
   sessionDir?: string,
   signal?: AbortSignal,
+  onSessionCreated?: (session: AgentSession) => void,
 ): Promise<PiRunResult> {
   const model = getModel(worker.modelProvider as any, worker.modelName as any);
   if (!model) throw new Error(`Model not found: ${worker.modelProvider}/${worker.modelName}`);
@@ -146,6 +148,13 @@ export async function runWorkerStep(
     sessionManager,
   });
 
+  // Wire abort signal to session
+  const abortHandler = () => { void session.abort(); };
+  signal?.addEventListener("abort", abortHandler);
+
+  // Expose session to caller (e.g. SessionRegistry) before prompt starts
+  onSessionCreated?.(session);
+
   const unsub = session.subscribe((event: any) => {
     if (signal?.aborted) return;
 
@@ -173,6 +182,7 @@ export async function runWorkerStep(
     await session.prompt(prompt);
   } finally {
     unsub();
+    signal?.removeEventListener("abort", abortHandler);
   }
 
   const output = getLastAssistantText(session.messages);

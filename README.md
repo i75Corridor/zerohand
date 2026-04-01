@@ -59,10 +59,10 @@ cp .env.example .env
 
 pnpm install        # postinstall auto-configures embedded-postgres
 pnpm db:generate    # generate SQL migrations from schema
-pnpm dev            # starts server on :3009 + UI on :5173
+pnpm dev            # starts server on :3009 + UI on :3008
 ```
 
-Open `http://localhost:5173`. The Daily Absurdist pipeline seeds automatically on first boot.
+Open `http://localhost:3008`. The Daily Absurdist pipeline seeds automatically on first boot.
 
 ### Option B — Docker Compose
 
