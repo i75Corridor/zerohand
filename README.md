@@ -180,23 +180,7 @@ zerohand/
 
 ## Roadmap
 
-**Completed**
-- Pipeline YAML packages with hash-based re-seeding
-- Execution engine with real-time WebSocket streaming
-- Cron triggers with timezone support
-- Human-in-the-loop approval gates
-- Budget enforcement (per-worker monthly caps)
-- Session persistence across steps
-- Imagen + publish worker types
+See [ROADMAP.md](./ROADMAP.md) for the full phased implementation plan with detailed feature breakdowns, file references, and verification steps.
 
-**Phase 3 — Channels**
-- Chat interface (steer agents mid-run)
-- Telegram / Slack bot triggers
-- Configurable budget guard: move model pricing table out of hardcoded `budget-guard.ts` into a database-backed settings table, editable via the UI
-- Output canvas: a visual board where pipeline run outputs (articles, images, generated files) are posted and browsable, with support for previewing markdown and images inline
-
-**Phase 4 — Polish**
-- Pipeline builder UI (visual step editor)
-- Worker config UI (model picker, skill selector)
-- Cost dashboard page
+**Next up: Phase 4 — Global Agent Chat Interface** (persistent AI assistant accessible from every page).
 

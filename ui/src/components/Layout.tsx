@@ -1,5 +1,28 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, Bot, Zap, CheckSquare, Image, Settings } from "lucide-react";
+import { LayoutDashboard, GitBranch, Bot, CheckSquare, Image, Settings } from "lucide-react";
+
+function ZerohandIcon({ size = 20, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="136 132 126 152"
+      width={size}
+      height={size}
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M 138,180 C 136,170 136,159 141,153 C 144,147 151,146 156,149 C 157,142 162,135 170,134 C 178,133 185,138 187,145 C 189,138 196,132 205,132 C 214,132 221,138 222,145 C 224,139 231,135 239,137 C 248,139 253,147 251,156 C 254,153 260,156 262,165 C 265,176 262,191 255,202 C 260,207 262,220 257,230 C 251,240 239,242 232,236 L 230,266 C 229,277 222,284 210,284 L 162,284 C 150,284 143,277 142,266 Z" />
+      <circle cx="149" cy="151" r="5" fill="currentColor" stroke="none" />
+      <circle cx="176" cy="142" r="5" fill="currentColor" stroke="none" />
+      <circle cx="205" cy="136" r="5.5" fill="currentColor" stroke="none" />
+      <circle cx="233" cy="141" r="5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api.ts";
@@ -50,7 +73,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-56 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
-          <Zap className="text-indigo-400" size={20} />
+          <ZerohandIcon size={20} className="text-indigo-400" />
           <span className="font-semibold text-white tracking-tight">Zerohand</span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
