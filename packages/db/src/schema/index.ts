@@ -6,4 +6,5 @@ export * from "./triggers.js";
 export * from "./approvals.js";
 export * from "./sessions.js";
 export * from "./costs.js";
+export * from "./budgets.js";
 export * from "./settings.js";

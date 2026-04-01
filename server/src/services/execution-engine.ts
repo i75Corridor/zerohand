@@ -1,11 +1,22 @@
 import { eq, asc } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { pipelineRuns, stepRuns, stepRunEvents, pipelineSteps, workers } from "@zerohand/db";
-import type { StepRunEventType } from "@zerohand/shared";
-import type { WsManager } from "../ws/index.js";
 import { join, resolve } from "node:path";
+import { mkdirSync } from "node:fs";
+import type { Db } from "@zerohand/db";
+import {
+  pipelineRuns,
+  stepRuns,
+  stepRunEvents,
+  pipelineSteps,
+  workers,
+  approvals,
+  workerSessions,
+} from "@zerohand/db";
+import type { StepRunEventType, WsIncomingChat } from "@zerohand/shared";
+import type { WsManager } from "../ws/index.js";
 import { runWorkerStep } from "./pi-executor.js";
 import { runImagenWorker, runPublishWorker } from "./builtin-workers.js";
+import { checkBudget, recordCost } from "./budget-guard.js";
+import { SessionRegistry } from "./session-registry.js";
 
 function resolvePrompt(
   template: string,
@@ -22,20 +33,15 @@ function resolvePrompt(
     if (parts[0] === "steps" && parts.length >= 3) {
       const stepIndex = parseInt(parts[1], 10);
       const output = stepOutputs.get(stepIndex) ?? "";
-      if (parts[2] === "output" && parts.length === 3) {
-        return output;
-      }
+      if (parts[2] === "output" && parts.length === 3) return output;
       if (parts[2] === "output" && parts.length > 3) {
         try {
           const parsed = JSON.parse(output) as Record<string, unknown>;
           let value: unknown = parsed;
           for (let i = 3; i < parts.length; i++) {
-            if (value && typeof value === "object") {
-              value = (value as Record<string, unknown>)[parts[i]];
-            } else {
-              value = undefined;
-              break;
-            }
+            value = value && typeof value === "object"
+              ? (value as Record<string, unknown>)[parts[i]]
+              : undefined;
           }
           return String(value ?? "");
         } catch {
@@ -51,12 +57,20 @@ function resolvePrompt(
 export class ExecutionEngine {
   private polling = false;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  private activeRunIds = new Set<string>();
+  private activeRunIds = new Map<string, AbortController>();
+  private sessionRegistry = new SessionRegistry();
+  private sessionsDir: string;
 
   constructor(
     private db: Db,
     private ws: WsManager,
-  ) {}
+  ) {
+    this.sessionsDir = resolve(
+      process.env.DATA_DIR ?? join(process.cwd(), ".data"),
+      "sessions",
+    );
+    mkdirSync(this.sessionsDir, { recursive: true });
+  }
 
   start(): void {
     this.polling = true;
@@ -74,33 +88,27 @@ export class ExecutionEngine {
 
   private async tick(): Promise<void> {
     if (!this.polling) return;
-
     try {
       const run = await this.db.query.pipelineRuns.findFirst({
         where: eq(pipelineRuns.status, "queued"),
         orderBy: [asc(pipelineRuns.createdAt)],
       });
+      if (!run) return;
+      if (this.activeRunIds.has(run.id)) return;
 
-      if (!run || this.activeRunIds.has(run.id)) return;
-
-      this.activeRunIds.add(run.id);
+      const abortController = new AbortController();
+      this.activeRunIds.set(run.id, abortController);
       await this.db
         .update(pipelineRuns)
         .set({ status: "running", startedAt: new Date(), updatedAt: new Date() })
         .where(eq(pipelineRuns.id, run.id));
-
       this.ws.broadcast({ type: "run_status", pipelineRunId: run.id, status: "running" });
 
-      this.executeRun(run.id).catch(async (err) => {
+      this.executeRun(run.id, abortController.signal).catch(async (err) => {
         console.error(`[ExecutionEngine] Run ${run.id} failed:`, err);
         await this.db
           .update(pipelineRuns)
-          .set({
-            status: "failed",
-            error: String(err),
-            finishedAt: new Date(),
-            updatedAt: new Date(),
-          })
+          .set({ status: "failed", error: String(err), finishedAt: new Date(), updatedAt: new Date() })
           .where(eq(pipelineRuns.id, run.id));
         this.ws.broadcast({ type: "run_status", pipelineRunId: run.id, status: "failed" });
         this.activeRunIds.delete(run.id);
@@ -110,7 +118,51 @@ export class ExecutionEngine {
     }
   }
 
-  private async executeRun(runId: string): Promise<void> {
+  private async getOrCreateSession(workerId: string, runId: string): Promise<string> {
+    const existing = await this.db.query.workerSessions.findFirst({
+      where: (t, { and, eq }) => and(eq(t.workerId, workerId), eq(t.taskKey, runId)),
+    });
+    if (existing?.sessionFilePath) return existing.sessionFilePath;
+
+    const sessionDir = join(this.sessionsDir, workerId, runId);
+    mkdirSync(sessionDir, { recursive: true });
+
+    await this.db.insert(workerSessions).values({
+      workerId,
+      taskKey: runId,
+      sessionFilePath: sessionDir,
+    });
+
+    return sessionDir;
+  }
+
+  handleChatMessage(msg: WsIncomingChat): void {
+    const entry = this.sessionRegistry.get(msg.stepRunId);
+    if (!entry) {
+      this.ws.broadcast({ type: "chat_ack", stepRunId: msg.stepRunId, accepted: false, error: "No active session for this step" });
+      return;
+    }
+    const { session } = entry;
+    if (msg.action === "abort") {
+      void session.abort();
+    } else if (msg.action === "steer" && msg.message) {
+      void session.steer(msg.message);
+    } else if (msg.action === "followUp" && msg.message) {
+      void session.followUp(msg.message);
+    }
+    this.ws.broadcast({ type: "chat_ack", stepRunId: msg.stepRunId, accepted: true });
+  }
+
+  cancelRun(runId: string): void {
+    const controller = this.activeRunIds.get(runId);
+    if (controller) controller.abort();
+    // Also abort any active sessions for this run
+    for (const { session } of this.sessionRegistry.getByRunId(runId)) {
+      void session.abort();
+    }
+  }
+
+  private async executeRun(runId: string, signal?: AbortSignal): Promise<void> {
     const run = await this.db.query.pipelineRuns.findFirst({
       where: eq(pipelineRuns.id, runId),
     });
@@ -121,25 +173,122 @@ export class ExecutionEngine {
       orderBy: [asc(pipelineSteps.stepIndex)],
     });
 
+    // Load completed step outputs for resume support
+    const existingStepRuns = await this.db.query.stepRuns.findMany({
+      where: eq(stepRuns.pipelineRunId, runId),
+    });
     const stepOutputs = new Map<number, string>();
+    const existingByIndex = new Map<number, typeof stepRuns.$inferSelect>();
+    for (const sr of existingStepRuns) {
+      existingByIndex.set(sr.stepIndex, sr);
+      if (sr.status === "completed") {
+        stepOutputs.set(sr.stepIndex, (sr.output as { text?: string })?.text ?? "");
+      }
+    }
 
     for (const step of steps) {
+      const existingSR = existingByIndex.get(step.stepIndex);
+
+      // Already completed — skip and continue
+      if (existingSR?.status === "completed") continue;
+
       const worker = await this.db.query.workers.findFirst({
         where: eq(workers.id, step.workerId),
       });
       if (!worker) throw new Error(`Worker not found: ${step.workerId}`);
 
-      // Create step_run record
-      const [stepRun] = await this.db
-        .insert(stepRuns)
-        .values({
-          pipelineRunId: runId,
-          stepIndex: step.stepIndex,
-          workerId: step.workerId,
-          status: "queued",
-          input: run.inputParams,
-        })
-        .returning();
+      // ── Approval gate ──────────────────────────────────────────────────────
+      if (step.approvalRequired) {
+        let stepRunId = existingSR?.id;
+
+        if (!stepRunId) {
+          const [sr] = await this.db
+            .insert(stepRuns)
+            .values({
+              pipelineRunId: runId,
+              stepIndex: step.stepIndex,
+              workerId: step.workerId,
+              status: "awaiting_approval",
+              input: run.inputParams,
+            })
+            .returning();
+          stepRunId = sr.id;
+          this.ws.broadcast({
+            type: "step_status",
+            pipelineRunId: runId,
+            stepRunId,
+            stepIndex: step.stepIndex,
+            status: "awaiting_approval",
+          });
+        }
+
+        const approval = await this.db.query.approvals.findFirst({
+          where: eq(approvals.stepRunId, stepRunId),
+        });
+
+        if (!approval) {
+          await this.db.insert(approvals).values({
+            pipelineRunId: runId,
+            stepRunId,
+            payload: { stepName: step.name, stepIndex: step.stepIndex },
+          });
+          await this.db
+            .update(pipelineRuns)
+            .set({ status: "paused", updatedAt: new Date() })
+            .where(eq(pipelineRuns.id, runId));
+          this.ws.broadcast({ type: "run_status", pipelineRunId: runId, status: "paused" });
+          this.activeRunIds.delete(runId);
+          return;
+        }
+
+        if (approval.status === "pending") {
+          // Still waiting — re-pause (handles edge case of engine picking up too soon)
+          await this.db
+            .update(pipelineRuns)
+            .set({ status: "paused", updatedAt: new Date() })
+            .where(eq(pipelineRuns.id, runId));
+          this.ws.broadcast({ type: "run_status", pipelineRunId: runId, status: "paused" });
+          this.activeRunIds.delete(runId);
+          return;
+        }
+
+        if (approval.status === "rejected") {
+          throw new Error(
+            `Step "${step.name}" rejected: ${approval.decisionNote ?? "no reason given"}`,
+          );
+        }
+        // status === "approved" → fall through to execute
+      }
+
+      // ── Budget check ───────────────────────────────────────────────────────
+      if (worker.workerType === "pi") {
+        await checkBudget(this.db, worker.id, runId);
+      }
+
+      // ── Create/reuse step_run ──────────────────────────────────────────────
+      let stepRun: typeof stepRuns.$inferSelect;
+      if (existingSR && existingSR.status !== "awaiting_approval") {
+        stepRun = existingSR;
+      } else if (existingSR?.status === "awaiting_approval") {
+        const [updated] = await this.db
+          .update(stepRuns)
+          .set({ status: "queued", updatedAt: new Date() })
+          .where(eq(stepRuns.id, existingSR.id))
+          .returning();
+        stepRun = updated;
+      } else {
+        const [created] = await this.db
+          .insert(stepRuns)
+          .values({
+            pipelineRunId: runId,
+            stepIndex: step.stepIndex,
+            workerId: step.workerId,
+            status: "queued",
+            input: run.inputParams,
+          })
+          .returning();
+        stepRun = created;
+      }
 
       this.ws.broadcast({
         type: "step_status",
@@ -149,15 +298,12 @@ export class ExecutionEngine {
         status: "queued",
       });
 
-      // Resolve prompt template
       const resolvedPrompt = resolvePrompt(step.promptTemplate, run.inputParams, stepOutputs);
 
-      // Update to running
       await this.db
         .update(stepRuns)
         .set({ status: "running", startedAt: new Date(), updatedAt: new Date() })
         .where(eq(stepRuns.id, stepRun.id));
-
       this.ws.broadcast({
         type: "step_status",
         pipelineRunId: runId,
@@ -167,21 +313,16 @@ export class ExecutionEngine {
       });
 
       let seq = 0;
-
-      const onEvent = (eventType: StepRunEventType, message?: string, payload?: Record<string, unknown>) => {
+      const onEvent = (
+        eventType: StepRunEventType,
+        message?: string,
+        payload?: Record<string, unknown>,
+      ) => {
         const currentSeq = seq++;
-        // Fire-and-forget DB insert for events
         this.db
           .insert(stepRunEvents)
-          .values({
-            stepRunId: stepRun.id,
-            seq: currentSeq,
-            eventType,
-            message: message ?? null,
-            payload: payload ?? null,
-          })
-          .catch((err) => console.error("[ExecutionEngine] Event insert failed:", err));
-
+          .values({ stepRunId: stepRun.id, seq: currentSeq, eventType, message: message ?? null, payload: payload ?? null })
+          .catch((e) => console.error("[ExecutionEngine] Event insert failed:", e));
         this.ws.broadcast({
           type: "step_event",
           pipelineRunId: runId,
@@ -193,11 +334,13 @@ export class ExecutionEngine {
         });
       };
 
+      // ── Dispatch ───────────────────────────────────────────────────────────
       let output = "";
       let usage: Record<string, unknown> = {};
 
       try {
         if (worker.workerType === "pi") {
+          const sessionDir = await this.getOrCreateSession(worker.id, runId);
           const result = await runWorkerStep(
             {
               id: worker.id,
@@ -209,22 +352,45 @@ export class ExecutionEngine {
             },
             resolvedPrompt,
             onEvent,
+            sessionDir,
+            signal,
+            (session) => {
+              this.sessionRegistry.register(stepRun.id, {
+                session,
+                pipelineRunId: runId,
+                workerId: worker.id,
+              });
+            },
           );
+          this.sessionRegistry.unregister(stepRun.id);
           output = result.output;
           usage = result.usage;
+
+          await recordCost(
+            this.db,
+            stepRun.id,
+            worker.id,
+            runId,
+            worker.modelProvider,
+            worker.modelName,
+            usage,
+          );
         } else if (worker.workerType === "imagen") {
           const outputDir =
             (worker.metadata?.outputDir as string | undefined) ??
             process.env.OUTPUT_DIR ??
             join(process.cwd(), "..", "output");
-          // Derive slug from run id + step index for uniqueness
           const slug = `${run.id.slice(0, 8)}-step${step.stepIndex}`;
+          const aspectRatio = (worker.metadata?.aspectRatio as string | undefined) ?? "1:1";
+          const personGeneration = (worker.metadata?.personGeneration as string | undefined) ?? "allow_all";
           output = await runImagenWorker(
             resolvedPrompt,
             worker.modelName,
             outputDir,
             slug,
             (msg) => onEvent("text_delta", msg),
+            aspectRatio,
+            personGeneration,
           );
         } else if (worker.workerType === "publish") {
           const outputDir =
@@ -247,17 +413,10 @@ export class ExecutionEngine {
 
         await this.db
           .update(stepRuns)
-          .set({
-            status: "completed",
-            output: { text: output },
-            usageJson: usage,
-            finishedAt: new Date(),
-            updatedAt: new Date(),
-          })
+          .set({ status: "completed", output: { text: output }, usageJson: usage, finishedAt: new Date(), updatedAt: new Date() })
           .where(eq(stepRuns.id, stepRun.id));
 
         onEvent("status_change", "completed", { status: "completed" });
-
         this.ws.broadcast({
           type: "step_status",
           pipelineRunId: runId,
@@ -266,20 +425,13 @@ export class ExecutionEngine {
           status: "completed",
         });
       } catch (err) {
+        this.sessionRegistry.unregister(stepRun.id);
         const errMsg = String(err);
-
         await this.db
           .update(stepRuns)
-          .set({
-            status: "failed",
-            error: errMsg,
-            finishedAt: new Date(),
-            updatedAt: new Date(),
-          })
+          .set({ status: "failed", error: errMsg, finishedAt: new Date(), updatedAt: new Date() })
           .where(eq(stepRuns.id, stepRun.id));
-
         onEvent("error", errMsg);
-
         this.ws.broadcast({
           type: "step_status",
           pipelineRunId: runId,
@@ -287,24 +439,15 @@ export class ExecutionEngine {
           stepIndex: step.stepIndex,
           status: "failed",
         });
-
         throw err;
       }
     }
 
-    // All steps done
     const lastOutput = steps.length > 0 ? stepOutputs.get(steps[steps.length - 1].stepIndex) : undefined;
-
     await this.db
       .update(pipelineRuns)
-      .set({
-        status: "completed",
-        output: lastOutput ? { text: lastOutput } : {},
-        finishedAt: new Date(),
-        updatedAt: new Date(),
-      })
+      .set({ status: "completed", output: lastOutput ? { text: lastOutput } : {}, finishedAt: new Date(), updatedAt: new Date() })
       .where(eq(pipelineRuns.id, runId));
-
     this.ws.broadcast({ type: "run_status", pipelineRunId: runId, status: "completed" });
     this.activeRunIds.delete(runId);
   }

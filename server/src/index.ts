@@ -9,11 +9,20 @@ import EmbeddedPostgres from "embedded-postgres";
 import { createDb, ensurePostgresDatabase, applyPendingMigrations } from "@zerohand/db";
 import { WsManager } from "./ws/index.js";
 import { ExecutionEngine } from "./services/execution-engine.js";
+import { TriggerManager } from "./services/trigger-manager.js";
 import { seedFromConfigs } from "./seed.js";
 import { createHealthRouter } from "./routes/health.js";
 import { createWorkersRouter } from "./routes/workers.js";
 import { createPipelinesRouter } from "./routes/pipelines.js";
 import { createPipelineRunsRouter } from "./routes/pipeline-runs.js";
+import { createTriggersRouter } from "./routes/triggers.js";
+import { createApprovalsRouter } from "./routes/approvals.js";
+import { createBudgetsRouter } from "./routes/budgets.js";
+import { createStatsRouter } from "./routes/stats.js";
+import { createSettingsRouter } from "./routes/settings.js";
+import { createFilesRouter } from "./routes/files.js";
+import { createWebhooksRouter } from "./routes/webhooks.js";
+import { ChannelManager } from "./services/channel-manager.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), ".data");
@@ -102,11 +111,16 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
-  // Routes
+  // Routes (approvals needs ws for re-queuing after approve/reject)
   app.use("/api", createHealthRouter());
   app.use("/api", createWorkersRouter(db));
   app.use("/api", createPipelinesRouter(db));
   app.use("/api", createPipelineRunsRouter(db));
+  app.use("/api", createTriggersRouter(db));
+  app.use("/api", createBudgetsRouter(db));
+  app.use("/api", createStatsRouter(db));
+  app.use("/api", createSettingsRouter(db));
+  app.use("/api", createFilesRouter());
 
   // 404 handler
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
@@ -119,9 +133,21 @@ async function main() {
 
   const httpServer = createServer(app);
   const ws = new WsManager(httpServer);
+
+  // Approvals router needs ws for re-queuing runs after approve/reject
+  app.use("/api", createApprovalsRouter(db, ws));
+
   const engine = new ExecutionEngine(db, ws);
+  const triggers = new TriggerManager(db, ws);
+  const channels = new ChannelManager(db, ws);
+  app.use("/", createWebhooksRouter(channels));
+
+  // Wire bidirectional WebSocket → engine chat handler
+  ws.onChatMessage((msg) => engine.handleChatMessage(msg));
 
   engine.start();
+  triggers.start();
+  void channels.start();
   console.log("[Engine] Execution engine started.");
 
   httpServer.listen(PORT, () => {
@@ -132,6 +158,7 @@ async function main() {
   const shutdown = async () => {
     console.log("[Server] Shutting down...");
     engine.stop();
+    triggers.stop();
     httpServer.close();
     await stopPostgres();
     process.exit(0);

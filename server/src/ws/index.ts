@@ -1,11 +1,12 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { IncomingMessage } from "node:http";
 import type { Server } from "node:http";
-import type { WsMessage } from "@zerohand/shared";
+import type { WsMessage, WsIncomingChat } from "@zerohand/shared";
 
 export class WsManager {
   private wss: WebSocketServer;
   private clients = new Set<WebSocket>();
+  private chatHandler: ((msg: WsIncomingChat) => void) | null = null;
 
   constructor(server: Server) {
     this.wss = new WebSocketServer({ server });
@@ -13,7 +14,21 @@ export class WsManager {
       this.clients.add(ws);
       ws.on("close", () => this.clients.delete(ws));
       ws.on("error", () => this.clients.delete(ws));
+      ws.on("message", (data) => {
+        try {
+          const msg = JSON.parse(data.toString()) as { type: string };
+          if (msg.type === "chat" && this.chatHandler) {
+            this.chatHandler(msg as WsIncomingChat);
+          }
+        } catch {
+          // ignore malformed messages
+        }
+      });
     });
+  }
+
+  onChatMessage(handler: (msg: WsIncomingChat) => void): void {
+    this.chatHandler = handler;
   }
 
   broadcast(message: WsMessage): void {

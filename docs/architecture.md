@@ -4,10 +4,12 @@
 
 Zerohand is a monorepo agentic workflow orchestrator. Pipelines are defined as YAML packages, stored in a directory, and seeded into PostgreSQL on startup. The execution engine polls for queued runs, resolves prompt templates, dispatches work to the appropriate worker type, and streams events back to the UI over WebSocket.
 
+The control plane adds scheduling (cron triggers), human approval gates, and budget enforcement on top of the core execution loop.
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                         Web UI (React)                        │
-│   Dashboard  │  Pipelines  │  Workers  │  Run Detail          │
+│   Dashboard  │  Pipelines  │  Approvals  │  Run Detail       │
 └──────────────────────┬───────────────────────────────────────┘
                        │ REST + WebSocket (port 3009)
 ┌──────────────────────┴───────────────────────────────────────┐
@@ -17,16 +19,19 @@ Zerohand is a monorepo agentic workflow orchestrator. Pipelines are defined as Y
 │  │   Execution Engine  │   │         REST API             │  │
 │  │  polls every 2s     │   │  /api/workers                │  │
 │  │  runs steps in seq  │   │  /api/pipelines              │  │
-│  └────────┬────────────┘   │  /api/runs                   │  │
+│  │  budget check       │   │  /api/runs                   │  │
+│  │  approval gates     │   │  /api/triggers               │  │
+│  │  session persist    │   │  /api/approvals              │  │
+│  └────────┬────────────┘   │  /api/budgets                │  │
 │           │                └──────────────────────────────┘  │
 │  ┌────────┴────────────┐   ┌──────────────────────────────┐  │
-│  │   Worker Dispatch   │   │       WebSocket Manager      │  │
-│  │  pi / imagen /      │   │  broadcasts to all clients   │  │
-│  │  publish            │   └──────────────────────────────┘  │
-│  └────────┬────────────┘                                      │
-└───────────┼──────────────────────────────────────────────────┘
-            │
-   ┌────────┴─────────────────────────────────────────┐
+│  │  Trigger Manager    │   │       WebSocket Manager      │  │
+│  │  polls every 30s    │   │  broadcasts to all clients   │  │
+│  │  fires cron runs    │   └──────────────────────────────┘  │
+│  └─────────────────────┘                                      │
+└───────────────────────┬──────────────────────────────────────┘
+                        │
+   ┌────────────────────┴─────────────────────────────┐
    │                                                   │
 ┌──┴──────────────┐   ┌─────────────────────────────┐ │
 │   PostgreSQL    │   │   Pi.dev SDK                │ │
@@ -39,7 +44,7 @@ Zerohand is a monorepo agentic workflow orchestrator. Pipelines are defined as Y
               │
    ┌──────────┴──────────────────────────────────────┐
    │              File System                         │
-   │   pipelines/   skills/   output/                │
+   │   pipelines/   skills/   output/   sessions/    │
    └─────────────────────────────────────────────────┘
 ```
 
@@ -54,13 +59,13 @@ Drizzle ORM schema and migration client. Exports:
 - `createDb(url)` — creates a Drizzle client with all relations wired up
 - `applyPendingMigrations(url)` — runs any unapplied SQL migrations
 - `ensurePostgresDatabase(rootUrl, dbName)` — creates the DB if it doesn't exist
-- All schema tables as named exports (`workers`, `pipelines`, `pipelineSteps`, etc.)
+- All schema tables as named exports (`workers`, `pipelines`, `pipelineSteps`, `triggers`, `approvals`, `budgetPolicies`, `costEvents`, `workerSessions`, etc.)
 
 ### `packages/shared`
 
 TypeScript interfaces shared between server and UI:
 
-- API response types (`ApiPipeline`, `ApiPipelineRun`, `ApiStepRun`, etc.)
+- API response types (`ApiPipeline`, `ApiPipelineRun`, `ApiStepRun`, `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, etc.)
 - WebSocket message types (`WsMessage`, `WsStepEvent`, etc.)
 - Status enums (`PipelineRunStatus`, `StepRunStatus`)
 
@@ -70,16 +75,22 @@ Express application. Responsibilities:
 
 - Boots embedded PostgreSQL (or connects to external via `DATABASE_URL`)
 - Applies migrations and seeds pipeline packages on startup
+- Starts the execution engine (polls every 2s for queued runs)
+- Starts the trigger manager (polls every 30s for due cron triggers)
 - Serves REST API and WebSocket
-- Runs the execution engine
 
 ### `ui`
 
-React + Vite + TailwindCSS single-page app. Talks to the server via REST (React Query) and WebSocket for live step streaming.
+React + Vite + TailwindCSS single-page app. Talks to the server via REST (React Query) and WebSocket for live step streaming. Key pages:
+
+- **Dashboard** — recent runs, overall status
+- **Pipelines** — list pipelines, trigger manual runs, manage cron triggers
+- **Approvals** — pending approval queue with live badge in sidebar nav
+- **Run Detail** — step-by-step progress with real-time event streaming
 
 ---
 
-## Data Flow: Triggering a Run
+## Data Flow: Manual Run
 
 ```
 User clicks "Run Pipeline"
@@ -94,18 +105,57 @@ Execution Engine (polling every 2s)
   → broadcasts run_status via WebSocket
 
 For each pipeline step (in order):
-  → creates step_run row
-  → resolves prompt template ({{input.*}}, {{steps.N.output.*}})
-  → dispatches to worker type:
-      pi      → pi-executor.ts (createAgentSession)
-      imagen  → builtin-workers.ts (Google Imagen API)
-      publish → builtin-workers.ts (writes markdown to disk)
-  → streams events to step_run_events table + WebSocket
-  → captures output, marks step "completed"
+  1. Skip if already completed (resume support)
+  2. Check approval_required → create approval record, pause run if gate needed
+  3. Check budget (budget-guard) → fail step if hard stop exceeded
+  4. Resolve prompt template ({{input.*}}, {{steps.N.output.*}})
+  5. Dispatch to worker type:
+       pi      → pi-executor.ts (createAgentSession, optional session resume)
+       imagen  → builtin-workers.ts (Google Imagen API)
+       publish → builtin-workers.ts (writes markdown to disk)
+  6. Stream events → step_run_events table + WebSocket
+  7. Record cost event (pi steps only)
+  8. Capture output, mark step "completed"
 
 All steps done:
   → marks run "completed"
   → broadcasts run_status via WebSocket
+```
+
+## Data Flow: Cron Trigger
+
+```
+TriggerManager tick (every 30s)
+  → queries triggers WHERE enabled = true AND next_run_at <= now()
+  → for each due trigger:
+      → creates pipeline_run (status: queued, trigger_type: "cron")
+      → updates trigger: last_fired_at = now(), next_run_at = computeNextRun(expression)
+      → broadcasts trigger_fired via WebSocket
+  → Execution Engine picks up the queued run normally
+```
+
+## Data Flow: Approval Gate
+
+```
+Execution Engine hits a step with approval_required = true
+  → creates approval record (status: "pending")
+  → marks pipeline_run status: "paused"
+  → returns (engine stops processing this run)
+
+User visits Approvals page
+  → sees pending card with pipeline name, step name, payload
+  → clicks "Approve" (optional: adds a note)
+  → POST /api/approvals/:id/approve
+
+Approval route handler
+  → updates approval status: "approved", records note + decided_at
+  → re-queues pipeline_run (status: "queued")
+  → broadcasts run_status via WebSocket
+
+Execution Engine (next tick)
+  → picks up re-queued run
+  → loads existing step_runs, populates stepOutputs from completed steps
+  → skips completed steps, continues from the approved step
 ```
 
 ---
@@ -124,12 +174,16 @@ See [`workers.md`](./workers.md) for full configuration reference.
 
 ## Key Design Decisions
 
-**Pipeline packages over DB-only config** — Pipelines are defined in `pipelines/<name>/pipeline.yaml`. This makes them version-controllable, shareable as packages, and editable without a UI. The seeder detects changes via a content hash and re-seeds automatically on restart.
+**Pipeline packages over DB-only config** — Pipelines are defined in `pipelines/<name>/pipeline.yaml`. This makes them version-controllable, shareable as packages, and editable without a UI. The seeder detects changes via a SHA-256 content hash and re-seeds automatically on restart.
 
 **Embedded PostgreSQL for local dev** — Zero setup. The server starts its own Postgres process on first boot. Set `DATABASE_URL` to use external Postgres (e.g. Docker Compose).
 
 **Pi.dev as the LLM execution layer** — Handles model routing, auth, session management, skill injection, and tool calling. Zerohand wraps it in `pi-executor.ts` and adds its own tool definitions (web search).
 
-**Polling over event-driven scheduling** — The execution engine polls every 2 seconds for queued runs. Simple, reliable, easy to debug. Sufficient for the current workload.
+**Polling over event-driven scheduling** — The execution engine polls every 2 seconds for queued runs; the trigger manager polls every 30 seconds for due cron triggers. Simple, reliable, easy to debug.
+
+**Resume on re-queue** — When a paused run is re-queued (after approval), the engine reloads all existing step_runs and repopulates outputs from completed ones. Steps that already completed are skipped; execution picks up at the next pending step.
 
 **WebSocket broadcast to all clients** — No per-connection subscriptions. All connected clients receive all events; the UI filters by `pipelineRunId`.
+
+**Cost recording after every pi step** — `cost_events` are inserted with real token counts from the pi session's usage object. Budget checks query this table before each step.

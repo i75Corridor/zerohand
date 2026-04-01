@@ -20,9 +20,11 @@
     "@zerohand/shared": "workspace:*",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "cronstrue": "^3.14.0",
     "lucide-react": "^0.454.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.28.0",
     "tailwind-merge": "^2.5.5"
   },

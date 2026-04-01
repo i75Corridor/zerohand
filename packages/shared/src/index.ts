@@ -7,7 +7,7 @@ export const STEP_RUN_STATUS = ["queued", "running", "awaiting_approval", "compl
 export type StepRunStatus = (typeof STEP_RUN_STATUS)[number];
 
 // Worker types
-export const WORKER_TYPE = ["pi", "function", "api"] as const;
+export const WORKER_TYPE = ["pi", "imagen", "publish", "function", "api"] as const;
 export type WorkerType = (typeof WORKER_TYPE)[number];
 
 // Worker statuses
@@ -40,6 +40,7 @@ export interface ApiPipelineRun {
   pipelineName?: string;
   status: PipelineRunStatus;
   inputParams: Record<string, unknown>;
+  output: Record<string, unknown> | null;
   triggerType: string;
   startedAt: string | null;
   finishedAt: string | null;
@@ -92,6 +93,56 @@ export interface ApiPipelineStep {
   approvalRequired: boolean;
 }
 
+export interface ApiTrigger {
+  id: string;
+  pipelineId: string;
+  type: "cron" | "webhook" | "channel";
+  enabled: boolean;
+  cronExpression: string | null;
+  timezone: string;
+  defaultInputs: Record<string, unknown>;
+  nextRunAt: string | null;
+  lastFiredAt: string | null;
+  channelType: string | null;
+  channelConfig: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface ModelCostEntry {
+  inputPerM: number;  // cents per 1M input tokens
+  outputPerM: number; // cents per 1M output tokens
+}
+
+export interface ApiSetting {
+  key: string;
+  value: unknown;
+  updatedAt: string;
+}
+
+export interface ApiApproval {
+  id: string;
+  pipelineRunId: string;
+  stepRunId: string | null;
+  status: ApprovalStatus;
+  payload: Record<string, unknown>;
+  decisionNote: string | null;
+  decidedAt: string | null;
+  pipelineName?: string;
+  stepName?: string;
+  createdAt: string;
+}
+
+export interface ApiBudgetPolicy {
+  id: string;
+  scopeType: "worker" | "pipeline";
+  scopeId: string;
+  amountCents: number;
+  windowKind: "calendar_month" | "lifetime";
+  warnPercent: number;
+  hardStopEnabled: boolean;
+  createdAt: string;
+}
+
 // WebSocket message types
 export interface WsStepEvent {
   type: "step_event";
@@ -117,4 +168,18 @@ export interface WsStepStatusChange {
   status: StepRunStatus;
 }
 
-export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange;
+export interface WsChatAck {
+  type: "chat_ack";
+  stepRunId: string;
+  accepted: boolean;
+  error?: string;
+}
+
+export interface WsIncomingChat {
+  type: "chat";
+  stepRunId: string;
+  action: "steer" | "followUp" | "abort";
+  message?: string;
+}
+
+export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck;

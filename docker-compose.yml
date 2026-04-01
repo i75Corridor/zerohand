@@ -40,7 +40,7 @@ services:
       context: .
       dockerfile: Dockerfile.ui
     ports:
-      - "8080:80"
+      - "3008:80"
     depends_on:
       - server
     restart: unless-stopped

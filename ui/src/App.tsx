@@ -4,6 +4,9 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Pipelines from "./pages/Pipelines.tsx";
 import Workers from "./pages/Workers.tsx";
 import RunDetail from "./pages/RunDetail.tsx";
+import Approvals from "./pages/Approvals.tsx";
+import Canvas from "./pages/Canvas.tsx";
+import Settings from "./pages/Settings.tsx";
 
 export default function App() {
   return (
@@ -13,6 +16,9 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pipelines" element={<Pipelines />} />
         <Route path="/workers" element={<Workers />} />
+        <Route path="/approvals" element={<Approvals />} />
+        <Route path="/canvas" element={<Canvas />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/runs/:id" element={<RunDetail />} />
       </Routes>
     </Layout>
