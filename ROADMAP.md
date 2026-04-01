@@ -160,7 +160,66 @@ Browse, edit, and create SKILL.md files from the UI.
 
 **Summary stats row:** total this month, daily average, projected month-end, most expensive worker, most expensive pipeline.
 
-### 6b. Run History Enhancements
+### 6b. Structured System Logging
+
+Opt-in detailed logging of everything that flows through the execution engine — step inputs, resolved prompts, raw LLM outputs, script stdin/stdout, tool calls, and timing. Designed for debugging and auditing, not shown in the default UI.
+
+**Design:**
+
+Logging is controlled by a `LOG_LEVEL` env var: `off` (default) | `info` | `debug`. At `debug`, all payloads are captured. At `info`, only metadata (timing, token counts, status) is captured with payloads omitted.
+
+Log entries are written as JSONL to `DATA_DIR/logs/runs/<runId>.jsonl` so they can be tailed, grepped, and parsed without a database query.
+
+**What gets logged at each level:**
+
+| Event | `info` | `debug` |
+|-------|--------|---------|
+| Run started (pipeline name, inputs) | ✓ | ✓ |
+| Step started (skill name, step index) | ✓ | ✓ |
+| Resolved prompt sent to skill | — | ✓ |
+| LLM response (raw output text) | — | ✓ |
+| Script stdin payload | — | ✓ |
+| Script stdout response | — | ✓ |
+| Tool call (name, input) | ✓ | ✓ |
+| Tool result | — | ✓ |
+| Token usage per step | ✓ | ✓ |
+| Step completed/failed + duration | ✓ | ✓ |
+| Run completed + total duration | ✓ | ✓ |
+
+**Files:**
+
+| Action | File | Details |
+|--------|------|---------|
+| Create | `server/src/services/run-logger.ts` | `RunLogger` class: opened per run, writes JSONL entries, closed on run end. `LOG_LEVEL` gating. |
+| Modify | `server/src/services/execution-engine.ts` | Instantiate `RunLogger` at run start; emit log entries at each dispatch point (before/after prompt, script calls, tool events) |
+| Modify | `server/src/services/skill-loader.ts` | `execScript()` accepts optional logger callback to capture stdin/stdout when at debug level |
+| Create | `server/src/routes/logs.ts` | `GET /api/runs/:id/log` — streams the JSONL file for a run (or returns 404 if logging was off) |
+| Modify | `server/src/index.ts` | Mount logs router |
+| Modify | `ui/src/pages/RunDetail.tsx` | "Debug Log" tab: streams log entries, renders as a timeline. Shown only when log file exists for the run. |
+| Modify | `ui/src/lib/api.ts` | Add `getRunLog(runId)` method |
+
+**Log entry schema:**
+```jsonc
+{ "ts": "2026-04-01T15:00:00.000Z", "event": "step_start", "stepIndex": 0, "skillName": "researcher" }
+{ "ts": "...", "event": "prompt", "stepIndex": 0, "payload": "Research the topic..." }
+{ "ts": "...", "event": "tool_call", "stepIndex": 0, "tool": "web_search", "input": { "query": "..." } }
+{ "ts": "...", "event": "tool_result", "stepIndex": 0, "tool": "web_search", "output": "[...]" }
+{ "ts": "...", "event": "step_output", "stepIndex": 0, "payload": "## Research Report..." }
+{ "ts": "...", "event": "step_end", "stepIndex": 0, "status": "completed", "durationMs": 8420, "tokens": { "input": 1200, "output": 800 } }
+```
+
+**Privacy note:** At `debug` level, full prompt and output text is written to disk. This may include user-supplied input values. Log files should be excluded from backups/exports that leave the operator's environment. Log rotation (cap at N MB or N days) added in a future sub-phase.
+
+**Verification:**
+1. `LOG_LEVEL=debug pnpm dev` → run a pipeline → `DATA_DIR/logs/runs/<id>.jsonl` exists and contains all events
+2. `LOG_LEVEL=info` → log file exists but prompt/output payloads are absent
+3. `LOG_LEVEL=off` → no log file created
+4. `GET /api/runs/:id/log` → streams the JSONL
+5. RunDetail "Debug Log" tab shows timeline of events when log exists
+
+---
+
+### 6c. Run History Enhancements
 
 **Files:**
 
@@ -175,6 +234,7 @@ Browse, edit, and create SKILL.md files from the UI.
 1. Cost page shows chart with historical data, breakdowns match raw `cost_events`
 2. Filter runs by status and pipeline, verify correct results
 3. Step logs show tool calls with inputs/outputs as structured timeline
+4. Debug log tab in RunDetail streams JSONL events for the run
 
 ---
 
