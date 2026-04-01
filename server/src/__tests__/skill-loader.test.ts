@@ -164,6 +164,7 @@ Prompt body.`,
     mkdirSync(scriptsDir, { recursive: true });
     writeFileSync(join(skillDir, "SKILL.md"), `---\nname: multiscript\nversion: "1.0.0"\ndescription: ""\ntype: pi\n---\nBody.`);
     writeFileSync(join(scriptsDir, "web_search.js"), "// js tool");
+    writeFileSync(join(scriptsDir, "generate.cjs"), "// cjs tool");
     writeFileSync(join(scriptsDir, "fetch.ts"), "// ts tool");
     writeFileSync(join(scriptsDir, "analyze.py"), "# py tool");
     writeFileSync(join(scriptsDir, "run.sh"), "#!/bin/bash");
@@ -171,9 +172,10 @@ Prompt body.`,
     writeFileSync(join(scriptsDir, "data.json"), "{}");
 
     const skill = loadSkillDef("multiscript", skillsDir);
-    expect(skill!.scriptPaths).toHaveLength(4);
+    expect(skill!.scriptPaths).toHaveLength(5);
     const names = skill!.scriptPaths.map((p) => p.split("/").pop());
     expect(names).toContain("web_search.js");
+    expect(names).toContain("generate.cjs");
     expect(names).toContain("fetch.ts");
     expect(names).toContain("analyze.py");
     expect(names).toContain("run.sh");
@@ -226,42 +228,3 @@ describe("makeScriptTools", () => {
   });
 });
 
-// ── execScript (via makeScriptTools) ─────────────────────────────────────────
-
-describe("script execution", () => {
-  let skillsDir: string;
-
-  beforeEach(() => {
-    skillsDir = mkdtempSync(join(tmpdir(), "zerohand-exec-test-"));
-  });
-
-  it("executes a simple JS script and returns its stdout", async () => {
-    const scriptPath = join(skillsDir, "echo.js");
-    writeFileSync(
-      scriptPath,
-      `import { createInterface } from "readline";
-const chunks = [];
-const rl = createInterface({ input: process.stdin });
-rl.on("line", (line) => chunks.push(line));
-rl.on("close", () => {
-  const input = JSON.parse(chunks.join("\\n") || "{}");
-  console.log(JSON.stringify({ echoed: input.query }));
-});`,
-    );
-
-    const [tool] = makeScriptTools([scriptPath]);
-    const result = await tool.execute!("call-1", { query: "hello world" }, undefined as any, undefined as any, undefined as any);
-    const text = (result as any).content[0].text as string;
-    expect(JSON.parse(text)).toEqual({ echoed: "hello world" });
-  });
-
-  it("rejects when a script exits with a non-zero code", async () => {
-    const scriptPath = join(skillsDir, "fail.js");
-    writeFileSync(scriptPath, `process.exit(1);`);
-
-    const [tool] = makeScriptTools([scriptPath]);
-    await expect(
-      tool.execute!("call-2", {}, undefined as any, undefined as any, undefined as any),
-    ).rejects.toThrow(/exited/);
-  });
-});

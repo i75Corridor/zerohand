@@ -356,12 +356,39 @@ export class ExecutionEngine {
           const modelName = skill.modelName ?? "imagen-4.0-generate-001";
           const aspectRatio = (skill.metadata?.aspectRatio as string | undefined) ?? "16:9";
           const personGeneration = (skill.metadata?.personGeneration as string | undefined) ?? "allow_all";
-          output = await runImagenWorker(resolvedPrompt, modelName, outputDir, slug, (msg) => onEvent("text_delta", msg), aspectRatio, personGeneration);
+
+          if (skill.scriptPaths.length > 0) {
+            const { runPrimaryScript } = await import("./skill-loader.js");
+            onEvent("text_delta", `Generating image with model: ${modelName} (${aspectRatio})`);
+            const result = await runPrimaryScript(skill, {
+              prompt: resolvedPrompt,
+              modelName,
+              outputDir,
+              slug,
+              aspectRatio,
+              personGeneration,
+              apiKey: process.env.GEMINI_API_KEY,
+            });
+            const parsed = JSON.parse(result) as { imagePath?: string };
+            output = parsed.imagePath ?? result.trim();
+            onEvent("text_delta", `Image saved: ${output}`);
+          } else {
+            output = await runImagenWorker(resolvedPrompt, modelName, outputDir, slug, (msg) => onEvent("text_delta", msg), aspectRatio, personGeneration);
+          }
         } else if (skill.type === "publish") {
           const outputDir = process.env.OUTPUT_DIR ?? join(process.cwd(), "..", "output");
           const imageStepIndex = step.metadata?.imageStepIndex as number | undefined;
           const imagePath = imageStepIndex !== undefined ? (stepOutputs.get(imageStepIndex) ?? "") : "";
-          output = await runPublishWorker(resolvedPrompt, imagePath, outputDir, (msg) => onEvent("text_delta", msg));
+
+          if (skill.scriptPaths.length > 0) {
+            const { runPrimaryScript } = await import("./skill-loader.js");
+            const result = await runPrimaryScript(skill, { article: resolvedPrompt, imagePath, outputDir });
+            const parsed = JSON.parse(result) as { publishedPath?: string };
+            output = parsed.publishedPath ?? result.trim();
+            onEvent("text_delta", `Article published: ${output}`);
+          } else {
+            output = await runPublishWorker(resolvedPrompt, imagePath, outputDir, (msg) => onEvent("text_delta", msg));
+          }
         }
 
         stepOutputs.set(step.stepIndex, output);

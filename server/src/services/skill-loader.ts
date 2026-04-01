@@ -18,6 +18,13 @@ function safeChildEnv(): NodeJS.ProcessEnv {
       env[k] = v;
     }
   }
+  // Scripts run from the skills directory and can't resolve monorepo packages
+  // without help. Point NODE_PATH at the server's node_modules so imports like
+  // @google/genai resolve correctly regardless of where the script lives.
+  env.NODE_PATH = [
+    join(process.cwd(), "node_modules"),       // server/node_modules
+    join(process.cwd(), "..", "node_modules"), // monorepo root node_modules
+  ].join(":");
   return env;
 }
 
@@ -66,7 +73,7 @@ export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | n
   const scriptsDir = join(skillDir, "scripts");
   const scriptPaths: string[] = [];
   if (existsSync(scriptsDir)) {
-    const files = readdirSync(scriptsDir).filter((f) => /\.(js|ts|py|sh)$/.test(f));
+    const files = readdirSync(scriptsDir).filter((f) => /\.(js|cjs|ts|py|sh)$/.test(f));
     scriptPaths.push(...files.map((f) => join(scriptsDir, f)));
   }
 
@@ -94,7 +101,7 @@ async function execScript(
     let cmd: string;
     let args: string[];
 
-    if (ext === ".js") { cmd = "node"; args = [scriptPath]; }
+    if (ext === ".js" || ext === ".cjs") { cmd = "node"; args = [scriptPath]; }
     else if (ext === ".ts") { cmd = "npx"; args = ["tsx", scriptPath]; }
     else if (ext === ".py") { cmd = "python3"; args = [scriptPath]; }
     else if (ext === ".sh") { cmd = "bash"; args = [scriptPath]; }
@@ -155,6 +162,24 @@ export function makeScriptTools(scriptPaths: string[]): ToolDefinition[] {
       },
     } as ToolDefinition;
   });
+}
+
+/**
+ * Run a skill's primary script directly (not as an LLM tool).
+ * Looks for a script named "generate" first, then falls back to the first script.
+ * Input is passed as JSON on stdin; stdout is returned as a string.
+ */
+export async function runPrimaryScript(
+  skill: SkillDef,
+  input: Record<string, unknown>,
+): Promise<string> {
+  if (skill.scriptPaths.length === 0) {
+    throw new Error(`Skill "${skill.name}" has no scripts in its scripts/ directory`);
+  }
+  const primary =
+    skill.scriptPaths.find((p) => basename(p, extname(p)) === "generate") ??
+    skill.scriptPaths[0];
+  return execScript(primary, input);
 }
 
 export function interpolateContext(text: string, context: Record<string, string>): string {
