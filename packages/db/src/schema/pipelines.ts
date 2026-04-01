@@ -1,5 +1,4 @@
 import { pgTable, uuid, text, integer, jsonb, timestamp, boolean, index, unique } from "drizzle-orm/pg-core";
-import { workers } from "./workers.js";
 
 export const pipelines = pgTable("pipelines", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -8,6 +7,9 @@ export const pipelines = pgTable("pipelines", {
   status: text("status").notNull().default("active"), // active, archived
   inputSchema: jsonb("input_schema").$type<Record<string, unknown>>(),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  systemPrompt: text("system_prompt"),
+  modelProvider: text("model_provider"),
+  modelName: text("model_name"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -19,7 +21,7 @@ export const pipelineSteps = pgTable(
     pipelineId: uuid("pipeline_id").notNull().references(() => pipelines.id, { onDelete: "cascade" }),
     stepIndex: integer("step_index").notNull(),
     name: text("name").notNull(),
-    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    skillName: text("skill_name"),
     // Template supports {{input.key}}, {{steps.N.output}}, {{steps.N.output.field}}
     promptTemplate: text("prompt_template").notNull(),
     timeoutSeconds: integer("timeout_seconds").notNull().default(300),

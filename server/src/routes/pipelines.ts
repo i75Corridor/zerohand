@@ -1,18 +1,19 @@
 import { Router } from "express";
 import { eq, asc } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { pipelines, pipelineSteps, workers } from "@zerohand/db";
+import { pipelines, pipelineSteps } from "@zerohand/db";
 import type { ApiPipeline, ApiPipelineStep } from "@zerohand/shared";
 
-function toApiStep(row: typeof pipelineSteps.$inferSelect, workerName?: string): ApiPipelineStep {
+function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineStep {
   return {
     id: row.id,
     stepIndex: row.stepIndex,
     name: row.name,
-    workerId: row.workerId,
-    workerName,
+    skillName: row.skillName ?? null,
     promptTemplate: row.promptTemplate,
+    timeoutSeconds: row.timeoutSeconds,
     approvalRequired: row.approvalRequired,
+    metadata: (row.metadata as Record<string, unknown>) ?? null,
   };
 }
 
@@ -25,20 +26,17 @@ async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise<ApiPip
     orderBy: [asc(pipelineSteps.stepIndex)],
   });
 
-  const workerIds = [...new Set(steps.map((s) => s.workerId))];
-  const workerRows = workerIds.length
-    ? await db.select({ id: workers.id, name: workers.name }).from(workers)
-    : [];
-  const workerNames = new Map(workerRows.map((w) => [w.id, w.name]));
-
   return {
     id: pipeline.id,
     name: pipeline.name,
     description: pipeline.description,
     status: pipeline.status,
     inputSchema: (pipeline.inputSchema as Record<string, unknown>) ?? null,
+    systemPrompt: pipeline.systemPrompt ?? null,
+    modelProvider: pipeline.modelProvider ?? null,
+    modelName: pipeline.modelName ?? null,
     createdAt: pipeline.createdAt.toISOString(),
-    steps: steps.map((s) => toApiStep(s, workerNames.get(s.workerId))),
+    steps: steps.map((s) => toApiStep(s)),
   };
 }
 
@@ -56,6 +54,9 @@ export function createPipelinesRouter(db: Db): Router {
           description: p.description,
           status: p.status,
           inputSchema: (p.inputSchema as Record<string, unknown>) ?? null,
+          systemPrompt: p.systemPrompt ?? null,
+          modelProvider: p.modelProvider ?? null,
+          modelName: p.modelName ?? null,
           createdAt: p.createdAt.toISOString(),
           steps: [],
         })),
@@ -142,7 +143,7 @@ export function createPipelinesRouter(db: Db): Router {
           pipelineId: req.params.id,
           stepIndex: body.stepIndex ?? 0,
           name: body.name ?? "Unnamed Step",
-          workerId: body.workerId!,
+          skillName: body.skillName ?? null,
           promptTemplate: body.promptTemplate ?? "",
           timeoutSeconds: body.timeoutSeconds ?? 300,
           approvalRequired: body.approvalRequired ?? false,

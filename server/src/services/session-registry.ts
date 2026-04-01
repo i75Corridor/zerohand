@@ -3,7 +3,6 @@ import type { AgentSession } from "@mariozechner/pi-coding-agent";
 interface ActiveSession {
   session: AgentSession;
   pipelineRunId: string;
-  workerId: string;
 }
 
 export class SessionRegistry {

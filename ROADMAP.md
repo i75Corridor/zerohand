@@ -160,7 +160,66 @@ Browse, edit, and create SKILL.md files from the UI.
 
 **Summary stats row:** total this month, daily average, projected month-end, most expensive worker, most expensive pipeline.
 
-### 6b. Run History Enhancements
+### 6b. Structured System Logging
+
+Opt-in detailed logging of everything that flows through the execution engine — step inputs, resolved prompts, raw LLM outputs, script stdin/stdout, tool calls, and timing. Designed for debugging and auditing, not shown in the default UI.
+
+**Design:**
+
+Logging is controlled by a `LOG_LEVEL` env var: `off` (default) | `info` | `debug`. At `debug`, all payloads are captured. At `info`, only metadata (timing, token counts, status) is captured with payloads omitted.
+
+Log entries are written as JSONL to `DATA_DIR/logs/runs/<runId>.jsonl` so they can be tailed, grepped, and parsed without a database query.
+
+**What gets logged at each level:**
+
+| Event | `info` | `debug` |
+|-------|--------|---------|
+| Run started (pipeline name, inputs) | ✓ | ✓ |
+| Step started (skill name, step index) | ✓ | ✓ |
+| Resolved prompt sent to skill | — | ✓ |
+| LLM response (raw output text) | — | ✓ |
+| Script stdin payload | — | ✓ |
+| Script stdout response | — | ✓ |
+| Tool call (name, input) | ✓ | ✓ |
+| Tool result | — | ✓ |
+| Token usage per step | ✓ | ✓ |
+| Step completed/failed + duration | ✓ | ✓ |
+| Run completed + total duration | ✓ | ✓ |
+
+**Files:**
+
+| Action | File | Details |
+|--------|------|---------|
+| Create | `server/src/services/run-logger.ts` | `RunLogger` class: opened per run, writes JSONL entries, closed on run end. `LOG_LEVEL` gating. |
+| Modify | `server/src/services/execution-engine.ts` | Instantiate `RunLogger` at run start; emit log entries at each dispatch point (before/after prompt, script calls, tool events) |
+| Modify | `server/src/services/skill-loader.ts` | `execScript()` accepts optional logger callback to capture stdin/stdout when at debug level |
+| Create | `server/src/routes/logs.ts` | `GET /api/runs/:id/log` — streams the JSONL file for a run (or returns 404 if logging was off) |
+| Modify | `server/src/index.ts` | Mount logs router |
+| Modify | `ui/src/pages/RunDetail.tsx` | "Debug Log" tab: streams log entries, renders as a timeline. Shown only when log file exists for the run. |
+| Modify | `ui/src/lib/api.ts` | Add `getRunLog(runId)` method |
+
+**Log entry schema:**
+```jsonc
+{ "ts": "2026-04-01T15:00:00.000Z", "event": "step_start", "stepIndex": 0, "skillName": "researcher" }
+{ "ts": "...", "event": "prompt", "stepIndex": 0, "payload": "Research the topic..." }
+{ "ts": "...", "event": "tool_call", "stepIndex": 0, "tool": "web_search", "input": { "query": "..." } }
+{ "ts": "...", "event": "tool_result", "stepIndex": 0, "tool": "web_search", "output": "[...]" }
+{ "ts": "...", "event": "step_output", "stepIndex": 0, "payload": "## Research Report..." }
+{ "ts": "...", "event": "step_end", "stepIndex": 0, "status": "completed", "durationMs": 8420, "tokens": { "input": 1200, "output": 800 } }
+```
+
+**Privacy note:** At `debug` level, full prompt and output text is written to disk. This may include user-supplied input values. Log files should be excluded from backups/exports that leave the operator's environment. Log rotation (cap at N MB or N days) added in a future sub-phase.
+
+**Verification:**
+1. `LOG_LEVEL=debug pnpm dev` → run a pipeline → `DATA_DIR/logs/runs/<id>.jsonl` exists and contains all events
+2. `LOG_LEVEL=info` → log file exists but prompt/output payloads are absent
+3. `LOG_LEVEL=off` → no log file created
+4. `GET /api/runs/:id/log` → streams the JSONL
+5. RunDetail "Debug Log" tab shows timeline of events when log exists
+
+---
+
+### 6c. Run History Enhancements
 
 **Files:**
 
@@ -175,6 +234,7 @@ Browse, edit, and create SKILL.md files from the UI.
 1. Cost page shows chart with historical data, breakdowns match raw `cost_events`
 2. Filter runs by status and pipeline, verify correct results
 3. Step logs show tool calls with inputs/outputs as structured timeline
+4. Debug log tab in RunDetail streams JSONL events for the run
 
 ---
 
@@ -245,7 +305,60 @@ The foundation for a future pipeline marketplace. Export format matches the exis
 | Modify | `ui/src/pages/Pipelines.tsx` — Export and Import buttons |
 | Modify | `ui/src/lib/api.ts` — add `exportPipeline`, `importPipeline` methods |
 
-### 8b. Secrets Management
+### 8b. Script Sandbox (Docker Isolation)
+
+Skill scripts currently run as child processes with full access to the server's filesystem and environment. This phase wraps every `execScript()` call in a throwaway Docker container, following the same design as nanoclaw's `container-runner.ts`.
+
+**Threat model:** A malicious or buggy script in `skills/<name>/scripts/` must not be able to read the server's env vars (API keys, DB URL), write outside its own directory, spawn persistent processes, or exfiltrate data over the network unless the skill explicitly declares network access.
+
+**Design (Docker-first, macOS + Linux):**
+
+| Layer | Mechanism |
+|---|---|
+| Filesystem | Only `skills/<name>/scripts/` mounted read-only at `/scripts`; `/tmp` as tmpfs; nothing else visible |
+| Credentials | API keys stripped from child env (already done); never passed into container |
+| Network | `--network=none` by default; skills declare `network: true` in SKILL.md frontmatter to opt in |
+| User | Non-root (`node`, uid 1000) inside container |
+| Timeout | Hard kill via `docker stop --time=0` after `SCRIPT_TIMEOUT_MS` |
+| Stdout limit | Container stdout piped through the same 1 MB cap as the current implementation |
+
+**Files:**
+
+| Action | File | Details |
+|--------|------|---------|
+| Create | `server/src/services/script-sandbox.ts` | `runInSandbox(scriptPath, input, opts)` — builds `docker run` args, mounts script dir read-only, strips env, enforces timeout, captures stdout |
+| Modify | `server/src/services/skill-loader.ts` | Replace `execScript()` body with `runInSandbox()` call; read `network` flag from skill frontmatter |
+| Modify | `server/src/routes/skills.ts` | Expose `network` field from SKILL.md frontmatter in `ApiSkill` |
+| Modify | `packages/shared/src/index.ts` | Add `network?: boolean` to `ApiSkill` |
+| Create | `container/skill-runner/Dockerfile` | Node 22-slim, `node` user, no extra packages; reusable image for all JS/TS skill scripts |
+| Modify | `server/src/index.ts` | On startup, verify Docker is available (`docker info`); log warning and fall back to subprocess mode if not |
+
+**SKILL.md frontmatter addition:**
+```yaml
+network: true   # optional — false by default; grants --network=bridge to the container
+```
+
+**Mount allowlist:** Following nanoclaw's pattern, store allowed host paths in `~/.config/zerohand/mount-allowlist.json` (outside project root, never accessible to containers). At launch the server reads this file; if absent, only `SKILLS_DIR` is mountable.
+
+**Docker availability fallback:** If Docker is not running, `script-sandbox.ts` falls back to the existing subprocess execution with a warning log. This keeps local dev working without Docker while enforcing sandboxing in production.
+
+**Container image:** Pre-built once on server start (`docker build -q` if image tag not present). The image is intentionally minimal — only Node 22-slim + Python 3 (for `.py` scripts). Shell scripts run `bash` inside the same image. TypeScript scripts use `npx tsx` already bundled in the image's `/node_modules`.
+
+**What this does NOT address (future work):**
+- Docker itself as an attack surface (for that: Docker Sandbox micro-VMs, same approach nanoclaw documents in `docs/docker-sandboxes.md`)
+- Resource limits beyond timeout (CPU/memory via `--cpus` / `--memory` flags — trivial to add but omitted until there's a concrete need)
+
+**Verification:**
+1. Skill script that calls `process.env.GEMINI_API_KEY` → returns `undefined`
+2. Skill script that writes to `/etc/passwd` → permission denied
+3. Skill script that makes an outbound HTTP request with `network: false` → connection refused
+4. Same script with `network: true` → succeeds
+5. Script that runs forever → killed after `SCRIPT_TIMEOUT_MS`, step fails with timeout error
+6. Server starts without Docker → logs warning, scripts run as subprocesses (dev mode)
+
+---
+
+### 8c. Secrets Management
 
 Encrypted runtime variables injected into workers. Keeps API keys out of YAML files.
 
@@ -370,3 +483,6 @@ These are unscheduled and will be prioritized based on usage:
 | `server/src/ws/index.ts` | Phase 4a |
 | `server/src/services/pi-executor.ts` | Phase 4a |
 | `server/src/seed.ts` | Phase 8a |
+| `server/src/services/script-sandbox.ts` (new) | Phase 8b |
+| `server/src/services/skill-loader.ts` | Phase 8b |
+| `container/skill-runner/Dockerfile` (new) | Phase 8b |

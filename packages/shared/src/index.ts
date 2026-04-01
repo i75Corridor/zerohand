@@ -6,14 +6,6 @@ export type PipelineRunStatus = (typeof PIPELINE_RUN_STATUS)[number];
 export const STEP_RUN_STATUS = ["queued", "running", "awaiting_approval", "completed", "failed", "cancelled"] as const;
 export type StepRunStatus = (typeof STEP_RUN_STATUS)[number];
 
-// Worker types
-export const WORKER_TYPE = ["pi", "imagen", "publish", "function", "api"] as const;
-export type WorkerType = (typeof WORKER_TYPE)[number];
-
-// Worker statuses
-export const WORKER_STATUS = ["idle", "active", "paused", "error"] as const;
-export type WorkerStatus = (typeof WORKER_STATUS)[number];
-
 // Trigger types
 export const TRIGGER_TYPE = ["cron", "webhook", "channel"] as const;
 export type TriggerType = (typeof TRIGGER_TYPE)[number];
@@ -52,7 +44,6 @@ export interface ApiStepRun {
   id: string;
   pipelineRunId: string;
   stepIndex: number;
-  workerName?: string;
   status: StepRunStatus;
   output: Record<string, unknown> | null;
   error: string | null;
@@ -60,17 +51,13 @@ export interface ApiStepRun {
   finishedAt: string | null;
 }
 
-export interface ApiWorker {
-  id: string;
+export interface ApiSkill {
   name: string;
-  description: string | null;
-  workerType: WorkerType;
-  modelProvider: string;
-  modelName: string;
-  status: WorkerStatus;
-  skills: string[];
-  budgetMonthlyCents: number;
-  spentMonthlyCents: number;
+  version: string;
+  description: string;
+  allowedTools: string[];
+  scripts: string[];
+  content?: string;
 }
 
 export interface ApiPipeline {
@@ -79,6 +66,9 @@ export interface ApiPipeline {
   description: string | null;
   status: string;
   inputSchema: Record<string, unknown> | null;
+  systemPrompt: string | null;
+  modelProvider: string | null;
+  modelName: string | null;
   steps: ApiPipelineStep[];
   createdAt: string;
 }
@@ -87,10 +77,11 @@ export interface ApiPipelineStep {
   id: string;
   stepIndex: number;
   name: string;
-  workerId: string;
-  workerName?: string;
+  skillName: string | null;
   promptTemplate: string;
+  timeoutSeconds: number;
   approvalRequired: boolean;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface ApiTrigger {
@@ -182,4 +173,26 @@ export interface WsIncomingChat {
   message?: string;
 }
 
-export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck;
+// Global agent WebSocket types
+export interface WsIncomingGlobalChat {
+  type: "global_chat";
+  action: "prompt" | "abort" | "reset";
+  message?: string;
+  context?: { path: string; pipelineId?: string; runId?: string };
+}
+
+export interface WsDataChanged {
+  type: "data_changed";
+  entity: "pipeline" | "step";
+  action: "created" | "updated" | "deleted";
+  id: string;
+}
+
+export interface WsGlobalAgentEvent {
+  type: "global_agent_event";
+  eventType: "text_delta" | "tool_call_start" | "tool_call_end" | "status_change" | "error" | "navigate";
+  message?: string;
+  payload?: Record<string, unknown>;
+}
+
+export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck | WsGlobalAgentEvent | WsDataChanged;

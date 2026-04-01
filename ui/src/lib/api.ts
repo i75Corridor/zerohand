@@ -1,11 +1,12 @@
 import type {
   ApiPipelineRun,
   ApiStepRun,
-  ApiWorker,
   ApiPipeline,
+  ApiPipelineStep,
   ApiTrigger,
   ApiApproval,
   ApiBudgetPolicy,
+  ApiSkill,
 } from "@zerohand/shared";
 
 const BASE = "/api";
@@ -24,15 +25,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  // Workers
-  listWorkers: () => request<ApiWorker[]>("/workers"),
-  getWorker: (id: string) => request<ApiWorker>(`/workers/${id}`),
-  createWorker: (body: Partial<ApiWorker>) =>
-    request<ApiWorker>("/workers", { method: "POST", body: JSON.stringify(body) }),
-  updateWorker: (id: string, body: Partial<ApiWorker>) =>
-    request<ApiWorker>(`/workers/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  deleteWorker: (id: string) => request<void>(`/workers/${id}`, { method: "DELETE" }),
-
   // Pipelines
   listPipelines: () => request<ApiPipeline[]>("/pipelines"),
   getPipeline: (id: string) => request<ApiPipeline>(`/pipelines/${id}`),
@@ -41,6 +33,26 @@ export const api = {
   updatePipeline: (id: string, body: Partial<ApiPipeline>) =>
     request<ApiPipeline>(`/pipelines/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deletePipeline: (id: string) => request<void>(`/pipelines/${id}`, { method: "DELETE" }),
+
+  // Pipeline steps
+  listSteps: (pipelineId: string) =>
+    request<ApiPipelineStep[]>(`/pipelines/${pipelineId}/steps`),
+  createStep: (pipelineId: string, body: Partial<ApiPipelineStep>) =>
+    request<ApiPipelineStep>(`/pipelines/${pipelineId}/steps`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateStep: (pipelineId: string, stepId: string, body: Partial<ApiPipelineStep>) =>
+    request<ApiPipelineStep>(`/pipelines/${pipelineId}/steps/${stepId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteStep: (pipelineId: string, stepId: string) =>
+    request<void>(`/pipelines/${pipelineId}/steps/${stepId}`, { method: "DELETE" }),
+
+  // Skills
+  listSkills: () => request<ApiSkill[]>("/skills"),
+  getSkill: (name: string) => request<ApiSkill>(`/skills/${name}`),
 
   // Pipeline runs
   listRuns: (pipelineId?: string) =>

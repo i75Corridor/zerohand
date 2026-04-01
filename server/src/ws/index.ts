@@ -1,12 +1,13 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { IncomingMessage } from "node:http";
 import type { Server } from "node:http";
-import type { WsMessage, WsIncomingChat } from "@zerohand/shared";
+import type { WsMessage, WsIncomingChat, WsIncomingGlobalChat } from "@zerohand/shared";
 
 export class WsManager {
   private wss: WebSocketServer;
   private clients = new Set<WebSocket>();
   private chatHandler: ((msg: WsIncomingChat) => void) | null = null;
+  private globalChatHandler: ((msg: WsIncomingGlobalChat) => void) | null = null;
 
   constructor(server: Server) {
     this.wss = new WebSocketServer({ server });
@@ -20,6 +21,9 @@ export class WsManager {
           if (msg.type === "chat" && this.chatHandler) {
             this.chatHandler(msg as WsIncomingChat);
           }
+          if (msg.type === "global_chat" && this.globalChatHandler) {
+            this.globalChatHandler(msg as WsIncomingGlobalChat);
+          }
         } catch {
           // ignore malformed messages
         }
@@ -29,6 +33,10 @@ export class WsManager {
 
   onChatMessage(handler: (msg: WsIncomingChat) => void): void {
     this.chatHandler = handler;
+  }
+
+  onGlobalChatMessage(handler: (msg: WsIncomingGlobalChat) => void): void {
+    this.globalChatHandler = handler;
   }
 
   broadcast(message: WsMessage): void {

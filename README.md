@@ -87,11 +87,19 @@ Open `http://localhost:8080`. API at `http://localhost:3009`.
 ## Features
 
 ### Pipelines
-Define multi-step workflows as YAML packages. Each step references a worker, a prompt template, and optional configuration. Steps execute sequentially; outputs are accessible in downstream prompt templates via `{{steps.N.output}}`.
+Define multi-step workflows as YAML packages. Each step references a skill or worker, a prompt template, and optional configuration. Steps execute sequentially; outputs are accessible in downstream prompt templates via `{{steps.N.output}}`.
 
-### Workers
-Three built-in worker types:
-- **`pi`** — LLM agent via pi.dev (Gemini, Claude, GPT). Loads skills and custom tools.
+### Skill-based Execution (recommended)
+Skills are folders in `SKILLS_DIR` with a `SKILL.md` (system prompt + frontmatter) and optional `scripts/` directory (executable tools). Three skill types:
+- **`pi`** — LLM agent session using the pipeline's model, with skill system prompt and script tools
+- **`imagen`** — Google Imagen image generation
+- **`publish`** — Assembles and writes a markdown file to disk
+
+The Daily Absurdist pipeline uses `researcher`, `writer`, `editor`, `imagen`, and `publisher` skills.
+
+### Workers (legacy, backwards compatible)
+Worker DB records with their own model, system prompt, and tool config. Three built-in types:
+- **`pi`** — LLM agent via pi.dev (Gemini, Claude, GPT)
 - **`imagen`** — Google Imagen image generation
 - **`publish`** — Assembles and writes a markdown file to disk
 
@@ -144,13 +152,17 @@ pnpm typecheck    # typecheck all packages
 zerohand/
 ├── pipelines/                         # Pipeline packages (YAML config)
 │   └── daily-absurdist/
-│       ├── pipeline.yaml              # Manifest: workers, steps, inputSchema
-│       ├── COMPANY.md                 # Context file (interpolated into prompts)
-│       └── prompts/                   # System prompt files per worker
-├── skills/                            # Pi.dev SKILL.md files
-│   ├── research/SKILL.md
+│       ├── pipeline.yaml              # Manifest: model, steps (skill-based), inputSchema
+│       └── COMPANY.md                 # Context file (interpolated into skill prompts)
+├── skills/                            # Skill definitions (SKILL.md + scripts/)
+│   ├── researcher/
+│   │   ├── SKILL.md                   # Frontmatter (name, type) + system prompt body
+│   │   └── scripts/
+│   │       └── web_search.js          # Tool: read JSON from stdin, write result to stdout
 │   ├── writer/SKILL.md
-│   └── editor/SKILL.md
+│   ├── editor/SKILL.md
+│   ├── imagen/SKILL.md
+│   └── publisher/SKILL.md
 ├── packages/
 │   ├── db/src/schema/                 # Drizzle schema (all tables)
 │   └── shared/src/index.ts            # Shared API + WS types

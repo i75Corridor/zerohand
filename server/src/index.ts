@@ -10,9 +10,8 @@ import { createDb, ensurePostgresDatabase, applyPendingMigrations } from "@zeroh
 import { WsManager } from "./ws/index.js";
 import { ExecutionEngine } from "./services/execution-engine.js";
 import { TriggerManager } from "./services/trigger-manager.js";
-import { seedFromConfigs } from "./seed.js";
+import { importAllPackages } from "./services/pipeline-import.js";
 import { createHealthRouter } from "./routes/health.js";
-import { createWorkersRouter } from "./routes/workers.js";
 import { createPipelinesRouter } from "./routes/pipelines.js";
 import { createPipelineRunsRouter } from "./routes/pipeline-runs.js";
 import { createTriggersRouter } from "./routes/triggers.js";
@@ -22,7 +21,9 @@ import { createStatsRouter } from "./routes/stats.js";
 import { createSettingsRouter } from "./routes/settings.js";
 import { createFilesRouter } from "./routes/files.js";
 import { createWebhooksRouter } from "./routes/webhooks.js";
+import { createSkillsRouter } from "./routes/skills.js";
 import { ChannelManager } from "./services/channel-manager.js";
+import { GlobalAgentService } from "./services/global-agent.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), ".data");
@@ -104,7 +105,7 @@ async function main() {
 
   const db = createDb(dbUrl);
   const pipelinesDir = process.env.PIPELINES_DIR ?? join(process.cwd(), "..", "pipelines");
-  await seedFromConfigs(db, pipelinesDir);
+  await importAllPackages(db, pipelinesDir);
 
   const app = express();
 
@@ -113,7 +114,6 @@ async function main() {
 
   // Routes (approvals needs ws for re-queuing after approve/reject)
   app.use("/api", createHealthRouter());
-  app.use("/api", createWorkersRouter(db));
   app.use("/api", createPipelinesRouter(db));
   app.use("/api", createPipelineRunsRouter(db));
   app.use("/api", createTriggersRouter(db));
@@ -121,6 +121,7 @@ async function main() {
   app.use("/api", createStatsRouter(db));
   app.use("/api", createSettingsRouter(db));
   app.use("/api", createFilesRouter());
+  app.use("/api", createSkillsRouter());
 
   // 404 handler
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
@@ -144,6 +145,12 @@ async function main() {
 
   // Wire bidirectional WebSocket → engine chat handler
   ws.onChatMessage((msg) => engine.handleChatMessage(msg));
+
+  const globalAgent = new GlobalAgentService(db, (msg) => ws.broadcast(msg), DATA_DIR);
+  globalAgent.setCancelRunFn((runId) => engine.cancelRun(runId));
+  ws.onGlobalChatMessage((msg) => {
+    void globalAgent.handleMessage(msg.action, msg.message, msg.context);
+  });
 
   engine.start();
   triggers.start();
