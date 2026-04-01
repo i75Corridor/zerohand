@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { workers } from "@zerohand/db";
+import { workers, pipelineSteps, pipelines } from "@zerohand/db";
 import type { ApiWorker } from "@zerohand/shared";
 
 function toApiWorker(row: typeof workers.$inferSelect): ApiWorker {
@@ -12,8 +12,11 @@ function toApiWorker(row: typeof workers.$inferSelect): ApiWorker {
     workerType: row.workerType as ApiWorker["workerType"],
     modelProvider: row.modelProvider,
     modelName: row.modelName,
+    systemPrompt: row.systemPrompt,
     status: row.status as ApiWorker["status"],
     skills: row.skills as string[],
+    customTools: row.customTools as string[],
+    metadata: row.metadata as Record<string, unknown> | null,
     budgetMonthlyCents: row.budgetMonthlyCents,
     spentMonthlyCents: row.spentMonthlyCents,
   };
@@ -81,6 +84,14 @@ export function createWorkersRouter(db: Db): Router {
 
   router.delete("/workers/:id", async (req, res, next) => {
     try {
+      const refs = await db
+        .select({ name: pipelines.name })
+        .from(pipelineSteps)
+        .innerJoin(pipelines, eq(pipelines.id, pipelineSteps.pipelineId))
+        .where(eq(pipelineSteps.workerId, req.params.id));
+      if (refs.length > 0) {
+        return res.status(409).json({ error: "Worker in use", pipelines: refs.map((r) => r.name) });
+      }
       const deleted = await db.delete(workers).where(eq(workers.id, req.params.id)).returning();
       if (deleted.length === 0) return res.status(404).json({ error: "Worker not found" });
       res.status(204).send();

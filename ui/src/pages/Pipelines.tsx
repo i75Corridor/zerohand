@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Play, GitBranch, Clock, Trash2, ToggleLeft, ToggleRight, Plus, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 import cronstrue from "cronstrue";
 import { api } from "../lib/api.ts";
@@ -563,7 +564,9 @@ function PipelineRow({ pipeline }: { pipeline: ApiPipeline }) {
       <div className="flex items-center gap-4 px-5 py-4 bg-gray-900 rounded-lg border border-gray-800">
         <GitBranch size={16} className="text-indigo-400 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-100">{pipeline.name}</div>
+          <Link to={`/pipelines/${pipeline.id}`} className="text-sm font-medium text-gray-100 hover:text-indigo-400 transition-colors">
+            {pipeline.name}
+          </Link>
           {pipeline.description && (
             <div className="text-xs text-gray-500 mt-0.5 truncate">{pipeline.description}</div>
           )}
@@ -607,6 +610,13 @@ export default function Pipelines() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white">Pipelines</h1>
+        <Link
+          to="/pipelines/new"
+          className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
+        >
+          <Plus size={14} />
+          New Pipeline
+        </Link>
       </div>
       {pipelines.length === 0 ? (
         <div className="text-gray-500 text-sm">No pipelines yet.</div>

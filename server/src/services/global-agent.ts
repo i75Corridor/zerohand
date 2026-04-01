@@ -12,16 +12,22 @@ import { join } from "node:path";
 import { mkdirSync, rmSync, existsSync } from "node:fs";
 import type { Db } from "@zerohand/db";
 import { pipelines, pipelineRuns, pipelineSteps, workers, stepRuns, costEvents } from "@zerohand/db";
-import type { WsGlobalAgentEvent } from "@zerohand/shared";
+import type { WsGlobalAgentEvent, WsDataChanged, WsIncomingGlobalChat } from "@zerohand/shared";
 import { makeAuthStorage, makeResourceLoader } from "./pi-executor.js";
 
 const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
 
-You have tools to list pipelines, trigger runs, check run status, list workers, get system stats, cancel runs, and navigate the UI.
+## Concepts
+- **Pipeline**: an orchestration graph of sequential steps, each referencing a worker. Defines what happens and in what order. Has a name, input schema, and ordered steps.
+- **Worker**: a configured AI agent or processor. Defines who does the work. Has a model, system prompt, skills, and budget. Types: pi (LLM), imagen (image generation), publish (markdown writer), function, api.
+- **Skill**: a reusable capability definition (SKILL.md files on disk) assigned to workers by name.
 
-Be concise and action-oriented. When the user asks you to do something, use your tools to do it. When showing results, format them cleanly. When you trigger a run or take an action, confirm what you did and offer to navigate to the relevant page.
+## Capabilities
+You can list, create, edit, and delete pipelines, steps, and workers. You can trigger and cancel runs, check status and stats, and navigate the UI.
 
-Zerohand is a pipeline orchestrator where each pipeline has sequential steps, each step runs a worker (pi LLM agents, imagen image generation, or publish markdown writers).`;
+When the user's message includes context about which page they are viewing, use that to provide relevant assistance — e.g. if they are on a pipeline page and say "add a step", you know which pipeline to edit. After making changes, offer to navigate to the relevant page.
+
+Be concise and action-oriented. Use your tools — don't ask permission to do things, just do them. Confirm what you did briefly.`;
 
 export class GlobalAgentService {
   private session: AgentSession | null = null;
@@ -30,7 +36,7 @@ export class GlobalAgentService {
 
   constructor(
     private db: Db,
-    private broadcastFn: (msg: WsGlobalAgentEvent) => void,
+    private broadcastFn: (msg: WsGlobalAgentEvent | WsDataChanged) => void,
     dataDir: string,
   ) {
     this.sessionDir = join(dataDir, "global-agent");
@@ -41,7 +47,11 @@ export class GlobalAgentService {
     this.cancelRunFn = fn;
   }
 
-  async handleMessage(action: string, message?: string): Promise<void> {
+  async handleMessage(
+    action: string,
+    message?: string,
+    context?: WsIncomingGlobalChat["context"],
+  ): Promise<void> {
     if (action === "reset") {
       await this.destroySession();
       this.broadcastFn({ type: "global_agent_event", eventType: "status_change", message: "reset" });
@@ -57,8 +67,26 @@ export class GlobalAgentService {
 
     if (action === "prompt" && message) {
       const session = await this.ensureSession();
+      let fullMessage = message;
+
+      // Inject context block
+      if (context?.path) {
+        let contextLines = `[Context: viewing ${context.path}`;
+        if (context.pipelineId) {
+          // Try to fetch pipeline name for better context
+          try {
+            const p = await this.db.query.pipelines.findFirst({ where: eq(pipelines.id, context.pipelineId) });
+            if (p) contextLines += ` — pipeline "${p.name}" (id: ${p.id})`;
+          } catch { /* ignore */ }
+        }
+        if (context.runId) contextLines += ` — run id: ${context.runId}`;
+        if (context.workerId) contextLines += ` — worker id: ${context.workerId}`;
+        contextLines += "]";
+        fullMessage = `${contextLines}\n\n${message}`;
+      }
+
       try {
-        await session.prompt(message);
+        await session.prompt(fullMessage);
       } catch (err) {
         this.broadcastFn({
           type: "global_agent_event",
@@ -69,6 +97,10 @@ export class GlobalAgentService {
         this.broadcastFn({ type: "global_agent_event", eventType: "status_change", message: "done" });
       }
     }
+  }
+
+  private broadcastDataChanged(entity: WsDataChanged["entity"], action: WsDataChanged["action"], id: string): void {
+    this.broadcastFn({ type: "data_changed", entity, action, id });
   }
 
   private async ensureSession(): Promise<AgentSession> {
@@ -327,13 +359,217 @@ export class GlobalAgentService {
     const navigate_ui: ToolDefinition = {
       name: "navigate_ui",
       label: "Navigate UI",
-      description: "Navigate the user's browser to a specific page in the UI. Valid paths: /dashboard, /pipelines, /workers, /approvals, /settings, /canvas, /runs/:id",
+      description: "Navigate the user's browser to a specific page in the UI. Valid paths: /dashboard, /pipelines, /pipelines/:id, /pipelines/:id/edit, /pipelines/new, /workers, /approvals, /settings, /runs/:id",
       parameters: Type.Object({
-        path: Type.String({ description: "The UI path to navigate to (e.g. /dashboard, /runs/abc123)" }),
+        path: Type.String({ description: "The UI path to navigate to (e.g. /dashboard, /pipelines/abc123)" }),
       }),
       execute: async (_id, params: { path: string }) => {
         broadcast({ type: "global_agent_event", eventType: "navigate", payload: { path: params.path } });
         return { content: [{ type: "text" as const, text: `Navigating to ${params.path}` }], details: {} };
+      },
+    };
+
+    // ── Pipeline editing tools ────────────────────────────────────────────────
+
+    const get_pipeline_detail: ToolDefinition = {
+      name: "get_pipeline_detail",
+      label: "Get Pipeline Detail",
+      description: "Get full details for a pipeline including all steps with worker names.",
+      parameters: Type.Object({
+        pipelineId: Type.String({ description: "The pipeline ID" }),
+      }),
+      execute: async (_id, params: { pipelineId: string }) => {
+        const pipeline = await db.query.pipelines.findFirst({ where: eq(pipelines.id, params.pipelineId) });
+        if (!pipeline) return { content: [{ type: "text" as const, text: "Pipeline not found." }], details: {} };
+        const steps = await db.query.pipelineSteps.findMany({ where: eq(pipelineSteps.pipelineId, params.pipelineId) });
+        const workerIds = [...new Set(steps.map((s) => s.workerId))];
+        const workerRows = workerIds.length ? await db.select({ id: workers.id, name: workers.name }).from(workers) : [];
+        const workerNames = new Map(workerRows.map((w) => [w.id, w.name]));
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              id: pipeline.id, name: pipeline.name, description: pipeline.description,
+              status: pipeline.status, inputSchema: pipeline.inputSchema,
+              steps: steps.map((s) => ({
+                id: s.id, stepIndex: s.stepIndex, name: s.name,
+                workerId: s.workerId, workerName: workerNames.get(s.workerId),
+                promptTemplate: s.promptTemplate, timeoutSeconds: s.timeoutSeconds,
+                approvalRequired: s.approvalRequired,
+              })),
+            }, null, 2),
+          }],
+          details: {},
+        };
+      },
+    };
+
+    const create_pipeline: ToolDefinition = {
+      name: "create_pipeline",
+      label: "Create Pipeline",
+      description: "Create a new pipeline.",
+      parameters: Type.Object({
+        name: Type.String({ description: "Pipeline name" }),
+        description: Type.Optional(Type.String({ description: "Pipeline description" })),
+        inputSchema: Type.Optional(Type.Record(Type.String(), Type.Unknown(), { description: "JSON Schema for pipeline inputs" })),
+      }),
+      execute: async (_id, params: { name: string; description?: string; inputSchema?: Record<string, unknown> }) => {
+        const [row] = await db.insert(pipelines).values({ name: params.name, description: params.description, inputSchema: params.inputSchema }).returning();
+        this.broadcastDataChanged("pipeline", "created", row.id);
+        return { content: [{ type: "text" as const, text: JSON.stringify({ id: row.id, name: row.name }, null, 2) }], details: {} };
+      },
+    };
+
+    const update_pipeline: ToolDefinition = {
+      name: "update_pipeline",
+      label: "Update Pipeline",
+      description: "Update pipeline metadata (name, description, status, input schema).",
+      parameters: Type.Object({
+        pipelineId: Type.String({ description: "The pipeline ID" }),
+        name: Type.Optional(Type.String()),
+        description: Type.Optional(Type.String()),
+        status: Type.Optional(Type.String()),
+        inputSchema: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+      }),
+      execute: async (_id, params: { pipelineId: string; name?: string; description?: string; status?: string; inputSchema?: Record<string, unknown> }) => {
+        const { pipelineId, ...fields } = params;
+        const [row] = await db.update(pipelines).set({ ...fields, updatedAt: new Date() }).where(eq(pipelines.id, pipelineId)).returning();
+        if (!row) return { content: [{ type: "text" as const, text: "Pipeline not found." }], details: {} };
+        this.broadcastDataChanged("pipeline", "updated", row.id);
+        return { content: [{ type: "text" as const, text: `Updated pipeline "${row.name}".` }], details: {} };
+      },
+    };
+
+    const delete_pipeline: ToolDefinition = {
+      name: "delete_pipeline",
+      label: "Delete Pipeline",
+      description: "Delete a pipeline and all its steps. This cannot be undone.",
+      parameters: Type.Object({
+        pipelineId: Type.String({ description: "The pipeline ID to delete" }),
+      }),
+      execute: async (_id, params: { pipelineId: string }) => {
+        const deleted = await db.delete(pipelines).where(eq(pipelines.id, params.pipelineId)).returning();
+        if (deleted.length === 0) return { content: [{ type: "text" as const, text: "Pipeline not found." }], details: {} };
+        this.broadcastDataChanged("pipeline", "deleted", params.pipelineId);
+        return { content: [{ type: "text" as const, text: `Deleted pipeline ${params.pipelineId}.` }], details: {} };
+      },
+    };
+
+    const add_pipeline_step: ToolDefinition = {
+      name: "add_pipeline_step",
+      label: "Add Pipeline Step",
+      description: "Add a new step to a pipeline.",
+      parameters: Type.Object({
+        pipelineId: Type.String({ description: "The pipeline ID" }),
+        name: Type.String({ description: "Step name" }),
+        workerId: Type.String({ description: "Worker ID for this step" }),
+        promptTemplate: Type.String({ description: "Prompt template text" }),
+        stepIndex: Type.Number({ description: "Position in the pipeline (0-based)" }),
+        timeoutSeconds: Type.Optional(Type.Number({ description: "Timeout in seconds (default 300)" })),
+        approvalRequired: Type.Optional(Type.Boolean({ description: "Whether human approval is required before executing (default false)" })),
+      }),
+      execute: async (_id, params: { pipelineId: string; name: string; workerId: string; promptTemplate: string; stepIndex: number; timeoutSeconds?: number; approvalRequired?: boolean }) => {
+        const [row] = await db.insert(pipelineSteps).values({
+          pipelineId: params.pipelineId,
+          stepIndex: params.stepIndex,
+          name: params.name,
+          workerId: params.workerId,
+          promptTemplate: params.promptTemplate,
+          timeoutSeconds: params.timeoutSeconds ?? 300,
+          approvalRequired: params.approvalRequired ?? false,
+        }).returning();
+        this.broadcastDataChanged("step", "created", row.id);
+        this.broadcastDataChanged("pipeline", "updated", params.pipelineId);
+        return { content: [{ type: "text" as const, text: JSON.stringify({ id: row.id, name: row.name, stepIndex: row.stepIndex }, null, 2) }], details: {} };
+      },
+    };
+
+    const update_pipeline_step: ToolDefinition = {
+      name: "update_pipeline_step",
+      label: "Update Pipeline Step",
+      description: "Update an existing pipeline step.",
+      parameters: Type.Object({
+        stepId: Type.String({ description: "The step ID" }),
+        name: Type.Optional(Type.String()),
+        workerId: Type.Optional(Type.String()),
+        promptTemplate: Type.Optional(Type.String()),
+        timeoutSeconds: Type.Optional(Type.Number()),
+        approvalRequired: Type.Optional(Type.Boolean()),
+      }),
+      execute: async (_id, params: { stepId: string; name?: string; workerId?: string; promptTemplate?: string; timeoutSeconds?: number; approvalRequired?: boolean }) => {
+        const { stepId, ...fields } = params;
+        const [row] = await db.update(pipelineSteps).set({ ...fields, updatedAt: new Date() }).where(eq(pipelineSteps.id, stepId)).returning();
+        if (!row) return { content: [{ type: "text" as const, text: "Step not found." }], details: {} };
+        this.broadcastDataChanged("step", "updated", row.id);
+        this.broadcastDataChanged("pipeline", "updated", row.pipelineId);
+        return { content: [{ type: "text" as const, text: `Updated step "${row.name}".` }], details: {} };
+      },
+    };
+
+    const remove_pipeline_step: ToolDefinition = {
+      name: "remove_pipeline_step",
+      label: "Remove Pipeline Step",
+      description: "Remove a step from a pipeline.",
+      parameters: Type.Object({
+        stepId: Type.String({ description: "The step ID to remove" }),
+      }),
+      execute: async (_id, params: { stepId: string }) => {
+        const deleted = await db.delete(pipelineSteps).where(eq(pipelineSteps.id, params.stepId)).returning();
+        if (deleted.length === 0) return { content: [{ type: "text" as const, text: "Step not found." }], details: {} };
+        this.broadcastDataChanged("step", "deleted", params.stepId);
+        this.broadcastDataChanged("pipeline", "updated", deleted[0].pipelineId);
+        return { content: [{ type: "text" as const, text: `Removed step "${deleted[0].name}".` }], details: {} };
+      },
+    };
+
+    const create_worker: ToolDefinition = {
+      name: "create_worker",
+      label: "Create Worker",
+      description: "Create a new worker.",
+      parameters: Type.Object({
+        name: Type.String({ description: "Worker name" }),
+        workerType: Type.Optional(Type.String({ description: "Worker type: pi, imagen, publish, function, api (default: pi)" })),
+        modelProvider: Type.Optional(Type.String({ description: "Model provider (e.g. anthropic, google)" })),
+        modelName: Type.Optional(Type.String({ description: "Model name" })),
+        systemPrompt: Type.Optional(Type.String({ description: "System prompt for pi workers" })),
+        skills: Type.Optional(Type.Array(Type.String(), { description: "List of skill names" })),
+        description: Type.Optional(Type.String({ description: "Worker description" })),
+      }),
+      execute: async (_id, params: { name: string; workerType?: string; modelProvider?: string; modelName?: string; systemPrompt?: string; skills?: string[]; description?: string }) => {
+        const [row] = await db.insert(workers).values({
+          name: params.name,
+          description: params.description,
+          workerType: (params.workerType ?? "pi") as any,
+          modelProvider: params.modelProvider ?? "anthropic",
+          modelName: params.modelName ?? "claude-sonnet-4-5-20251001",
+          systemPrompt: params.systemPrompt,
+          skills: params.skills ?? [],
+          customTools: [],
+        }).returning();
+        this.broadcastDataChanged("worker", "created", row.id);
+        return { content: [{ type: "text" as const, text: JSON.stringify({ id: row.id, name: row.name }, null, 2) }], details: {} };
+      },
+    };
+
+    const update_worker: ToolDefinition = {
+      name: "update_worker",
+      label: "Update Worker",
+      description: "Update an existing worker.",
+      parameters: Type.Object({
+        workerId: Type.String({ description: "The worker ID" }),
+        name: Type.Optional(Type.String()),
+        description: Type.Optional(Type.String()),
+        systemPrompt: Type.Optional(Type.String()),
+        skills: Type.Optional(Type.Array(Type.String())),
+        modelProvider: Type.Optional(Type.String()),
+        modelName: Type.Optional(Type.String()),
+      }),
+      execute: async (_id, params: { workerId: string; name?: string; description?: string; systemPrompt?: string; skills?: string[]; modelProvider?: string; modelName?: string }) => {
+        const { workerId, ...fields } = params;
+        const [row] = await db.update(workers).set({ ...fields, updatedAt: new Date() }).where(eq(workers.id, workerId)).returning();
+        if (!row) return { content: [{ type: "text" as const, text: "Worker not found." }], details: {} };
+        this.broadcastDataChanged("worker", "updated", row.id);
+        return { content: [{ type: "text" as const, text: `Updated worker "${row.name}".` }], details: {} };
       },
     };
 
@@ -346,6 +582,15 @@ export class GlobalAgentService {
       list_workers,
       get_system_stats,
       navigate_ui,
+      get_pipeline_detail,
+      create_pipeline,
+      update_pipeline,
+      delete_pipeline,
+      add_pipeline_step,
+      update_pipeline_step,
+      remove_pipeline_step,
+      create_worker,
+      update_worker,
     ];
   }
 }

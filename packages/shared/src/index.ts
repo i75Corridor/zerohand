@@ -69,8 +69,19 @@ export interface ApiWorker {
   modelName: string;
   status: WorkerStatus;
   skills: string[];
+  customTools: string[];
+  systemPrompt: string | null;
+  metadata: Record<string, unknown> | null;
   budgetMonthlyCents: number;
   spentMonthlyCents: number;
+}
+
+export interface ApiSkill {
+  name: string;
+  version: string;
+  description: string;
+  allowedTools: string[];
+  content?: string;
 }
 
 export interface ApiPipeline {
@@ -90,7 +101,9 @@ export interface ApiPipelineStep {
   workerId: string;
   workerName?: string;
   promptTemplate: string;
+  timeoutSeconds: number;
   approvalRequired: boolean;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface ApiTrigger {
@@ -187,6 +200,14 @@ export interface WsIncomingGlobalChat {
   type: "global_chat";
   action: "prompt" | "abort" | "reset";
   message?: string;
+  context?: { path: string; pipelineId?: string; runId?: string; workerId?: string };
+}
+
+export interface WsDataChanged {
+  type: "data_changed";
+  entity: "pipeline" | "worker" | "step";
+  action: "created" | "updated" | "deleted";
+  id: string;
 }
 
 export interface WsGlobalAgentEvent {
@@ -196,4 +217,4 @@ export interface WsGlobalAgentEvent {
   payload?: Record<string, unknown>;
 }
 
-export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck | WsGlobalAgentEvent;
+export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck | WsGlobalAgentEvent | WsDataChanged;

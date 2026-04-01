@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Pipelines from "./pages/Pipelines.tsx";
+import PipelineDetail from "./pages/PipelineDetail.tsx";
+import PipelineBuilder from "./pages/PipelineBuilder.tsx";
 import Workers from "./pages/Workers.tsx";
 import RunDetail from "./pages/RunDetail.tsx";
 import Approvals from "./pages/Approvals.tsx";
@@ -15,6 +17,9 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pipelines" element={<Pipelines />} />
+        <Route path="/pipelines/new" element={<PipelineBuilder />} />
+        <Route path="/pipelines/:id" element={<PipelineDetail />} />
+        <Route path="/pipelines/:id/edit" element={<PipelineBuilder />} />
         <Route path="/workers" element={<Workers />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/canvas" element={<Canvas />} />

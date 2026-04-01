@@ -12,7 +12,9 @@ function toApiStep(row: typeof pipelineSteps.$inferSelect, workerName?: string):
     workerId: row.workerId,
     workerName,
     promptTemplate: row.promptTemplate,
+    timeoutSeconds: row.timeoutSeconds,
     approvalRequired: row.approvalRequired,
+    metadata: (row.metadata as Record<string, unknown>) ?? null,
   };
 }
 

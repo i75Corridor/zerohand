@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { RotateCcw, Send, StopCircle, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useWebSocket } from "../lib/ws.ts";
-import type { WsMessage } from "@zerohand/shared";
+import type { WsMessage, WsIncomingGlobalChat } from "@zerohand/shared";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -15,6 +16,18 @@ interface GlobalChatPanelProps {
   onClose: () => void;
 }
 
+function getContext(path: string): WsIncomingGlobalChat["context"] {
+  const pipelineMatch = path.match(/^\/pipelines\/([^/]+)/);
+  const runMatch = path.match(/^\/runs\/([^/]+)/);
+  const workerMatch = path.match(/^\/workers\/([^/]+)/);
+  return {
+    path,
+    pipelineId: pipelineMatch?.[1],
+    runId: runMatch?.[1],
+    workerId: workerMatch?.[1],
+  };
+}
+
 export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -24,8 +37,20 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
 
   const { send: wsSend } = useWebSocket((msg: WsMessage) => {
+    if (msg.type === "data_changed") {
+      if (msg.entity === "pipeline") {
+        queryClient.invalidateQueries({ queryKey: ["pipelines"] });
+        queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      }
+      if (msg.entity === "worker") queryClient.invalidateQueries({ queryKey: ["workers"] });
+      if (msg.entity === "step") queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      return;
+    }
+
     if (msg.type !== "global_agent_event") return;
 
     if (msg.eventType === "text_delta" && msg.message) {
@@ -70,7 +95,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
     const text = input.trim();
     if (!text || isStreaming) return;
     setMessages((m) => [...m, { role: "user", content: text, timestamp: new Date() }]);
-    wsSend({ type: "global_chat", action: "prompt", message: text });
+    wsSend({ type: "global_chat", action: "prompt", message: text, context: getContext(location.pathname) });
     setInput("");
     setIsStreaming(true);
     setStreamingText("");
