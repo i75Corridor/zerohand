@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, Bot, CheckSquare, Image, Settings } from "lucide-react";
+import { LayoutDashboard, GitBranch, Bot, CheckSquare, Image, Settings, MessageSquare } from "lucide-react";
 
 function ZerohandIcon({ size = 20, className = "" }: { size?: number; className?: string }) {
   return (
@@ -23,9 +23,11 @@ function ZerohandIcon({ size = 20, className = "" }: { size?: number; className?
     </svg>
   );
 }
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api.ts";
+import GlobalChatPanel from "./GlobalChatPanel.tsx";
 
 function ApprovalsNavItem() {
   const { data: pending = [] } = useQuery({
@@ -68,6 +70,8 @@ const bottomNav = [
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
+  const [agentOpen, setAgentOpen] = useState(false);
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
@@ -112,13 +116,32 @@ export default function Layout({ children }: { children: ReactNode }) {
               {label}
             </NavLink>
           ))}
+          <button
+            onClick={() => setAgentOpen((o) => !o)}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              agentOpen
+                ? "bg-indigo-600 text-white"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
+            }`}
+          >
+            <MessageSquare size={16} />
+            Agent
+          </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-gray-950">
-        {children}
-      </main>
+      {/* Main content + Agent panel */}
+      <div className="flex flex-1 min-w-0 overflow-hidden">
+        <main className="flex-1 min-w-0 overflow-y-auto bg-gray-950">
+          {children}
+        </main>
+
+        {agentOpen && (
+          <div className="w-96 flex-shrink-0">
+            <GlobalChatPanel onClose={() => setAgentOpen(false)} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -18,7 +18,7 @@ import { join } from "node:path";
 const AUTH_DIR = "/tmp/zerohand";
 mkdirSync(AUTH_DIR, { recursive: true });
 
-function makeAuthStorage(): AuthStorage {
+export function makeAuthStorage(): AuthStorage {
   const auth = AuthStorage.create(`${AUTH_DIR}/auth.json`);
   if (process.env.GEMINI_API_KEY) auth.setRuntimeApiKey("google", process.env.GEMINI_API_KEY);
   if (process.env.ANTHROPIC_API_KEY) auth.setRuntimeApiKey("anthropic", process.env.ANTHROPIC_API_KEY);
@@ -36,7 +36,7 @@ function loadWorkerSkills(skillNames: string[]): Skill[] {
     : skills;
 }
 
-function makeResourceLoader(systemPrompt: string, skillNames: string[]): ResourceLoader {
+export function makeResourceLoader(systemPrompt: string, skillNames: string[]): ResourceLoader {
   const skills = loadWorkerSkills(skillNames);
   return {
     getExtensions: () => ({ extensions: [], errors: [], runtime: createExtensionRuntime() }),

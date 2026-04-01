@@ -23,6 +23,7 @@ import { createSettingsRouter } from "./routes/settings.js";
 import { createFilesRouter } from "./routes/files.js";
 import { createWebhooksRouter } from "./routes/webhooks.js";
 import { ChannelManager } from "./services/channel-manager.js";
+import { GlobalAgentService } from "./services/global-agent.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), ".data");
@@ -144,6 +145,12 @@ async function main() {
 
   // Wire bidirectional WebSocket → engine chat handler
   ws.onChatMessage((msg) => engine.handleChatMessage(msg));
+
+  const globalAgent = new GlobalAgentService(db, (msg) => ws.broadcast(msg), DATA_DIR);
+  globalAgent.setCancelRunFn((runId) => engine.cancelRun(runId));
+  ws.onGlobalChatMessage((msg) => {
+    void globalAgent.handleMessage(msg.action, msg.message);
+  });
 
   engine.start();
   triggers.start();

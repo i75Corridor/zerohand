@@ -182,4 +182,18 @@ export interface WsIncomingChat {
   message?: string;
 }
 
-export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck;
+// Global agent WebSocket types
+export interface WsIncomingGlobalChat {
+  type: "global_chat";
+  action: "prompt" | "abort" | "reset";
+  message?: string;
+}
+
+export interface WsGlobalAgentEvent {
+  type: "global_agent_event";
+  eventType: "text_delta" | "tool_call_start" | "tool_call_end" | "status_change" | "error" | "navigate";
+  message?: string;
+  payload?: Record<string, unknown>;
+}
+
+export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck | WsGlobalAgentEvent;
