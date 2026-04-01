@@ -23,11 +23,19 @@ function parseSkillFile(skillDir: string): ApiSkill | null {
     ? fm["allowed-tools"].split(",").map((t) => t.trim()).filter(Boolean)
     : [];
 
+  const scriptsDir = join(skillDir, "scripts");
+  const scripts: string[] = [];
+  if (existsSync(scriptsDir)) {
+    const files = readdirSync(scriptsDir).filter((f: string) => /\.(js|ts|py|sh)$/.test(f));
+    scripts.push(...files.map((f: string) => f.replace(/\.(js|ts|py|sh)$/, "")));
+  }
+
   return {
     name: String(fm.name ?? ""),
     version: String(fm.version ?? "0.0.0"),
     description: String(fm.description ?? ""),
     allowedTools,
+    scripts,
   };
 }
 

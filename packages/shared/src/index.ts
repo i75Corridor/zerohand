@@ -81,6 +81,7 @@ export interface ApiSkill {
   version: string;
   description: string;
   allowedTools: string[];
+  scripts: string[];
   content?: string;
 }
 
@@ -90,6 +91,9 @@ export interface ApiPipeline {
   description: string | null;
   status: string;
   inputSchema: Record<string, unknown> | null;
+  systemPrompt: string | null;
+  modelProvider: string | null;
+  modelName: string | null;
   steps: ApiPipelineStep[];
   createdAt: string;
 }
@@ -98,8 +102,9 @@ export interface ApiPipelineStep {
   id: string;
   stepIndex: number;
   name: string;
-  workerId: string;
+  workerId?: string;
   workerName?: string;
+  skillName: string | null;
   promptTemplate: string;
   timeoutSeconds: number;
   approvalRequired: boolean;

@@ -31,7 +31,7 @@ export const stepRuns = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     pipelineRunId: uuid("pipeline_run_id").notNull().references(() => pipelineRuns.id, { onDelete: "cascade" }),
     stepIndex: integer("step_index").notNull(),
-    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    workerId: uuid("worker_id").references(() => workers.id),
     // queued, running, awaiting_approval, completed, failed, cancelled
     status: text("status").notNull().default("queued"),
     input: jsonb("input").$type<Record<string, unknown>>(),

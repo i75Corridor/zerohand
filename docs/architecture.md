@@ -109,10 +109,12 @@ For each pipeline step (in order):
   2. Check approval_required → create approval record, pause run if gate needed
   3. Check budget (budget-guard) → fail step if hard stop exceeded
   4. Resolve prompt template ({{input.*}}, {{steps.N.output.*}})
-  5. Dispatch to worker type:
-       pi      → pi-executor.ts (createAgentSession, optional session resume)
-       imagen  → builtin-workers.ts (Google Imagen API)
-       publish → builtin-workers.ts (writes markdown to disk)
+  5. Dispatch by step type:
+       skill-based  → skill-loader.ts loads SKILL.md + scripts, then:
+                       pi      → pi-executor.runSkillStep (pipeline + skill system prompt, script tools)
+                       imagen  → builtin-workers.ts (Google Imagen API)
+                       publish → builtin-workers.ts (writes markdown to disk)
+       worker-based → pi-executor.runWorkerStep / builtin-workers.ts (legacy)
   6. Stream events → step_run_events table + WebSocket
   7. Record cost event (pi steps only)
   8. Capture output, mark step "completed"
@@ -160,15 +162,30 @@ Execution Engine (next tick)
 
 ---
 
-## Worker Types
+## Execution Model
+
+Each pipeline step executes via either a **skill** (new) or a **worker** (legacy):
+
+### Skill-based steps (recommended)
+Steps reference a skill by name. Skills are folders in `SKILLS_DIR`:
+- `SKILL.md` — frontmatter (name, type, model override) + body (system prompt appended to the pipeline system prompt)
+- `scripts/` — executable files (`.js`, `.ts`, `.py`, `.sh`) that become tools the LLM can call
+
+Skill types:
+| Type | What it does |
+|------|-------------|
+| `pi` (default) | Runs a pi.dev agent session with pipeline + skill system prompt and script tools |
+| `imagen` | Calls Google Imagen API with the resolved prompt |
+| `publish` | Writes article + image to a `.md` file on disk |
+
+### Worker-based steps (legacy, backwards compatible)
+Steps reference a worker DB record. Workers have their own model, system prompt, and tool config.
 
 | Type | What it does | Output |
 |------|-------------|--------|
 | `pi` | Runs a pi.dev agent session with the resolved prompt | Agent's final assistant text |
 | `imagen` | Calls Google Imagen API with the resolved prompt as the image prompt | Absolute path to saved `.png` |
 | `publish` | Writes the resolved prompt (article text) + image from a prior step to a `.md` file | Absolute path to saved `.md` |
-
-See [`workers.md`](./workers.md) for full configuration reference.
 
 ---
 

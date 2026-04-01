@@ -2,7 +2,7 @@
  * Idempotent pipeline package importer.
  *
  * Each subdirectory under the pipelines directory is a package:
- *   pipelines/<name>/pipeline.yaml   — manifest (workers, steps, inputSchema)
+ *   pipelines/<name>/pipeline.yaml   — manifest (workers?, steps, inputSchema)
  *   pipelines/<name>/prompts/*.md    — system prompts (referenced by systemPromptFile)
  *   pipelines/<name>/COMPANY.md      — context files (interpolated via {{context.key}})
  *
@@ -10,6 +10,10 @@
  * A worker key → DB ID map is stored in pipeline.metadata.workerKeyMap so updates are stable.
  *
  * On config change: workers and steps are UPSERTED in place — run history is preserved.
+ *
+ * New skill-based format: steps reference a skill by name via `skill:` instead of `worker:`.
+ * Pipelines can define a top-level `model:` and `systemPrompt:`/`systemPromptFile:` instead of
+ * per-worker models.
  */
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -34,7 +38,8 @@ interface WorkerConfig {
 
 interface StepConfig {
   name: string;
-  worker: string;
+  worker?: string;
+  skill?: string;
   promptTemplate: string;
   timeoutSeconds?: number;
   approvalRequired?: boolean;
@@ -45,13 +50,16 @@ interface PipelineManifest {
   name: string;
   description?: string;
   status?: string;
+  model?: string;
+  systemPrompt?: string;
+  systemPromptFile?: string;
   inputSchema?: Record<string, unknown>;
   context?: Record<string, string>;
-  workers: Record<string, WorkerConfig>;
+  workers?: Record<string, WorkerConfig>;
   steps: StepConfig[];
 }
 
-function hashConfig(raw: string): string {
+export function hashConfig(raw: string): string {
   return createHash("sha256").update(raw).digest("hex").slice(0, 16);
 }
 
@@ -81,6 +89,16 @@ function loadContext(manifest: PipelineManifest, packageDir: string): Record<str
   return context;
 }
 
+export function parsePipelineModel(model: string | undefined): { modelProvider?: string; modelName?: string } {
+  if (!model) return {};
+  const idx = model.indexOf("/");
+  if (idx === -1) return {};
+  return {
+    modelProvider: model.slice(0, idx),
+    modelName: model.slice(idx + 1),
+  };
+}
+
 async function createPackage(
   db: Db,
   manifest: PipelineManifest,
@@ -89,10 +107,13 @@ async function createPackage(
 ): Promise<void> {
   const context = loadContext(manifest, packageDir);
 
-  // Create workers, tracking key → DB id
+  const { modelProvider, modelName } = parsePipelineModel(manifest.model);
+  const systemPrompt = resolvePrompt(manifest.systemPrompt, manifest.systemPromptFile, packageDir, context);
+
+  // Create workers, tracking key → DB id (only if workers section exists)
   const workerIdMap = new Map<string, string>();
-  for (const [key, w] of Object.entries(manifest.workers)) {
-    const systemPrompt = resolvePrompt(w.systemPrompt, w.systemPromptFile, packageDir, context);
+  for (const [key, w] of Object.entries(manifest.workers ?? {})) {
+    const workerSystemPrompt = resolvePrompt(w.systemPrompt, w.systemPromptFile, packageDir, context);
     const [row] = await db
       .insert(workers)
       .values({
@@ -101,7 +122,7 @@ async function createPackage(
         workerType: w.workerType ?? "pi",
         modelProvider: w.modelProvider,
         modelName: w.modelName,
-        systemPrompt: systemPrompt || null,
+        systemPrompt: workerSystemPrompt || null,
         skills: w.skills ?? [],
         customTools: w.customTools ?? [],
         metadata: w.metadata,
@@ -110,7 +131,7 @@ async function createPackage(
     workerIdMap.set(key, row.id);
   }
 
-  // Store configHash + workerKeyMap in metadata for stable future updates
+  // Store configHash + workerKeyMap + context in metadata for stable future updates
   const workerKeyMap = Object.fromEntries(workerIdMap);
   const [pipeline] = await db
     .insert(pipelines)
@@ -119,20 +140,27 @@ async function createPackage(
       description: manifest.description,
       status: manifest.status ?? "active",
       inputSchema: manifest.inputSchema,
-      metadata: { configHash, workerKeyMap },
+      systemPrompt: systemPrompt || null,
+      modelProvider: modelProvider ?? null,
+      modelName: modelName ?? null,
+      metadata: { configHash, workerKeyMap, context },
     })
     .returning();
 
   // Create steps
   await db.insert(pipelineSteps).values(
     manifest.steps.map((step, index) => {
-      const workerId = workerIdMap.get(step.worker);
-      if (!workerId) throw new Error(`[Import] Unknown worker key "${step.worker}" in step "${step.name}"`);
+      let workerId: string | undefined;
+      if (step.worker) {
+        workerId = workerIdMap.get(step.worker);
+        if (!workerId) throw new Error(`[Import] Unknown worker key "${step.worker}" in step "${step.name}"`);
+      }
       return {
         pipelineId: pipeline.id,
         stepIndex: index,
         name: step.name,
-        workerId,
+        workerId: workerId ?? null,
+        skillName: step.skill ?? null,
         promptTemplate: step.promptTemplate,
         timeoutSeconds: step.timeoutSeconds ?? 300,
         approvalRequired: step.approvalRequired ?? false,
@@ -151,13 +179,16 @@ async function updatePackage(
 ): Promise<void> {
   const context = loadContext(manifest, packageDir);
 
+  const { modelProvider, modelName } = parsePipelineModel(manifest.model);
+  const systemPrompt = resolvePrompt(manifest.systemPrompt, manifest.systemPromptFile, packageDir, context);
+
   // Retrieve the stable worker key → ID map from stored metadata
   const storedWorkerKeyMap = ((existing.metadata as Record<string, unknown>)?.workerKeyMap ?? {}) as Record<string, string>;
 
   // Upsert workers: update existing by stored ID, create new ones
   const workerIdMap = new Map<string, string>();
-  for (const [key, w] of Object.entries(manifest.workers)) {
-    const systemPrompt = resolvePrompt(w.systemPrompt, w.systemPromptFile, packageDir, context);
+  for (const [key, w] of Object.entries(manifest.workers ?? {})) {
+    const workerSystemPrompt = resolvePrompt(w.systemPrompt, w.systemPromptFile, packageDir, context);
     const existingWorkerId = storedWorkerKeyMap[key];
 
     if (existingWorkerId) {
@@ -169,7 +200,7 @@ async function updatePackage(
           workerType: w.workerType ?? "pi",
           modelProvider: w.modelProvider,
           modelName: w.modelName,
-          systemPrompt: systemPrompt || null,
+          systemPrompt: workerSystemPrompt || null,
           skills: w.skills ?? [],
           customTools: w.customTools ?? [],
           metadata: w.metadata,
@@ -186,7 +217,7 @@ async function updatePackage(
           workerType: w.workerType ?? "pi",
           modelProvider: w.modelProvider,
           modelName: w.modelName,
-          systemPrompt: systemPrompt || null,
+          systemPrompt: workerSystemPrompt || null,
           skills: w.skills ?? [],
           customTools: w.customTools ?? [],
           metadata: w.metadata,
@@ -196,7 +227,7 @@ async function updatePackage(
     }
   }
 
-  // Update pipeline metadata with new hash and worker map
+  // Update pipeline metadata with new hash, worker map, and context
   const workerKeyMap = Object.fromEntries(workerIdMap);
   await db
     .update(pipelines)
@@ -205,7 +236,10 @@ async function updatePackage(
       description: manifest.description,
       status: manifest.status ?? "active",
       inputSchema: manifest.inputSchema,
-      metadata: { configHash, workerKeyMap },
+      systemPrompt: systemPrompt || null,
+      modelProvider: modelProvider ?? null,
+      modelName: modelName ?? null,
+      metadata: { configHash, workerKeyMap, context },
       updatedAt: new Date(),
     })
     .where(eq(pipelines.id, existing.id));
@@ -219,8 +253,11 @@ async function updatePackage(
   const yamlIndices = manifest.steps.map((_, i) => i);
 
   for (const [index, step] of manifest.steps.entries()) {
-    const workerId = workerIdMap.get(step.worker);
-    if (!workerId) throw new Error(`[Import] Unknown worker key "${step.worker}" in step "${step.name}"`);
+    let workerId: string | undefined;
+    if (step.worker) {
+      workerId = workerIdMap.get(step.worker);
+      if (!workerId) throw new Error(`[Import] Unknown worker key "${step.worker}" in step "${step.name}"`);
+    }
 
     const existingStep = existingByIndex.get(index);
     if (existingStep) {
@@ -228,7 +265,8 @@ async function updatePackage(
         .update(pipelineSteps)
         .set({
           name: step.name,
-          workerId,
+          workerId: workerId ?? null,
+          skillName: step.skill ?? null,
           promptTemplate: step.promptTemplate,
           timeoutSeconds: step.timeoutSeconds ?? 300,
           approvalRequired: step.approvalRequired ?? false,
@@ -241,7 +279,8 @@ async function updatePackage(
         pipelineId: existing.id,
         stepIndex: index,
         name: step.name,
-        workerId,
+        workerId: workerId ?? null,
+        skillName: step.skill ?? null,
         promptTemplate: step.promptTemplate,
         timeoutSeconds: step.timeoutSeconds ?? 300,
         approvalRequired: step.approvalRequired ?? false,

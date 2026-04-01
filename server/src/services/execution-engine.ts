@@ -7,18 +7,19 @@ import {
   stepRuns,
   stepRunEvents,
   pipelineSteps,
+  pipelines,
   workers,
   approvals,
   workerSessions,
 } from "@zerohand/db";
 import type { StepRunEventType, WsIncomingChat } from "@zerohand/shared";
 import type { WsManager } from "../ws/index.js";
-import { runWorkerStep } from "./pi-executor.js";
+import { runWorkerStep, runSkillStep } from "./pi-executor.js";
 import { runImagenWorker, runPublishWorker } from "./builtin-workers.js";
 import { checkBudget, recordCost } from "./budget-guard.js";
 import { SessionRegistry } from "./session-registry.js";
 
-function resolvePrompt(
+export function resolvePrompt(
   template: string,
   inputParams: Record<string, unknown>,
   stepOutputs: Map<number, string>,
@@ -168,6 +169,15 @@ export class ExecutionEngine {
     });
     if (!run) throw new Error(`Run not found: ${runId}`);
 
+    // Load pipeline for skill-based execution
+    const pipeline = await this.db.query.pipelines.findFirst({
+      where: eq(pipelines.id, run.pipelineId),
+    });
+    const pipelineContext = ((pipeline?.metadata as Record<string, unknown>)?.context ?? {}) as Record<string, string>;
+    const pipelineSystemPrompt = pipeline?.systemPrompt ?? null;
+    const pipelineModelProvider = pipeline?.modelProvider ?? "google";
+    const pipelineModelName = pipeline?.modelName ?? "gemini-2.5-flash";
+
     const steps = await this.db.query.pipelineSteps.findMany({
       where: eq(pipelineSteps.pipelineId, run.pipelineId),
       orderBy: [asc(pipelineSteps.stepIndex)],
@@ -192,11 +202,6 @@ export class ExecutionEngine {
       // Already completed — skip and continue
       if (existingSR?.status === "completed") continue;
 
-      const worker = await this.db.query.workers.findFirst({
-        where: eq(workers.id, step.workerId),
-      });
-      if (!worker) throw new Error(`Worker not found: ${step.workerId}`);
-
       // ── Approval gate ──────────────────────────────────────────────────────
       if (step.approvalRequired) {
         let stepRunId = existingSR?.id;
@@ -207,7 +212,7 @@ export class ExecutionEngine {
             .values({
               pipelineRunId: runId,
               stepIndex: step.stepIndex,
-              workerId: step.workerId,
+              workerId: step.workerId ?? null,
               status: "awaiting_approval",
               input: run.inputParams,
             })
@@ -260,11 +265,6 @@ export class ExecutionEngine {
         // status === "approved" → fall through to execute
       }
 
-      // ── Budget check ───────────────────────────────────────────────────────
-      if (worker.workerType === "pi") {
-        await checkBudget(this.db, worker.id, runId);
-      }
-
       // ── Create/reuse step_run ──────────────────────────────────────────────
       let stepRun: typeof stepRuns.$inferSelect;
       if (existingSR && existingSR.status !== "awaiting_approval") {
@@ -282,7 +282,7 @@ export class ExecutionEngine {
           .values({
             pipelineRunId: runId,
             stepIndex: step.stepIndex,
-            workerId: step.workerId,
+            workerId: step.workerId ?? null,
             status: "queued",
             input: run.inputParams,
           })
@@ -339,74 +339,135 @@ export class ExecutionEngine {
       let usage: Record<string, unknown> = {};
 
       try {
-        if (worker.workerType === "pi") {
-          const sessionDir = await this.getOrCreateSession(worker.id, runId);
-          const result = await runWorkerStep(
-            {
-              id: worker.id,
-              modelProvider: worker.modelProvider,
-              modelName: worker.modelName,
-              systemPrompt: worker.systemPrompt,
-              skills: worker.skills as string[],
-              customTools: worker.customTools as string[],
-            },
-            resolvedPrompt,
-            onEvent,
-            sessionDir,
-            signal,
-            (session) => {
-              this.sessionRegistry.register(stepRun.id, {
-                session,
-                pipelineRunId: runId,
-                workerId: worker.id,
-              });
-            },
-          );
-          this.sessionRegistry.unregister(stepRun.id);
-          output = result.output;
-          usage = result.usage;
+        if (step.skillName) {
+          // ── Skill-based execution ────────────────────────────────────────
+          const skillsDir = process.env.SKILLS_DIR ?? join(process.cwd(), "..", "skills");
+          const { loadSkillDef } = await import("./skill-loader.js");
+          const skill = loadSkillDef(step.skillName, skillsDir);
+          if (!skill) throw new Error(`Skill not found: ${step.skillName}`);
 
-          await recordCost(
-            this.db,
-            stepRun.id,
-            worker.id,
-            runId,
-            worker.modelProvider,
-            worker.modelName,
-            usage,
-          );
-        } else if (worker.workerType === "imagen") {
-          const outputDir =
-            (worker.metadata?.outputDir as string | undefined) ??
-            process.env.OUTPUT_DIR ??
-            join(process.cwd(), "..", "output");
-          const slug = `${run.id.slice(0, 8)}-step${step.stepIndex}`;
-          const aspectRatio = (worker.metadata?.aspectRatio as string | undefined) ?? "1:1";
-          const personGeneration = (worker.metadata?.personGeneration as string | undefined) ?? "allow_all";
-          output = await runImagenWorker(
-            resolvedPrompt,
-            worker.modelName,
-            outputDir,
-            slug,
-            (msg) => onEvent("text_delta", msg),
-            aspectRatio,
-            personGeneration,
-          );
-        } else if (worker.workerType === "publish") {
-          const outputDir =
-            (worker.metadata?.outputDir as string | undefined) ??
-            process.env.OUTPUT_DIR ??
-            join(process.cwd(), "..", "output");
-          const imageStepIndex = step.metadata?.imageStepIndex as number | undefined;
-          const imagePath = imageStepIndex !== undefined ? (stepOutputs.get(imageStepIndex) ?? "") : "";
-          output = await runPublishWorker(
-            resolvedPrompt,
-            imagePath,
-            outputDir,
-            (msg) => onEvent("text_delta", msg),
-          );
+          if (skill.type === "pi") {
+            const sessionDir = join(this.sessionsDir, "skills", runId, step.skillName + "-" + step.stepIndex);
+            mkdirSync(sessionDir, { recursive: true });
+            const result = await runSkillStep(
+              skill,
+              pipelineSystemPrompt,
+              pipelineModelProvider,
+              pipelineModelName,
+              resolvedPrompt,
+              pipelineContext,
+              onEvent,
+              sessionDir,
+              signal,
+              (session) => {
+                this.sessionRegistry.register(stepRun.id, {
+                  session,
+                  pipelineRunId: runId,
+                  workerId: step.skillName!,
+                });
+              },
+            );
+            this.sessionRegistry.unregister(stepRun.id);
+            output = result.output;
+            usage = result.usage;
+            const workerForCost = step.workerId ?? step.skillName ?? "unknown";
+            await recordCost(this.db, stepRun.id, workerForCost, runId, pipelineModelProvider, pipelineModelName, usage);
+          } else if (skill.type === "imagen") {
+            const outputDir = process.env.OUTPUT_DIR ?? join(process.cwd(), "..", "output");
+            const slug = `${run.id.slice(0, 8)}-step${step.stepIndex}`;
+            const modelName = skill.modelName ?? "imagen-4.0-generate-001";
+            const aspectRatio = (skill.metadata?.aspectRatio as string | undefined) ?? "16:9";
+            const personGeneration = (skill.metadata?.personGeneration as string | undefined) ?? "allow_all";
+            output = await runImagenWorker(resolvedPrompt, modelName, outputDir, slug, (msg) => onEvent("text_delta", msg), aspectRatio, personGeneration);
+          } else if (skill.type === "publish") {
+            const outputDir = process.env.OUTPUT_DIR ?? join(process.cwd(), "..", "output");
+            const imageStepIndex = step.metadata?.imageStepIndex as number | undefined;
+            const imagePath = imageStepIndex !== undefined ? (stepOutputs.get(imageStepIndex) ?? "") : "";
+            output = await runPublishWorker(resolvedPrompt, imagePath, outputDir, (msg) => onEvent("text_delta", msg));
+          }
+        } else if (step.workerId) {
+          // ── Worker-based execution (backwards compat) ────────────────────
+          const worker = await this.db.query.workers.findFirst({
+            where: eq(workers.id, step.workerId),
+          });
+          if (!worker) throw new Error(`Worker not found: ${step.workerId}`);
+
+          // Budget check only applies to worker-based pi steps
+          if (worker.workerType === "pi") {
+            await checkBudget(this.db, worker.id, runId);
+          }
+
+          if (worker.workerType === "pi") {
+            const sessionDir = await this.getOrCreateSession(worker.id, runId);
+            const result = await runWorkerStep(
+              {
+                id: worker.id,
+                modelProvider: worker.modelProvider,
+                modelName: worker.modelName,
+                systemPrompt: worker.systemPrompt,
+                skills: worker.skills as string[],
+                customTools: worker.customTools as string[],
+              },
+              resolvedPrompt,
+              onEvent,
+              sessionDir,
+              signal,
+              (session) => {
+                this.sessionRegistry.register(stepRun.id, {
+                  session,
+                  pipelineRunId: runId,
+                  workerId: worker.id,
+                });
+              },
+            );
+            this.sessionRegistry.unregister(stepRun.id);
+            output = result.output;
+            usage = result.usage;
+
+            await recordCost(
+              this.db,
+              stepRun.id,
+              worker.id,
+              runId,
+              worker.modelProvider,
+              worker.modelName,
+              usage,
+            );
+          } else if (worker.workerType === "imagen") {
+            const outputDir =
+              (worker.metadata?.outputDir as string | undefined) ??
+              process.env.OUTPUT_DIR ??
+              join(process.cwd(), "..", "output");
+            const slug = `${run.id.slice(0, 8)}-step${step.stepIndex}`;
+            const aspectRatio = (worker.metadata?.aspectRatio as string | undefined) ?? "1:1";
+            const personGeneration = (worker.metadata?.personGeneration as string | undefined) ?? "allow_all";
+            output = await runImagenWorker(
+              resolvedPrompt,
+              worker.modelName,
+              outputDir,
+              slug,
+              (msg) => onEvent("text_delta", msg),
+              aspectRatio,
+              personGeneration,
+            );
+          } else if (worker.workerType === "publish") {
+            const outputDir =
+              (worker.metadata?.outputDir as string | undefined) ??
+              process.env.OUTPUT_DIR ??
+              join(process.cwd(), "..", "output");
+            const imageStepIndex = step.metadata?.imageStepIndex as number | undefined;
+            const imagePath = imageStepIndex !== undefined ? (stepOutputs.get(imageStepIndex) ?? "") : "";
+            output = await runPublishWorker(
+              resolvedPrompt,
+              imagePath,
+              outputDir,
+              (msg) => onEvent("text_delta", msg),
+            );
+          } else {
+            throw new Error(`Worker type "${worker.workerType}" not yet implemented`);
+          }
         } else {
-          throw new Error(`Worker type "${worker.workerType}" not yet implemented`);
+          throw new Error(`Step "${step.name}" has neither skillName nor workerId`);
         }
 
         stepOutputs.set(step.stepIndex, output);

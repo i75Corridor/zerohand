@@ -190,6 +190,80 @@ export async function runWorkerStep(
   return { output, usage };
 }
 
+export async function runSkillStep(
+  skill: import("./skill-loader.js").SkillDef,
+  pipelineSystemPrompt: string | null,
+  modelProvider: string,
+  modelName: string,
+  prompt: string,
+  context: Record<string, string>,
+  onEvent: (eventType: StepRunEventType, message?: string, payload?: Record<string, unknown>) => void,
+  sessionDir?: string,
+  signal?: AbortSignal,
+  onSessionCreated?: (session: AgentSession) => void,
+): Promise<PiRunResult> {
+  const provider = skill.modelProvider ?? modelProvider;
+  const name = skill.modelName ?? modelName;
+
+  const model = getModel(provider as any, name as any);
+  if (!model) throw new Error(`Model not found: ${provider}/${name}`);
+
+  const { interpolateContext, makeScriptTools } = await import("./skill-loader.js");
+  const skillBody = interpolateContext(skill.systemPrompt, context);
+  const fullSystemPrompt = [pipelineSystemPrompt, skillBody].filter(Boolean).join("\n\n---\n\n");
+
+  const authStorage = makeAuthStorage();
+  const modelRegistry = ModelRegistry.inMemory(authStorage);
+  const resourceLoader = makeResourceLoader(fullSystemPrompt, []);
+
+  const customTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths);
+
+  const sessionManager = sessionDir
+    ? SessionManager.create(sessionDir)
+    : SessionManager.inMemory();
+
+  const { session } = await createAgentSession({
+    model,
+    thinkingLevel: "off",
+    authStorage,
+    modelRegistry,
+    resourceLoader,
+    tools: [],
+    customTools,
+    sessionManager,
+  });
+
+  const abortHandler = () => { void session.abort(); };
+  signal?.addEventListener("abort", abortHandler);
+  onSessionCreated?.(session);
+
+  const unsub = session.subscribe((event: any) => {
+    if (signal?.aborted) return;
+    if (event.type === "message_update") {
+      const ae = event.assistantMessageEvent;
+      if (!ae) return;
+      if (ae.type === "text_delta") {
+        onEvent("text_delta", ae.delta as string);
+      } else if (ae.type === "tool_use") {
+        onEvent("tool_call_start", ae.name as string, { toolCallId: ae.id, toolName: ae.name, input: ae.input ?? {} });
+      } else if (ae.type === "tool_result") {
+        onEvent("tool_call_end", undefined, { toolCallId: ae.tool_use_id });
+      }
+    }
+  });
+
+  try {
+    await session.prompt(prompt);
+  } finally {
+    unsub();
+    signal?.removeEventListener("abort", abortHandler);
+  }
+
+  const output = getLastAssistantText(session.messages);
+  const usage = extractUsage(session.messages);
+  return { output, usage };
+}
+
 function getLastAssistantText(messages: any[]): string {
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];

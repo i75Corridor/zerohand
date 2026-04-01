@@ -2,6 +2,9 @@ name: The Daily Absurdist
 description: "Satirical news pipeline: research → write → edit → publish"
 status: active
 
+model: google/gemini-2.5-flash
+systemPrompt: "You are The Daily Absurdist AI editorial team. Each step in this pipeline performs a specialized editorial function: researching topics, writing satirical articles, editing for quality, generating illustrations, and publishing the final piece."
+
 inputSchema:
   type: object
   properties:
@@ -11,57 +14,12 @@ inputSchema:
   required:
     - topic
 
-# Context files — loaded and available as {{context.<key>}} in system prompts
 context:
   company: ./COMPANY.md
 
-workers:
-  researcher:
-    name: Researcher
-    description: Research Director — finds raw material for satirical articles via web search
-    workerType: pi
-    modelProvider: google
-    modelName: gemini-2.5-flash
-    customTools:
-      - web_search
-    systemPromptFile: ./prompts/researcher.md
-
-  writer:
-    name: Writer
-    description: Staff Writer — turns research into Onion-style satirical news articles
-    workerType: pi
-    modelProvider: google
-    modelName: gemini-2.5-flash
-    systemPromptFile: ./prompts/writer.md
-
-  editor:
-    name: Editor
-    description: Editor — reviews articles and generates image prompts
-    workerType: pi
-    modelProvider: google
-    modelName: gemini-2.5-flash
-    systemPromptFile: ./prompts/editor.md
-
-  image_generator:
-    name: Image Generator
-    description: Generates the cover illustration via Google Imagen
-    workerType: imagen
-    modelProvider: google
-    modelName: imagen-4.0-generate-001
-    metadata:
-      aspectRatio: "16:9"
-      personGeneration: allow_all
-
-  publisher:
-    name: Publisher
-    description: Assembles the final markdown article with cover image
-    workerType: publish
-    modelProvider: none
-    modelName: none
-
 steps:
   - name: Research
-    worker: researcher
+    skill: researcher
     timeoutSeconds: 120
     promptTemplate: |
       Research the following topic for The Daily Absurdist: "{{input.topic}}"
@@ -69,7 +27,7 @@ steps:
       Run exactly 3 web searches as instructed, then compile the structured research report.
 
   - name: Write
-    worker: writer
+    skill: writer
     timeoutSeconds: 180
     promptTemplate: |
       Write a satirical article based on the following research:
@@ -79,7 +37,7 @@ steps:
       Remember: 2,000–2,500 words, dry deadpan throughout, non-obvious satirical angle.
 
   - name: Edit
-    worker: editor
+    skill: editor
     timeoutSeconds: 60
     promptTemplate: |
       Review and edit this article. Respond with the JSON object as instructed:
@@ -87,12 +45,12 @@ steps:
       {{steps.1.output}}
 
   - name: Illustrate
-    worker: image_generator
+    skill: imagen
     timeoutSeconds: 120
     promptTemplate: "{{steps.2.output.imagePrompt}}"
 
   - name: Publish
-    worker: publisher
+    skill: publisher
     timeoutSeconds: 30
     promptTemplate: "{{steps.1.output}}"
     metadata:

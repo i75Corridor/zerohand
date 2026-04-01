@@ -393,7 +393,7 @@ export class GlobalAgentService {
               status: pipeline.status, inputSchema: pipeline.inputSchema,
               steps: steps.map((s) => ({
                 id: s.id, stepIndex: s.stepIndex, name: s.name,
-                workerId: s.workerId, workerName: workerNames.get(s.workerId),
+                workerId: s.workerId, workerName: s.workerId ? workerNames.get(s.workerId) : undefined,
                 promptTemplate: s.promptTemplate, timeoutSeconds: s.timeoutSeconds,
                 approvalRequired: s.approvalRequired,
               })),

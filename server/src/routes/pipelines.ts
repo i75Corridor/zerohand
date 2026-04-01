@@ -9,8 +9,9 @@ function toApiStep(row: typeof pipelineSteps.$inferSelect, workerName?: string):
     id: row.id,
     stepIndex: row.stepIndex,
     name: row.name,
-    workerId: row.workerId,
+    workerId: row.workerId ?? undefined,
     workerName,
+    skillName: row.skillName ?? null,
     promptTemplate: row.promptTemplate,
     timeoutSeconds: row.timeoutSeconds,
     approvalRequired: row.approvalRequired,
@@ -27,7 +28,7 @@ async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise<ApiPip
     orderBy: [asc(pipelineSteps.stepIndex)],
   });
 
-  const workerIds = [...new Set(steps.map((s) => s.workerId))];
+  const workerIds = [...new Set(steps.map((s) => s.workerId).filter(Boolean))] as string[];
   const workerRows = workerIds.length
     ? await db.select({ id: workers.id, name: workers.name }).from(workers)
     : [];
@@ -39,8 +40,11 @@ async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise<ApiPip
     description: pipeline.description,
     status: pipeline.status,
     inputSchema: (pipeline.inputSchema as Record<string, unknown>) ?? null,
+    systemPrompt: pipeline.systemPrompt ?? null,
+    modelProvider: pipeline.modelProvider ?? null,
+    modelName: pipeline.modelName ?? null,
     createdAt: pipeline.createdAt.toISOString(),
-    steps: steps.map((s) => toApiStep(s, workerNames.get(s.workerId))),
+    steps: steps.map((s) => toApiStep(s, s.workerId ? workerNames.get(s.workerId) : undefined)),
   };
 }
 
@@ -58,6 +62,9 @@ export function createPipelinesRouter(db: Db): Router {
           description: p.description,
           status: p.status,
           inputSchema: (p.inputSchema as Record<string, unknown>) ?? null,
+          systemPrompt: p.systemPrompt ?? null,
+          modelProvider: p.modelProvider ?? null,
+          modelName: p.modelName ?? null,
           createdAt: p.createdAt.toISOString(),
           steps: [],
         })),
@@ -144,7 +151,8 @@ export function createPipelinesRouter(db: Db): Router {
           pipelineId: req.params.id,
           stepIndex: body.stepIndex ?? 0,
           name: body.name ?? "Unnamed Step",
-          workerId: body.workerId!,
+          workerId: body.workerId ?? null,
+          skillName: (body as Record<string, unknown>).skillName as string ?? null,
           promptTemplate: body.promptTemplate ?? "",
           timeoutSeconds: body.timeoutSeconds ?? 300,
           approvalRequired: body.approvalRequired ?? false,

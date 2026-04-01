@@ -1,0 +1,1 @@
+ALTER TABLE "step_runs" ALTER COLUMN "worker_id" DROP NOT NULL;

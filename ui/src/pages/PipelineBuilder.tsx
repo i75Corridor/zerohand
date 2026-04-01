@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useCallback } from "react";
 import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, GitBranch, CheckSquare } from "lucide-react";
 import { api } from "../lib/api.ts";
-import type { ApiPipeline, ApiPipelineStep, ApiWorker } from "@zerohand/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiWorker, ApiSkill } from "@zerohand/shared";
 
 // ── Draft step type (before saving) ───────────────────────────────────────────
 
@@ -12,6 +12,7 @@ interface DraftStep {
   id?: string;
   name: string;
   workerId: string;
+  skillName?: string;
   promptTemplate: string;
   timeoutSeconds: number;
   approvalRequired: boolean;
@@ -57,6 +58,7 @@ function schemaToFields(schema: Record<string, unknown> | null): SchemaField[] {
 function StepForm({
   step,
   workers,
+  skills,
   inputKeys,
   stepIndex,
   totalSteps,
@@ -64,6 +66,7 @@ function StepForm({
 }: {
   step: DraftStep;
   workers: ApiWorker[];
+  skills: ApiSkill[];
   inputKeys: string[];
   stepIndex: number;
   totalSteps: number;
@@ -91,17 +94,46 @@ function StepForm({
       </div>
 
       <div>
-        <label className="block text-xs text-gray-400 mb-1">Worker</label>
-        <select
-          className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-          value={step.workerId}
-          onChange={(e) => onChange({ ...step, workerId: e.target.value })}
-        >
-          <option value="">— select worker —</option>
-          {workers.map((w) => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
+        <label className="block text-xs text-gray-400 mb-1">Capability</label>
+        <div className="flex gap-2 mb-2">
+          <button
+            type="button"
+            className={`text-xs px-2 py-1 rounded ${step.skillName === undefined && step.workerId ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-400"}`}
+            onClick={() => onChange({ ...step, skillName: undefined })}
+          >
+            Worker
+          </button>
+          <button
+            type="button"
+            className={`text-xs px-2 py-1 rounded ${step.skillName !== undefined ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-400"}`}
+            onClick={() => onChange({ ...step, workerId: "", skillName: step.skillName ?? "" })}
+          >
+            Skill
+          </button>
+        </div>
+        {step.skillName !== undefined ? (
+          <select
+            className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            value={step.skillName}
+            onChange={(e) => onChange({ ...step, skillName: e.target.value })}
+          >
+            <option value="">— select skill —</option>
+            {skills.map((s) => (
+              <option key={s.name} value={s.name}>{s.name}</option>
+            ))}
+          </select>
+        ) : (
+          <select
+            className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            value={step.workerId}
+            onChange={(e) => onChange({ ...step, workerId: e.target.value })}
+          >
+            <option value="">— select worker —</option>
+            {workers.map((w) => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div>
@@ -200,8 +232,12 @@ function StepList({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white truncate">{step.name || "Unnamed step"}</div>
-                {step.workerId && (
-                  <div className="text-xs text-indigo-400 mt-0.5 truncate">{workerMap.get(step.workerId) ?? step.workerId}</div>
+                {(step.skillName !== undefined || step.workerId) && (
+                  <div className="text-xs text-indigo-400 mt-0.5 truncate">
+                    {step.skillName !== undefined
+                      ? (step.skillName ? `skill: ${step.skillName}` : "skill: —")
+                      : (workerMap.get(step.workerId) ?? step.workerId)}
+                  </div>
                 )}
               </div>
             </div>
@@ -331,6 +367,11 @@ export default function PipelineBuilder() {
     queryFn: () => api.listWorkers(),
   });
 
+  const { data: skills = [] } = useQuery({
+    queryKey: ["skills"],
+    queryFn: () => api.listSkills(),
+  });
+
   // Pipeline metadata
   const [name, setName] = useState(() => existing?.name ?? "");
   const [description, setDescription] = useState(() => existing?.description ?? "");
@@ -355,7 +396,8 @@ export default function PipelineBuilder() {
       .map((s) => ({
         id: s.id,
         name: s.name,
-        workerId: s.workerId,
+        workerId: s.workerId ?? "",
+        skillName: s.skillName ?? undefined,
         promptTemplate: s.promptTemplate,
         timeoutSeconds: s.timeoutSeconds,
         approvalRequired: s.approvalRequired,
@@ -371,7 +413,8 @@ export default function PipelineBuilder() {
         .map((s) => ({
           id: s.id,
           name: s.name,
-          workerId: s.workerId,
+          workerId: s.workerId ?? "",
+          skillName: s.skillName ?? undefined,
           promptTemplate: s.promptTemplate,
           timeoutSeconds: s.timeoutSeconds,
           approvalRequired: s.approvalRequired,
@@ -439,10 +482,11 @@ export default function PipelineBuilder() {
 
         for (let i = 0; i < steps.length; i++) {
           const draft = steps[i];
-          const body: Partial<ApiPipelineStep> = {
+          const body: Partial<ApiPipelineStep> & { skillName?: string } = {
             stepIndex: i,
             name: draft.name,
-            workerId: draft.workerId,
+            workerId: draft.skillName !== undefined ? undefined : draft.workerId,
+            skillName: draft.skillName,
             promptTemplate: draft.promptTemplate,
             timeoutSeconds: draft.timeoutSeconds,
             approvalRequired: draft.approvalRequired,
@@ -469,11 +513,12 @@ export default function PipelineBuilder() {
           await api.createStep(pipeline.id, {
             stepIndex: i,
             name: draft.name,
-            workerId: draft.workerId,
+            workerId: draft.skillName !== undefined ? undefined : draft.workerId,
+            skillName: draft.skillName,
             promptTemplate: draft.promptTemplate,
             timeoutSeconds: draft.timeoutSeconds,
             approvalRequired: draft.approvalRequired,
-          });
+          } as Partial<ApiPipelineStep> & { skillName?: string });
         }
       }
 
@@ -579,6 +624,7 @@ export default function PipelineBuilder() {
                   key={selectedStep}
                   step={steps[selectedStep]}
                   workers={workers}
+                  skills={skills}
                   inputKeys={inputKeys}
                   stepIndex={selectedStep}
                   totalSteps={steps.length}
