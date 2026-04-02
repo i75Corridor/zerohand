@@ -31,7 +31,7 @@ function InstalledCard({
   uninstalling: boolean;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col gap-3">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3 card-glow">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -39,25 +39,25 @@ function InstalledCard({
               href={`https://github.com/${pkg.repoFullName}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-semibold text-white hover:text-indigo-300 flex items-center gap-1 transition-colors"
+              className="text-sm font-semibold text-white hover:text-sky-300 flex items-center gap-1 transition-colors"
             >
               {pkg.repoFullName}
-              <ExternalLink size={11} className="text-gray-500" />
+              <ExternalLink size={11} className="text-slate-500" />
             </a>
             {pkg.updateAvailable ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-400 bg-amber-900/40 border border-amber-700/50 px-1.5 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
                 <ArrowUpCircle size={10} />
                 Update available
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-xs font-medium text-green-400 bg-green-900/40 border border-green-700/50 px-1.5 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">
                 <CheckCircle size={10} />
                 Up to date
               </span>
             )}
           </div>
           {pkg.pipelineName && (
-            <p className="text-xs text-gray-500 mt-0.5">Pipeline: {pkg.pipelineName}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Pipeline: {pkg.pipelineName}</p>
           )}
         </div>
       </div>
@@ -67,7 +67,7 @@ function InstalledCard({
           {pkg.skills.map((skill) => (
             <span
               key={skill}
-              className="text-xs text-indigo-300 bg-indigo-900/40 border border-indigo-800/50 px-2 py-0.5 rounded-full"
+              className="text-xs text-sky-400 bg-sky-900/40 border border-sky-800/50 px-2 py-0.5 rounded-full"
             >
               {skill}
             </span>
@@ -75,8 +75,8 @@ function InstalledCard({
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-1 border-t border-gray-800">
-        <p className="text-xs text-gray-600">
+      <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+        <p className="text-xs text-slate-600">
           {pkg.installedAt
             ? `Installed ${new Date(pkg.installedAt).toLocaleDateString()}`
             : ""}
@@ -95,7 +95,7 @@ function InstalledCard({
           <button
             onClick={onUninstall}
             disabled={uninstalling}
-            className="text-gray-600 hover:text-red-400 disabled:opacity-50 transition-colors"
+            className="text-slate-600 hover:text-red-400 disabled:opacity-50 transition-colors"
           >
             <Trash2 size={13} />
           </button>
@@ -117,23 +117,23 @@ function DiscoverCard({
   installing: boolean;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col gap-3">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <a
             href={pkg.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-semibold text-white hover:text-indigo-300 flex items-center gap-1 transition-colors"
+            className="text-sm font-semibold text-white hover:text-sky-300 flex items-center gap-1 transition-colors"
           >
             {pkg.fullName}
-            <ExternalLink size={11} className="text-gray-500" />
+            <ExternalLink size={11} className="text-slate-500" />
           </a>
           {pkg.description && (
-            <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{pkg.description}</p>
+            <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{pkg.description}</p>
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
+        <div className="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0">
           <Star size={11} />
           {pkg.stars}
         </div>
@@ -145,7 +145,7 @@ function DiscoverCard({
             .filter((t) => t !== "zerohand-package")
             .slice(0, 3)
             .map((t) => (
-              <span key={t} className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+              <span key={t} className="text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
                 {t}
               </span>
             ))}
@@ -153,7 +153,7 @@ function DiscoverCard({
         <button
           onClick={onInstall}
           disabled={pkg.installed || installing}
-          className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500 hover:text-slate-950 text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
         >
           <Download size={11} />
           {pkg.installed ? "Installed" : installing ? "Installing..." : "Install"}
@@ -226,13 +226,13 @@ export default function Packages() {
     <div className="p-8 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Package size={20} className="text-indigo-400" />
-          <h1 className="text-2xl font-bold text-white">Packages</h1>
+          <Package size={20} className="text-sky-400" />
+          <h1 className="text-2xl font-bold font-display text-white">Packages</h1>
         </div>
         <button
           onClick={() => checkUpdates.mutate()}
           disabled={checkUpdates.isPending}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
         >
           <RefreshCw size={12} className={checkUpdates.isPending ? "animate-spin" : ""} />
           Check for updates
@@ -241,16 +241,16 @@ export default function Packages() {
 
       {/* Installed packages */}
       <section className="mb-8">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
           Installed
         </h2>
         {loadingInstalled ? (
-          <p className="text-xs text-gray-600">Loading...</p>
+          <p className="text-xs text-slate-600">Loading...</p>
         ) : installed.length === 0 ? (
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
-            <Package size={24} className="text-gray-700 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">No packages installed yet.</p>
-            <p className="text-xs text-gray-600 mt-1">Discover packages below or install from a URL.</p>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+            <Package size={24} className="text-slate-700 mx-auto mb-2" />
+            <p className="text-sm text-slate-500">No packages installed yet.</p>
+            <p className="text-xs text-slate-600 mt-1">Discover packages below or install from a URL.</p>
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -277,15 +277,15 @@ export default function Packages() {
 
       {/* Discover */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
           Discover
         </h2>
 
         <div className="flex gap-2 mb-4">
           <div className="relative flex-1">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
-              className="w-full bg-gray-900 border border-gray-800 rounded-md pl-8 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
               placeholder="Search GitHub for zerohand packages..."
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}
@@ -295,7 +295,7 @@ export default function Packages() {
           <button
             onClick={handleDiscover}
             disabled={loadingDiscover}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
           >
             {loadingDiscover ? "Searching..." : "Search"}
           </button>
@@ -321,17 +321,17 @@ export default function Packages() {
         )}
 
         {/* Manual URL install */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Link size={13} className="text-gray-500" />
-            <span className="text-xs font-medium text-gray-400">Install from URL</span>
+            <Link size={13} className="text-slate-500" />
+            <span className="text-xs font-medium text-slate-400">Install from URL</span>
           </div>
-          <p className="text-xs text-gray-600 mb-3">
+          <p className="text-xs text-slate-600 mb-3">
             For private or unlisted repos. Use the full GitHub URL.
           </p>
           <div className="flex gap-2">
             <input
-              className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-xs text-white font-mono placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-sky-500 font-mono placeholder-slate-600 focus:outline-none focus:border-sky-500"
               placeholder="https://github.com/owner/repo"
               value={manualUrl}
               onChange={(e) => setManualUrl(e.target.value)}
@@ -340,7 +340,7 @@ export default function Packages() {
             <button
               onClick={handleInstallManual}
               disabled={!manualUrl.trim() || (install.isPending && installingId === "manual")}
-              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-md disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-medium rounded-xl disabled:opacity-50 transition-colors"
             >
               <Download size={11} />
               {install.isPending && installingId === "manual" ? "Installing..." : "Install"}

@@ -8,8 +8,6 @@ import type { ApiApproval } from "@zerohand/shared";
 function ApprovalCard({ approval }: { approval: ApiApproval }) {
   const queryClient = useQueryClient();
   const [note, setNote] = useState("");
-  const [showNote, setShowNote] = useState(false);
-  const [pendingDecision, setPendingDecision] = useState<"approve" | "reject" | null>(null);
 
   const decide = useMutation({
     mutationFn: ({ decision, n }: { decision: "approve" | "reject"; n: string }) =>
@@ -18,92 +16,69 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
         : api.rejectStep(approval.id, n || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["approvals"] });
-      setShowNote(false);
       setNote("");
-      setPendingDecision(null);
     },
   });
 
-  const handleDecision = (decision: "approve" | "reject") => {
-    if (showNote && pendingDecision === decision) {
-      decide.mutate({ decision, n: note });
-    } else {
-      setPendingDecision(decision);
-      setShowNote(true);
-    }
-  };
-
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-5">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-glow">
       <div className="flex items-start gap-3 mb-3">
-        <Clock size={16} className="text-yellow-400 mt-0.5 flex-shrink-0" />
+        <Clock size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             {approval.pipelineName && (
-              <span className="text-sm font-medium text-gray-100">{approval.pipelineName}</span>
+              <span className="text-sm font-medium text-slate-100">{approval.pipelineName}</span>
             )}
             {approval.stepName && (
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">
+              <span className="bg-slate-800 text-slate-400 text-[10px] font-mono px-2 py-0.5 rounded-md">
                 {approval.stepName}
               </span>
             )}
             <Link
               to={`/runs/${approval.pipelineRunId}`}
-              className="ml-auto flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
+              className="ml-auto flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300"
             >
               View run <ExternalLink size={10} />
             </Link>
           </div>
-          <div className="text-xs text-gray-600 mt-1">
+          <div className="text-xs text-slate-600 mt-1">
             Requested {new Date(approval.createdAt).toLocaleString()}
           </div>
         </div>
       </div>
 
       {Object.keys(approval.payload).length > 0 && (
-        <div className="mb-3 text-xs text-gray-500 bg-gray-800 rounded p-2 font-mono">
+        <div className="mb-3 bg-slate-800/80 rounded-lg p-3 font-mono text-xs text-slate-300 border border-slate-700/50">
           {JSON.stringify(approval.payload, null, 2)}
         </div>
       )}
 
-      {showNote && (
-        <div className="mb-3">
-          <input
-            className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
-            placeholder={`Note for ${pendingDecision} (optional)`}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && pendingDecision && handleDecision(pendingDecision)}
-            autoFocus
-          />
-        </div>
-      )}
+      <div className="mb-3">
+        <input
+          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40 transition-all"
+          placeholder="Add a note (optional)"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </div>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-3">
         <button
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+          className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
           disabled={decide.isPending}
-          onClick={() => handleDecision("approve")}
+          onClick={() => decide.mutate({ decision: "approve", n: note })}
         >
           <CheckCircle size={13} />
-          {showNote && pendingDecision === "approve" ? "Confirm Approve" : "Approve"}
+          Approve
         </button>
         <button
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-800 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+          className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 bg-rose-800 hover:bg-rose-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
           disabled={decide.isPending}
-          onClick={() => handleDecision("reject")}
+          onClick={() => decide.mutate({ decision: "reject", n: note })}
         >
           <XCircle size={13} />
-          {showNote && pendingDecision === "reject" ? "Confirm Reject" : "Reject"}
+          Reject
         </button>
-        {showNote && (
-          <button
-            className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
-            onClick={() => { setShowNote(false); setPendingDecision(null); setNote(""); }}
-          >
-            Cancel
-          </button>
-        )}
       </div>
     </div>
   );
@@ -116,21 +91,21 @@ export default function Approvals() {
     refetchInterval: 10_000,
   });
 
-  if (isLoading) return <div className="p-8 text-gray-500">Loading...</div>;
+  if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
 
   return (
     <div className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-bold text-white mb-6">
+      <h1 className="text-2xl font-bold font-display text-white mb-6">
         Approvals
         {pending.length > 0 && (
-          <span className="ml-3 text-sm font-normal bg-yellow-600 text-white px-2 py-0.5 rounded-full">
+          <span className="ml-3 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-md px-2.5 py-1 text-xs font-bold">
             {pending.length} pending
           </span>
         )}
       </h1>
 
       {pending.length === 0 ? (
-        <div className="text-gray-500 text-sm">No pending approvals.</div>
+        <div className="text-slate-500 text-sm">No pending approvals.</div>
       ) : (
         <div className="space-y-4">
           {pending.map((a) => (

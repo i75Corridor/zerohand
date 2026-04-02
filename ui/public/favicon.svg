@@ -1,3 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="136 132 126 152" width="32" height="32" fill="none" stroke="#818cf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M 138,180 C 136,170 136,159 141,153 C 144,147 151,146 156,149 C 157,142 162,135 170,134 C 178,133 185,138 187,145 C 189,138 196,132 205,132 C 214,132 221,138 222,145 C 224,139 231,135 239,137 C 248,139 253,147 251,156 C 254,153 260,156 262,165 C 265,176 262,191 255,202 C 260,207 262,220 257,230 C 251,240 239,242 232,236 L 230,266 C 229,277 222,284 210,284 L 162,284 C 150,284 143,277 142,266 Z"/>
+<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+  <!-- Zerohand — fist mark, sky-400 on transparent bg -->
+
+  <!-- Thumb (left, angled inward) -->
+  <rect x="3" y="28" width="22" height="56" rx="11" fill="#38bdf8" transform="rotate(-6 14 56)"/>
+
+  <!-- Four knuckle bumps: pinky → index -->
+  <rect x="22" y="17" width="17" height="38" rx="8"  fill="#38bdf8"/>
+  <rect x="42" y="11" width="18" height="44" rx="9"  fill="#38bdf8"/>
+  <rect x="63" y="7"  width="18" height="48" rx="9"  fill="#38bdf8"/>
+  <rect x="83" y="13" width="15" height="43" rx="7"  fill="#38bdf8"/>
+
+  <!-- Main fist body -->
+  <rect x="18" y="47" width="80" height="58" rx="17" fill="#38bdf8"/>
+
+  <!-- Subtle knuckle crease -->
+  <path d="M 24 51 Q 58 44 96 51" stroke="#0f172a" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.18"/>
 </svg>

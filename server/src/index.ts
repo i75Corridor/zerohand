@@ -26,6 +26,7 @@ import { createWebhooksRouter } from "./routes/webhooks.js";
 import { createSkillsRouter } from "./routes/skills.js";
 import { createSecretsRouter } from "./routes/secrets.js";
 import { createPackagesRouter } from "./routes/packages.js";
+import { createModelsRouter } from "./routes/models.js";
 import { ChannelManager } from "./services/channel-manager.js";
 import { GlobalAgentService } from "./services/global-agent.js";
 
@@ -137,11 +138,13 @@ async function main() {
   app.use("/api", createTriggersRouter(db));
   app.use("/api", createBudgetsRouter(db));
   app.use("/api", createStatsRouter(db));
-  app.use("/api", createSettingsRouter(db));
+  let globalAgentRef: import("./services/global-agent.js").GlobalAgentService | null = null;
+  app.use("/api", createSettingsRouter(db, () => { void globalAgentRef?.resetSession(); }));
   app.use("/api", createFilesRouter());
   app.use("/api", createSkillsRouter());
   app.use("/api", createSecretsRouter(db));
   app.use("/api", createPackagesRouter(db));
+  app.use("/api", createModelsRouter());
 
   // 404 handler
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
@@ -167,6 +170,7 @@ async function main() {
   ws.onChatMessage((msg) => engine.handleChatMessage(msg));
 
   const globalAgent = new GlobalAgentService(db, (msg) => ws.broadcast(msg), DATA_DIR);
+  globalAgentRef = globalAgent;
   globalAgent.setCancelRunFn((runId) => engine.cancelRun(runId));
   ws.onGlobalChatMessage((msg) => {
     void globalAgent.handleMessage(msg.action, msg.message, msg.context);

@@ -17,6 +17,7 @@ import { runImagenWorker, runPublishWorker } from "./builtin-workers.js";
 import { recordCost } from "./budget-guard.js";
 import { SessionRegistry } from "./session-registry.js";
 import { loadSecretsMap } from "../routes/secrets.js";
+import { readModelSetting } from "./model-utils.js";
 
 export function resolvePrompt(
   template: string,
@@ -161,8 +162,9 @@ export class ExecutionEngine {
     });
     const pipelineContext = ((pipeline?.metadata as Record<string, unknown>)?.context ?? {}) as Record<string, string>;
     const pipelineSystemPrompt = pipeline?.systemPrompt ?? null;
-    const pipelineModelProvider = pipeline?.modelProvider ?? "google";
-    const pipelineModelName = pipeline?.modelName ?? "gemini-2.5-flash";
+    const defaultModel = await readModelSetting(this.db, "default_pipeline_model", "google/gemini-2.5-flash");
+    const pipelineModelProvider = pipeline?.modelProvider ?? defaultModel.provider;
+    const pipelineModelName = pipeline?.modelName ?? defaultModel.modelId;
 
     // Load all secrets once for {{secret.KEY}} interpolation
     const secretsMap = await loadSecretsMap(this.db);

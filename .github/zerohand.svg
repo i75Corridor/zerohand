@@ -1,195 +1,148 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
   <defs>
-    <radialGradient id="bgGrad" cx="50%" cy="48%" r="52%">
-      <stop offset="0%" stop-color="#0d1b2a"/>
-      <stop offset="100%" stop-color="#060d14"/>
+    <!-- Background: deep slate gradient -->
+    <linearGradient id="bg5" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Fist glow halo -->
+    <radialGradient id="halo5" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.18"/>
+      <stop offset="60%" stop-color="#0ea5e9" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="fistGrad" x1="15%" y1="0%" x2="85%" y2="100%">
-      <stop offset="0%" stop-color="#22e0ff"/>
-      <stop offset="45%" stop-color="#0099dd"/>
-      <stop offset="100%" stop-color="#004a8a"/>
-    </linearGradient>
-    <linearGradient id="fistGradShine" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-    <filter id="fistGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="7" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+
+    <!-- Crisp edge glow on fist -->
+    <filter id="fistEdge5" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="4" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+
+    <!-- Soft bloom behind fist -->
+    <filter id="bloom5" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="22"/>
     </filter>
-    <filter id="halo" x="-80%" y="-80%" width="360%" height="360%">
-      <feGaussianBlur stdDeviation="18" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+
+    <!-- Wordmark glow -->
+    <filter id="textGlow5" x="-10%" y="-40%" width="120%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
-    <clipPath id="circleClip">
-      <circle cx="200" cy="200" r="172"/>
-    </clipPath>
   </defs>
 
-  <!-- Background -->
-  <rect width="400" height="400" fill="url(#bgGrad)"/>
+  <!-- ── Background ── -->
+  <rect width="400" height="400" fill="url(#bg5)"/>
 
-  <!-- Outer rings -->
-  <circle cx="200" cy="200" r="186" fill="none" stroke="#004a77" stroke-width="1.5" opacity="0.45"/>
-  <circle cx="200" cy="200" r="176" fill="none" stroke="#006699" stroke-width="0.5" opacity="0.25"/>
-
-  <!-- Ring tick marks -->
-  <g opacity="0.35" stroke="#00bbdd" stroke-width="1.5">
-    <line x1="200" y1="16" x2="200" y2="28"/>
-    <line x1="200" y1="372" x2="200" y2="384"/>
-    <line x1="16" y1="200" x2="28" y2="200"/>
-    <line x1="372" y1="200" x2="384" y2="200"/>
-  </g>
-  <g opacity="0.2" stroke="#0088aa" stroke-width="1">
-    <line x1="68" y1="68" x2="76" y2="76"/>
-    <line x1="332" y1="68" x2="324" y2="76"/>
-    <line x1="68" y1="332" x2="76" y2="324"/>
-    <line x1="332" y1="332" x2="324" y2="324"/>
-  </g>
-
-  <!-- Circuit traces radiating out -->
-  <g clip-path="url(#circleClip)" opacity="0.2" stroke="#00aadd" stroke-width="1" fill="none">
-    <polyline points="200,200 155,155 125,155 108,138"/>
-    <polyline points="200,200 145,145 145,115 125,95"/>
-    <polyline points="200,200 245,155 275,155 292,138"/>
-    <polyline points="200,200 255,145 255,115 275,95"/>
-    <polyline points="200,200 155,245 125,245 108,262"/>
-    <polyline points="200,200 145,255 145,285 125,305"/>
-    <polyline points="200,200 245,245 275,245 292,262"/>
-    <polyline points="200,200 255,255 255,285 275,305"/>
-    <polyline points="200,200 200,135 172,135 162,118"/>
-    <polyline points="200,200 200,265 172,265 162,282"/>
-  </g>
-
-  <!-- Circuit endpoint nodes -->
-  <g filter="url(#glow)" opacity="0.8">
-    <circle cx="108" cy="138" r="3" fill="#00eeff"/>
-    <circle cx="125" cy="95" r="3" fill="#00eeff"/>
-    <circle cx="292" cy="138" r="3" fill="#00eeff"/>
-    <circle cx="275" cy="95" r="3" fill="#00eeff"/>
-    <circle cx="108" cy="262" r="3" fill="#00eeff"/>
-    <circle cx="125" cy="305" r="3" fill="#00eeff"/>
-    <circle cx="292" cy="262" r="3" fill="#00eeff"/>
-    <circle cx="275" cy="305" r="3" fill="#00eeff"/>
-    <circle cx="162" cy="118" r="2.5" fill="#00eeff"/>
-    <circle cx="162" cy="282" r="2.5" fill="#00eeff"/>
+  <!-- Subtle dot grid -->
+  <g fill="#1e293b" opacity="0.45">
+    <!-- row 1 -->
+    <circle cx="40"  cy="40"  r="1"/><circle cx="80"  cy="40"  r="1"/><circle cx="120" cy="40"  r="1"/>
+    <circle cx="160" cy="40"  r="1"/><circle cx="200" cy="40"  r="1"/><circle cx="240" cy="40"  r="1"/>
+    <circle cx="280" cy="40"  r="1"/><circle cx="320" cy="40"  r="1"/><circle cx="360" cy="40"  r="1"/>
+    <!-- row 2 -->
+    <circle cx="40"  cy="80"  r="1"/><circle cx="80"  cy="80"  r="1"/><circle cx="120" cy="80"  r="1"/>
+    <circle cx="160" cy="80"  r="1"/><circle cx="200" cy="80"  r="1"/><circle cx="240" cy="80"  r="1"/>
+    <circle cx="280" cy="80"  r="1"/><circle cx="320" cy="80"  r="1"/><circle cx="360" cy="80"  r="1"/>
+    <!-- row 3 -->
+    <circle cx="40"  cy="120" r="1"/><circle cx="80"  cy="120" r="1"/><circle cx="120" cy="120" r="1"/>
+    <circle cx="160" cy="120" r="1"/><circle cx="200" cy="120" r="1"/><circle cx="240" cy="120" r="1"/>
+    <circle cx="280" cy="120" r="1"/><circle cx="320" cy="120" r="1"/><circle cx="360" cy="120" r="1"/>
+    <!-- row 4 -->
+    <circle cx="40"  cy="160" r="1"/><circle cx="80"  cy="160" r="1"/><circle cx="120" cy="160" r="1"/>
+    <circle cx="160" cy="160" r="1"/><circle cx="200" cy="160" r="1"/><circle cx="240" cy="160" r="1"/>
+    <circle cx="280" cy="160" r="1"/><circle cx="320" cy="160" r="1"/><circle cx="360" cy="160" r="1"/>
+    <!-- row 5 -->
+    <circle cx="40"  cy="200" r="1"/><circle cx="80"  cy="200" r="1"/><circle cx="120" cy="200" r="1"/>
+    <circle cx="160" cy="200" r="1"/><circle cx="200" cy="200" r="1"/><circle cx="240" cy="200" r="1"/>
+    <circle cx="280" cy="200" r="1"/><circle cx="320" cy="200" r="1"/><circle cx="360" cy="200" r="1"/>
+    <!-- row 6 -->
+    <circle cx="40"  cy="240" r="1"/><circle cx="80"  cy="240" r="1"/><circle cx="120" cy="240" r="1"/>
+    <circle cx="160" cy="240" r="1"/><circle cx="200" cy="240" r="1"/><circle cx="240" cy="240" r="1"/>
+    <circle cx="280" cy="240" r="1"/><circle cx="320" cy="240" r="1"/><circle cx="360" cy="240" r="1"/>
+    <!-- row 7 -->
+    <circle cx="40"  cy="280" r="1"/><circle cx="80"  cy="280" r="1"/><circle cx="120" cy="280" r="1"/>
+    <circle cx="160" cy="280" r="1"/><circle cx="200" cy="280" r="1"/><circle cx="240" cy="280" r="1"/>
+    <circle cx="280" cy="280" r="1"/><circle cx="320" cy="280" r="1"/><circle cx="360" cy="280" r="1"/>
+    <!-- row 8 -->
+    <circle cx="40"  cy="320" r="1"/><circle cx="80"  cy="320" r="1"/><circle cx="120" cy="320" r="1"/>
+    <circle cx="160" cy="320" r="1"/><circle cx="200" cy="320" r="1"/><circle cx="240" cy="320" r="1"/>
+    <circle cx="280" cy="320" r="1"/><circle cx="320" cy="320" r="1"/><circle cx="360" cy="320" r="1"/>
+    <!-- row 9 -->
+    <circle cx="40"  cy="360" r="1"/><circle cx="80"  cy="360" r="1"/><circle cx="120" cy="360" r="1"/>
+    <circle cx="160" cy="360" r="1"/><circle cx="200" cy="360" r="1"/><circle cx="240" cy="360" r="1"/>
+    <circle cx="280" cy="360" r="1"/><circle cx="320" cy="360" r="1"/><circle cx="360" cy="360" r="1"/>
   </g>
 
-  <!-- Ambient halo behind fist -->
-  <ellipse cx="200" cy="207" rx="72" ry="80" fill="#0077bb" opacity="0.09" filter="url(#halo)"/>
+  <!-- ── Central ambient halo ── -->
+  <ellipse cx="200" cy="168" rx="140" ry="120" fill="url(#halo5)"/>
 
-  <!-- === ORGANIC FIST PATH === -->
-  <!-- Shadow / depth layer -->
-  <path d="
-    M 152,196
-    C 150,186 150,175 155,169
-    C 158,163 165,162 170,165
-    C 171,158 176,151 184,150
-    C 192,149 199,154 201,161
-    C 203,154 210,148 219,148
-    C 228,148 235,154 236,161
-    C 238,155 245,151 253,153
-    C 262,155 267,163 265,172
-    C 268,169 274,172 276,181
-    C 279,192 276,207 269,218
-    C 274,223 276,236 271,246
-    C 265,256 253,258 246,252
-    L 244,282
-    C 243,293 236,300 224,300
-    L 176,300
-    C 164,300 157,293 156,282
-    Z
-  " fill="#003366" opacity="0.5" transform="translate(5,8)"/>
-
-  <!-- Main fist body -->
-  <path d="
-    M 152,196
-    C 150,186 150,175 155,169
-    C 158,163 165,162 170,165
-    C 171,158 176,151 184,150
-    C 192,149 199,154 201,161
-    C 203,154 210,148 219,148
-    C 228,148 235,154 236,161
-    C 238,155 245,151 253,153
-    C 262,155 267,163 265,172
-    C 268,169 274,172 276,181
-    C 279,192 276,207 269,218
-    C 274,223 276,236 271,246
-    C 265,256 253,258 246,252
-    L 244,282
-    C 243,293 236,300 224,300
-    L 176,300
-    C 164,300 157,293 156,282
-    Z
-  " fill="url(#fistGrad)" filter="url(#fistGlow)"/>
-
-  <!-- Shine overlay -->
-  <path d="
-    M 152,196
-    C 150,186 150,175 155,169
-    C 158,163 165,162 170,165
-    C 171,158 176,151 184,150
-    C 192,149 199,154 201,161
-    C 203,154 210,148 219,148
-    C 228,148 235,154 236,161
-    C 238,155 245,151 253,153
-    C 262,155 267,163 265,172
-    L 265,210
-    L 152,210
-    Z
-  " fill="url(#fistGradShine)"/>
-
-  <!-- Knuckle groove lines -->
-  <g stroke="#003a6a" stroke-width="2" opacity="0.55" stroke-linecap="round">
-    <line x1="176" y1="196" x2="174" y2="215"/>
-    <line x1="203" y1="196" x2="202" y2="215"/>
-    <line x1="232" y1="196" x2="231" y2="215"/>
+  <!-- ── Fist: bloom layer (sky glow behind) ── -->
+  <g transform="translate(110, 60) scale(1.8)" filter="url(#bloom5)" opacity="0.55">
+    <rect x="3"  y="28" width="22" height="56" rx="11" fill="#38bdf8" transform="rotate(-6 14 56)"/>
+    <rect x="22" y="17" width="17" height="38" rx="8"  fill="#38bdf8"/>
+    <rect x="42" y="11" width="18" height="44" rx="9"  fill="#38bdf8"/>
+    <rect x="63" y="7"  width="18" height="48" rx="9"  fill="#38bdf8"/>
+    <rect x="83" y="13" width="15" height="43" rx="7"  fill="#38bdf8"/>
+    <rect x="18" y="47" width="80" height="58" rx="17" fill="#38bdf8"/>
   </g>
 
-  <!-- Circuit detail on palm -->
-  <g stroke="#00ccee" stroke-width="0.8" fill="none" opacity="0.3">
-    <line x1="166" y1="216" x2="166" y2="258"/>
-    <line x1="166" y1="238" x2="190" y2="238"/>
-    <circle cx="190" cy="238" r="2.5" fill="#00eeff" stroke="none" opacity="0.8"/>
-    <line x1="218" y1="216" x2="218" y2="262"/>
-    <line x1="218" y1="248" x2="244" y2="248"/>
-    <circle cx="244" cy="248" r="2.5" fill="#00eeff" stroke="none" opacity="0.8"/>
+  <!-- ── Fist: crisp main render ── -->
+  <g transform="translate(110, 60) scale(1.8)" filter="url(#fistEdge5)">
+    <!-- Thumb -->
+    <rect x="3"  y="28" width="22" height="56" rx="11" fill="#38bdf8" transform="rotate(-6 14 56)"/>
+    <!-- Knuckles: pinky → index -->
+    <rect x="22" y="17" width="17" height="38" rx="8"  fill="#38bdf8"/>
+    <rect x="42" y="11" width="18" height="44" rx="9"  fill="#38bdf8"/>
+    <rect x="63" y="7"  width="18" height="48" rx="9"  fill="#38bdf8"/>
+    <rect x="83" y="13" width="15" height="43" rx="7"  fill="#38bdf8"/>
+    <!-- Palm body -->
+    <rect x="18" y="47" width="80" height="58" rx="17" fill="#38bdf8"/>
+    <!-- Knuckle crease -->
+    <path d="M 24 51 Q 58 44 96 51"
+          stroke="rgba(15,23,42,0.22)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- Subtle inner highlight on top of palm face -->
+    <rect x="22" y="48" width="72" height="18" rx="10" fill="rgba(255,255,255,0.07)"/>
   </g>
 
-  <!-- Knuckle glowing nodes -->
-  <g filter="url(#glow)">
-    <circle cx="163" cy="167" r="5.5" fill="#00ffff" opacity="0.9"/>
-    <circle cx="190" cy="158" r="5.5" fill="#00ffff"/>
-    <circle cx="219" cy="152" r="6" fill="#00ffff"/>
-    <circle cx="247" cy="157" r="5.5" fill="#00ffff" opacity="0.9"/>
+  <!-- ── Divider ── -->
+  <line x1="140" y1="282" x2="260" y2="282" stroke="#0ea5e9" stroke-width="0.75" opacity="0.25"/>
+
+  <!-- ── Wordmark ── -->
+  <g filter="url(#textGlow5)">
+    <text
+      x="200" y="318"
+      font-family="'Arial Black', 'Helvetica Neue', Helvetica, sans-serif"
+      font-size="34" font-weight="900" letter-spacing="-1"
+      text-anchor="middle" fill="#f8fafc">Zerohand</text>
   </g>
 
-  <!-- Knuckle connecting arc -->
-  <path d="M 163,167 C 180,155 202,148 219,152 C 233,155 245,157 247,157"
-        fill="none" stroke="#00ddff" stroke-width="1.2" opacity="0.5" stroke-dasharray="4,3"/>
+  <!-- ── Tagline ── -->
+  <text
+    x="200" y="342"
+    font-family="'Helvetica Neue', Arial, sans-serif"
+    font-size="11.5" letter-spacing="0.4"
+    text-anchor="middle" fill="#475569">Agentic workflows for engineers</text>
 
-  <!-- Bottom label -->
-  <g filter="url(#glow)">
-    <text x="200" y="336" font-family="'Courier New', Courier, monospace"
-          font-size="22" font-weight="bold" letter-spacing="8"
-          text-anchor="middle" fill="#00ccff">ZEROHAND</text>
+  <!-- ── Corner L-brackets ── -->
+  <g stroke="#0ea5e9" stroke-width="1.2" opacity="0.22" fill="none" stroke-linecap="square">
+    <polyline points="14,34 14,14 34,14"/>
+    <polyline points="366,14 386,14 386,34"/>
+    <polyline points="14,366 14,386 34,386"/>
+    <polyline points="386,366 386,386 366,386"/>
   </g>
-  <text x="200" y="354" font-family="'Courier New', Courier, monospace"
-        font-size="8.5" letter-spacing="3"
-        text-anchor="middle" fill="#006688" opacity="0.8">HUMANLESS · AGENTIC · AUTONOMOUS</text>
 
-  <!-- Top label -->
-  <text x="200" y="56" font-family="'Courier New', Courier, monospace"
-        font-size="8" letter-spacing="2"
-        text-anchor="middle" fill="#005577" opacity="0.5">AI ORCHESTRATION HARNESS</text>
-
-  <!-- Side readouts -->
-  <text x="30" y="204" font-family="monospace" font-size="7" fill="#004466" opacity="0.45"
-        transform="rotate(-90,30,204)">SYS:ACTIVE</text>
-  <text x="370" y="207" font-family="monospace" font-size="7" fill="#004466" opacity="0.45"
-        transform="rotate(90,370,207)">v0.1.0</text>
+  <!-- Corner accent dots -->
+  <g fill="#0ea5e9" opacity="0.35">
+    <circle cx="14" cy="14" r="1.5"/>
+    <circle cx="386" cy="14" r="1.5"/>
+    <circle cx="14" cy="386" r="1.5"/>
+    <circle cx="386" cy="386" r="1.5"/>
+  </g>
 </svg>

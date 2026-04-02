@@ -1,28 +1,31 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package } from "lucide-react";
 
-function ZerohandIcon({ size = 20, className = "" }: { size?: number; className?: string }) {
+function FistIcon({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="136 132 126 152"
+      viewBox="0 0 100 110"
       width={size}
       height={size}
       className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
     >
-      <path d="M 138,180 C 136,170 136,159 141,153 C 144,147 151,146 156,149 C 157,142 162,135 170,134 C 178,133 185,138 187,145 C 189,138 196,132 205,132 C 214,132 221,138 222,145 C 224,139 231,135 239,137 C 248,139 253,147 251,156 C 254,153 260,156 262,165 C 265,176 262,191 255,202 C 260,207 262,220 257,230 C 251,240 239,242 232,236 L 230,266 C 229,277 222,284 210,284 L 162,284 C 150,284 143,277 142,266 Z" />
-      <circle cx="149" cy="151" r="5" fill="currentColor" stroke="none" />
-      <circle cx="176" cy="142" r="5" fill="currentColor" stroke="none" />
-      <circle cx="205" cy="136" r="5.5" fill="currentColor" stroke="none" />
-      <circle cx="233" cy="141" r="5" fill="currentColor" stroke="none" />
+      {/* Thumb */}
+      <rect x="3" y="28" width="22" height="56" rx="11" fill="currentColor" transform="rotate(-6 14 56)" />
+      {/* Knuckles: pinky → index */}
+      <rect x="22" y="17" width="17" height="38" rx="8"  fill="currentColor" />
+      <rect x="42" y="11" width="18" height="44" rx="9"  fill="currentColor" />
+      <rect x="63" y="7"  width="18" height="48" rx="9"  fill="currentColor" />
+      <rect x="83" y="13" width="15" height="43" rx="7"  fill="currentColor" />
+      {/* Main fist body */}
+      <rect x="18" y="47" width="80" height="58" rx="17" fill="currentColor" />
+      {/* Knuckle crease */}
+      <path d="M 24 51 Q 58 44 96 51" stroke="rgba(15,23,42,0.18)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -40,19 +43,26 @@ function ApprovalsNavItem() {
     <NavLink
       to="/approvals"
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+        `group relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all overflow-hidden ${
           isActive
-            ? "bg-indigo-600 text-white"
-            : "text-gray-400 hover:text-white hover:bg-gray-800"
+            ? "bg-slate-800/50 text-sky-400 ring-1 ring-slate-700/50"
+            : "text-slate-400 hover:text-white hover:bg-slate-800/40"
         }`
       }
     >
-      <CheckSquare size={16} />
-      <span className="flex-1">Approvals</span>
-      {pending.length > 0 && (
-        <span className="bg-yellow-500 text-black text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
-          {pending.length}
-        </span>
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-sky-500 rounded-r-full" />
+          )}
+          <CheckSquare size={16} className={isActive ? "" : "group-hover:text-sky-400 transition-colors"} />
+          <span className="flex-1">Approvals</span>
+          {pending.length > 0 && (
+            <span className="bg-sky-500/10 text-sky-400 border border-sky-500/30 text-[10px] font-bold px-1.5 py-0.5 rounded-md leading-none">
+              {pending.length}
+            </span>
+          )}
+        </>
       )}
     </NavLink>
   );
@@ -75,65 +85,92 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col">
-        <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
-          <ZerohandIcon size={20} className="text-indigo-400" />
-          <span className="font-semibold text-white tracking-tight">Zerohand</span>
+      <aside className="w-64 flex-shrink-0 glass-sidebar flex flex-col z-50">
+        {/* Logo */}
+        <div className="px-6 py-6 flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 bg-sky-500/20 blur-xl rounded-full" />
+            <FistIcon size={24} className="text-sky-400 relative logo-glow" />
+          </div>
+          <span className="font-display text-xl text-white tracking-tighter">Zerohand</span>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
+
+        {/* Main nav */}
+        <nav className="flex-1 px-4 py-4 space-y-1.5">
           {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                `group relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all overflow-hidden ${
                   isActive
-                    ? "bg-indigo-600 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-800"
+                    ? "bg-slate-800/50 text-sky-400 ring-1 ring-slate-700/50"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/40"
                 }`
               }
             >
-              <Icon size={16} />
-              {label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-sky-500 rounded-r-full" />
+                  )}
+                  <Icon size={16} className={isActive ? "" : "group-hover:text-sky-400 transition-colors"} />
+                  {label}
+                </>
+              )}
             </NavLink>
           ))}
           <ApprovalsNavItem />
         </nav>
-        <div className="px-3 py-3 border-t border-gray-800 space-y-1">
-          {bottomNav.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-indigo-600 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-800"
-                }`
-              }
+
+        {/* Bottom nav */}
+        <div className="mt-auto p-4">
+          <div className="glass-footer rounded-2xl p-2 space-y-1">
+            {bottomNav.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `group relative flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all overflow-hidden ${
+                    isActive
+                      ? "bg-slate-800/50 text-sky-400 ring-1 ring-slate-700/50"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-sky-500 rounded-r-full" />
+                    )}
+                    <Icon size={16} className={isActive ? "" : "group-hover:text-sky-400 transition-colors"} />
+                    {label}
+                  </>
+                )}
+              </NavLink>
+            ))}
+            <button
+              onClick={() => setAgentOpen((o) => !o)}
+              className={`w-full group flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                agentOpen
+                  ? "bg-slate-800/50 text-sky-400 ring-1 ring-slate-700/50"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
             >
-              <Icon size={16} />
-              {label}
-            </NavLink>
-          ))}
-          <button
-            onClick={() => setAgentOpen((o) => !o)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              agentOpen
-                ? "bg-indigo-600 text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
-            }`}
-          >
-            <MessageSquare size={16} />
-            Agent
-          </button>
+              <MessageSquare size={16} className={agentOpen ? "" : "group-hover:text-sky-400 transition-colors"} />
+              Agent AI
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* Main content + Agent panel */}
       <div className="flex flex-1 min-w-0 overflow-hidden">
-        <main className="flex-1 min-w-0 overflow-y-auto bg-gray-950">
-          {children}
+        <main className="flex-1 min-w-0 overflow-y-auto bg-slate-950 relative">
+          <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-sky-500/5 to-transparent pointer-events-none" />
+          <div className="relative">
+            {children}
+          </div>
         </main>
 
         {agentOpen && (

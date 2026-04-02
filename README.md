@@ -1,7 +1,7 @@
 # Zerohand
 
 <p align="center">
-  <img src=".github/zerohand-v4.svg" width="300" alt="Zerohand" />
+  <img src=".github/zerohand.svg" width="300" alt="Zerohand" />
 </p>
 
 An agentic workflow orchestrator built on [pi.dev](https://github.com/badlogic/pi-mono). Define pipelines as YAML packages, configure workers, schedule them with cron triggers, gate steps behind human approvals, enforce budget caps — and watch runs execute in real-time through the web portal.

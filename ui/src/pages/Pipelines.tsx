@@ -81,15 +81,15 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
   };
 
   return (
-    <div className="border border-gray-700 rounded-lg p-4 bg-gray-800/50 space-y-4">
+    <div className="border border-dashed border-slate-800 hover:border-sky-500/40 rounded-lg p-4 bg-slate-800/50 space-y-4">
       {/* Presets */}
       <div>
-        <div className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Presets</div>
+        <div className="text-xs text-slate-500 mb-2 uppercase tracking-wide">Presets</div>
         <div className="grid grid-cols-2 gap-1.5">
           {PRESETS.map((p) => (
             <button
               key={p.cron}
-              className="text-left text-xs px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-md transition-colors"
+              className="text-left text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md transition-colors"
               onClick={() => onSelect(p.cron)}
             >
               {p.label}
@@ -100,31 +100,31 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
 
       {/* Custom time + days */}
       <div>
-        <div className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Custom</div>
+        <div className="text-xs text-slate-500 mb-2 uppercase tracking-wide">Custom</div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-gray-400">At</span>
+          <span className="text-xs text-slate-400">At</span>
           <input
             type="number" min="0" max="23"
-            className="w-14 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-indigo-500"
+            className="w-14 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-sky-500"
             value={hour}
             onChange={(e) => setHour(e.target.value)}
           />
-          <span className="text-gray-500">:</span>
+          <span className="text-slate-500">:</span>
           <input
             type="number" min="0" max="59"
-            className="w-14 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-indigo-500"
+            className="w-14 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-sky-500"
             value={minute}
             onChange={(e) => setMinute(e.target.value)}
           />
-          <span className="text-xs text-gray-400 ml-1">on</span>
+          <span className="text-xs text-slate-400 ml-1">on</span>
           <div className="flex gap-1">
             {DAYS.map((d) => (
               <button
                 key={d.value}
                 className={`text-xs px-1.5 py-1 rounded transition-colors ${
                   selectedDays.has(d.value)
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+                    ? "bg-sky-500 text-slate-950"
+                    : "bg-slate-700 text-slate-400 hover:bg-slate-600"
                 }`}
                 onClick={() => toggleDay(d.value)}
               >
@@ -133,9 +133,9 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
             ))}
           </div>
         </div>
-        <div className="text-xs text-gray-500 mb-2 italic">{parseCron(customCron)}</div>
+        <div className="text-xs text-slate-500 mb-2 italic">{parseCron(customCron)}</div>
         <button
-          className="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors"
+          className="text-xs px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-md transition-colors"
           onClick={() => onSelect(customCron)}
         >
           Use this schedule
@@ -173,21 +173,21 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-semibold text-white mb-4">Run: {pipeline.name}</h2>
 
         {fields.length === 0 ? (
-          <p className="text-sm text-gray-500 mb-4">No inputs required.</p>
+          <p className="text-sm text-slate-500 mb-4">No inputs required.</p>
         ) : (
           <div className="space-y-4 mb-4">
             {fields.map(([key, prop]) => (
               <div key={key}>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm text-slate-400 mb-1">
                   {key}{required.has(key) && <span className="text-red-400 ml-1">*</span>}
                 </label>
-                {prop.description && <p className="text-xs text-gray-600 mb-1">{prop.description}</p>}
+                {prop.description && <p className="text-xs text-slate-600 mb-1">{prop.description}</p>}
                 <input
-                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                   placeholder={prop.description ?? key}
                   value={values[key] ?? ""}
                   onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
@@ -199,9 +199,9 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
         )}
 
         <div className="flex gap-3 justify-end">
-          <button className="px-4 py-2 text-sm text-gray-400 hover:text-white" onClick={onClose}>Cancel</button>
+          <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Cancel</button>
           <button
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
+            className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-medium rounded-md disabled:opacity-50"
             disabled={trigger.isPending}
             onClick={() => trigger.mutate()}
           >
@@ -225,15 +225,15 @@ function TriggerRow({ t, onToggle, onRemove, serverBase }: {
   const isChannel = t.type === "channel";
 
   return (
-    <div className="flex items-start gap-3 bg-gray-800 rounded-lg px-3 py-2">
-      <button onClick={() => onToggle(t)} className="text-gray-400 hover:text-white mt-0.5">
-        {t.enabled ? <ToggleRight size={18} className="text-indigo-400" /> : <ToggleLeft size={18} />}
+    <div className="flex items-start gap-3 bg-slate-800 rounded-lg px-3 py-2">
+      <button onClick={() => onToggle(t)} className="text-slate-400 hover:text-white mt-0.5">
+        {t.enabled ? <ToggleRight size={18} className="text-sky-400" /> : <ToggleLeft size={18} />}
       </button>
       <div className="flex-1 min-w-0">
         {isCron && (
           <>
-            <div className="text-xs font-mono text-gray-200">{t.cronExpression}</div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs font-mono text-slate-200">{t.cronExpression}</div>
+            <div className="text-xs text-slate-500">
               {parseCron(t.cronExpression ?? "")}
               {" · "}{t.timezone}
               {t.nextRunAt && ` · next: ${new Date(t.nextRunAt).toLocaleString()}`}
@@ -243,22 +243,22 @@ function TriggerRow({ t, onToggle, onRemove, serverBase }: {
         )}
         {isChannel && (
           <>
-            <div className="flex items-center gap-1.5 text-xs text-gray-200">
+            <div className="flex items-center gap-1.5 text-xs text-slate-200">
               <MessageSquare size={11} className="text-purple-400" />
               <span className="font-medium capitalize">{t.channelType ?? "channel"}</span> trigger
             </div>
-            <div className="text-xs text-gray-500 mt-0.5 font-mono break-all">
+            <div className="text-xs text-slate-500 mt-0.5 font-mono break-all">
               {serverBase}/webhooks/{t.channelType}/{t.id}
             </div>
             {t.lastFiredAt && (
-              <div className="text-xs text-gray-600">last: {new Date(t.lastFiredAt).toLocaleString()}</div>
+              <div className="text-xs text-slate-600">last: {new Date(t.lastFiredAt).toLocaleString()}</div>
             )}
           </>
         )}
       </div>
       <button
         onClick={() => onRemove(t.id)}
-        className="text-gray-600 hover:text-red-400 transition-colors mt-0.5"
+        className="text-slate-600 hover:text-red-400 transition-colors mt-0.5"
       >
         <Trash2 size={13} />
       </button>
@@ -354,11 +354,11 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto"
+        className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold text-white mb-4">
-          <Clock size={16} className="inline mr-2 text-indigo-400" />
+          <Clock size={16} className="inline mr-2 text-sky-400" />
           Triggers: {pipeline.name}
         </h2>
 
@@ -378,13 +378,13 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
         )}
 
         {/* Tab bar */}
-        <div className="border-t border-gray-700 pt-4">
+        <div className="border-t border-slate-700 pt-4">
           <div className="flex gap-1 mb-4">
             {(["cron", "channel"] as const).map((t) => (
               <button
                 key={t}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  tab === t ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  tab === t ? "bg-sky-500 text-slate-950" : "bg-slate-800 text-slate-400 hover:bg-slate-700"
                 }`}
                 onClick={() => setTab(t)}
               >
@@ -399,21 +399,21 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
               <div className="flex gap-2">
                 <div className="flex-1">
                   <input
-                    className={`w-full bg-gray-800 border rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 font-mono focus:outline-none focus:border-indigo-500 ${
-                      cronInvalid ? "border-red-500" : "border-gray-600"
+                    className={`w-full bg-slate-800 border rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 font-mono focus:outline-none focus:border-sky-500 ${
+                      cronInvalid ? "border-red-500" : "border-slate-700"
                     }`}
                     placeholder="0 9 * * *"
                     value={cron}
                     onChange={(e) => setCron(e.target.value)}
                   />
                   {cronDescription && (
-                    <p className={`text-xs mt-1 ${cronInvalid ? "text-red-400" : "text-indigo-300"}`}>
+                    <p className={`text-xs mt-1 ${cronInvalid ? "text-red-400" : "text-sky-300"}`}>
                       {cronDescription}
                     </p>
                   )}
                 </div>
                 <input
-                  className="w-28 bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  className="w-28 bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                   placeholder="UTC"
                   value={tz}
                   onChange={(e) => setTz(e.target.value)}
@@ -421,7 +421,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
               </div>
 
               <button
-                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors"
                 onClick={() => setShowBuilder((v) => !v)}
               >
                 {showBuilder ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -447,7 +447,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                   <button
                     key={ct}
                     className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
-                      channelType === ct ? "bg-purple-700 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                      channelType === ct ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"
                     }`}
                     onClick={() => setChannelType(ct)}
                   >
@@ -457,10 +457,10 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Bot Token <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-slate-400 mb-1">Bot Token <span className="text-red-400">*</span></label>
                 <input
                   type="password"
-                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                   placeholder={channelType === "telegram" ? "1234567890:ABC..." : "xoxb-..."}
                   value={botToken}
                   onChange={(e) => setBotToken(e.target.value)}
@@ -469,9 +469,9 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
 
               {channelType === "telegram" && (
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Webhook Secret <span className="text-gray-600">(optional, recommended)</span></label>
+                  <label className="block text-xs text-slate-400 mb-1">Webhook Secret <span className="text-slate-600">(optional, recommended)</span></label>
                   <input
-                    className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                     placeholder="Random secret string"
                     value={webhookSecret}
                     onChange={(e) => setWebhookSecret(e.target.value)}
@@ -481,10 +481,10 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
 
               {channelType === "slack" && (
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Signing Secret <span className="text-red-400">*</span></label>
+                  <label className="block text-xs text-slate-400 mb-1">Signing Secret <span className="text-red-400">*</span></label>
                   <input
                     type="password"
-                    className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                     placeholder="Slack app signing secret"
                     value={signingSecret}
                     onChange={(e) => setSigningSecret(e.target.value)}
@@ -493,19 +493,19 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
               )}
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
+                <label className="block text-xs text-slate-400 mb-1">
                   {channelType === "telegram" ? "Chat ID filter" : "Channel ID filter"}
-                  {" "}<span className="text-gray-600">(optional)</span>
+                  {" "}<span className="text-slate-600">(optional)</span>
                 </label>
                 <input
-                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                   placeholder={channelType === "telegram" ? "-100123456789" : "C01234567"}
                   value={channelId}
                   onChange={(e) => setChannelId(e.target.value)}
                 />
               </div>
 
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-slate-600">
                 {channelType === "telegram"
                   ? "Set PUBLIC_URL env var to auto-register the Telegram webhook. Otherwise register manually."
                   : "Point your Slack app's Event Subscriptions to the webhook URL shown above."}
@@ -516,16 +516,16 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
           {/* Default inputs (shared) */}
           {fields.length > 0 && (
             <div className="space-y-2 mt-3">
-              <div className="text-xs text-gray-500 font-medium">Default inputs</div>
+              <div className="text-xs text-slate-500 font-medium">Default inputs</div>
               {fields.map(([key, prop]) => (
                 <div key={key}>
-                  <label className="block text-xs text-gray-400 mb-1">
+                  <label className="block text-xs text-slate-400 mb-1">
                     {key}
                     {required.has(key) && <span className="text-red-400 ml-1">*</span>}
-                    {prop.description && <span className="text-gray-600 ml-1">— {prop.description}</span>}
+                    {prop.description && <span className="text-slate-600 ml-1">— {prop.description}</span>}
                   </label>
                   <input
-                    className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                     placeholder={prop.description ?? key}
                     value={defaultInputs[key] ?? ""}
                     onChange={(e) => setDefaultInputs((v) => ({ ...v, [key]: e.target.value }))}
@@ -536,7 +536,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
           )}
 
           <button
-            className="mt-3 flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
+            className="mt-3 flex items-center gap-1.5 px-3 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-medium rounded-md disabled:opacity-50"
             disabled={!canSubmit}
             onClick={() => create.mutate()}
           >
@@ -546,7 +546,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
         </div>
 
         <div className="mt-4 flex justify-end">
-          <button className="px-4 py-2 text-sm text-gray-400 hover:text-white" onClick={onClose}>Close</button>
+          <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>
@@ -561,34 +561,40 @@ function PipelineRow({ pipeline }: { pipeline: ApiPipeline }) {
 
   return (
     <>
-      <div className="flex items-center gap-4 px-5 py-4 bg-gray-900 rounded-lg border border-gray-800">
-        <GitBranch size={16} className="text-indigo-400 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <Link to={`/pipelines/${pipeline.id}`} className="text-sm font-medium text-gray-100 hover:text-indigo-400 transition-colors">
-            {pipeline.name}
-          </Link>
-          {pipeline.description && (
-            <div className="text-xs text-gray-500 mt-0.5 truncate">{pipeline.description}</div>
-          )}
-          <div className="text-xs text-gray-600 mt-0.5">
-            {pipeline.steps.length} step{pipeline.steps.length !== 1 ? "s" : ""} · {pipeline.status}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6 px-5 py-4 bg-slate-900 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-4 flex-1 min-w-0 w-full md:w-auto">
+          <div className="p-3 bg-sky-500/10 rounded-2xl flex-shrink-0">
+            <GitBranch size={16} className="text-sky-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Link to={`/pipelines/${pipeline.id}`} className="text-sm font-medium text-slate-100 hover:text-sky-400 transition-colors">
+              {pipeline.name}
+            </Link>
+            {pipeline.description && (
+              <div className="text-xs text-slate-500 mt-0.5 truncate">{pipeline.description}</div>
+            )}
+            <div className="text-xs text-slate-600 mt-0.5">
+              {pipeline.steps.length} step{pipeline.steps.length !== 1 ? "s" : ""} · {pipeline.status}
+            </div>
           </div>
         </div>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-md transition-colors"
-          onClick={() => setShowTriggers(true)}
-          title="Manage cron triggers"
-        >
-          <Clock size={12} />
-          Triggers
-        </button>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-md transition-colors"
-          onClick={() => setShowRun(true)}
-        >
-          <Play size={12} />
-          Run
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-md transition-colors"
+            onClick={() => setShowTriggers(true)}
+            title="Manage cron triggers"
+          >
+            <Clock size={12} />
+            Triggers
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-medium rounded-md transition-colors"
+            onClick={() => setShowRun(true)}
+          >
+            <Play size={12} />
+            Run
+          </button>
+        </div>
       </div>
       {showRun && <RunModal pipeline={pipeline} onClose={() => setShowRun(false)} />}
       {showTriggers && <TriggersModal pipeline={pipeline} onClose={() => setShowTriggers(false)} />}
@@ -604,22 +610,22 @@ export default function Pipelines() {
     queryFn: () => api.listPipelines(),
   });
 
-  if (isLoading) return <div className="p-8 text-gray-500">Loading...</div>;
+  if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Pipelines</h1>
+        <h1 className="text-2xl font-bold font-display text-white">Pipelines</h1>
         <Link
           to="/pipelines/new"
-          className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-medium rounded-md transition-colors"
         >
           <Plus size={14} />
           New Pipeline
         </Link>
       </div>
       {pipelines.length === 0 ? (
-        <div className="text-gray-500 text-sm">No pipelines yet.</div>
+        <div className="text-slate-500 text-sm">No pipelines yet.</div>
       ) : (
         <div className="space-y-3">
           {pipelines.map((p) => (

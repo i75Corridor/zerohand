@@ -9,12 +9,21 @@ import ChatPanel from "../components/ChatPanel.tsx";
 import type { WsMessage, ApiStepRun, WsIncomingChat } from "@zerohand/shared";
 
 const STATUS_COLORS: Record<string, string> = {
-  queued: "border-gray-600 text-gray-400",
-  running: "border-blue-500 text-blue-400",
-  awaiting_approval: "border-yellow-500 text-yellow-400",
-  completed: "border-green-500 text-green-400",
-  failed: "border-red-500 text-red-400",
-  cancelled: "border-gray-600 text-gray-400",
+  queued: "border-slate-700 text-slate-400",
+  running: "border-sky-500 text-sky-400",
+  awaiting_approval: "border-amber-500 text-amber-400",
+  completed: "border-emerald-500 text-emerald-400",
+  failed: "border-rose-500 text-rose-400",
+  cancelled: "border-slate-700 text-slate-400",
+};
+
+const LEFT_BORDER_COLORS: Record<string, string> = {
+  queued: "border-l-slate-700",
+  running: "border-l-sky-500",
+  awaiting_approval: "border-l-amber-500",
+  completed: "border-l-emerald-500",
+  failed: "border-l-rose-500",
+  cancelled: "border-l-slate-700",
 };
 
 interface LiveStep {
@@ -35,7 +44,8 @@ function StepCard({
 }) {
   const [expanded, setExpanded] = useState(step.status === "running" || step.status === "failed");
   const prevStatus = useRef(step.status);
-  const colorClass = STATUS_COLORS[step.status] ?? "border-gray-600 text-gray-400";
+  const colorClass = STATUS_COLORS[step.status] ?? "border-slate-700 text-slate-400";
+  const leftBorderColor = LEFT_BORDER_COLORS[step.status] ?? "border-l-slate-700";
   const textRef = useRef<HTMLDivElement>(null);
 
   const displayText = liveData?.text ?? (step.output as { text?: string })?.text ?? step.error ?? "";
@@ -56,20 +66,20 @@ function StepCard({
   }, [displayText, isRunning]);
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${colorClass.split(" ")[0]}`}>
+    <div className={`border border-slate-800 border-l-4 ${leftBorderColor} rounded-xl overflow-hidden`}>
       <button
-        className="w-full flex items-center gap-3 px-4 py-3 bg-gray-900 hover:bg-gray-800 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-3 bg-slate-900/40 hover:bg-slate-900/60 transition-colors text-left"
         onClick={() => setExpanded((v) => !v)}
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <span className="text-sm font-medium text-gray-200">
+        <span className="text-sm font-medium text-slate-200">
           Step {step.stepIndex + 1}
         </span>
         <span className={`ml-auto text-xs font-medium ${colorClass.split(" ").slice(1).join(" ")}`}>
           {step.status}
         </span>
         {step.startedAt && step.finishedAt && (
-          <span className="text-xs text-gray-500 ml-2">
+          <span className="text-xs text-slate-500 ml-2">
             {Math.round(
               (new Date(step.finishedAt).getTime() - new Date(step.startedAt).getTime()) / 1000,
             )}s
@@ -78,23 +88,23 @@ function StepCard({
       </button>
 
       {expanded && isRunning && liveData?.stepRunId && (
-        <div className="bg-gray-900 px-4 pt-3 pb-2 border-b border-gray-800">
+        <div className="bg-slate-900/40 px-4 pt-3 pb-2 border-b border-slate-800">
           <ChatPanel stepRunId={liveData.stepRunId} onSend={onSend} />
         </div>
       )}
 
       {expanded && (
-        <div className="bg-gray-950 p-4" ref={textRef}>
+        <div className="bg-slate-950 p-4" ref={textRef}>
           {displayText ? (
             isRunning ? (
-              <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed">
+              <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed">
                 {displayText}
               </pre>
             ) : (
               <OutputPreview text={displayText} compact />
             )
           ) : (
-            <span className="text-xs text-gray-600 italic">
+            <span className="text-xs text-slate-600 italic">
               {step.status === "queued" ? "Waiting to start..." : "No output yet"}
             </span>
           )}
@@ -166,32 +176,32 @@ export default function RunDetail() {
     }
   });
 
-  if (!run) return <div className="p-8 text-gray-500">Loading...</div>;
+  if (!run) return <div className="p-8 text-slate-500">Loading...</div>;
 
   const statusColor =
     run.status === "completed"
-      ? "text-green-400"
+      ? "text-emerald-400"
       : run.status === "failed"
-      ? "text-red-400"
+      ? "text-rose-400"
       : run.status === "running"
-      ? "text-blue-400"
-      : "text-gray-400";
+      ? "text-sky-400"
+      : "text-slate-400";
 
   return (
     <div className="p-8 max-w-4xl">
-      <Link to="/dashboard" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300 mb-6">
+      <Link to="/dashboard" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-300 mb-6">
         <ArrowLeft size={14} />
         Back to Dashboard
       </Link>
 
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-xl font-bold text-white">
+          <h1 className="text-xl font-bold font-display text-white">
             {run.pipelineName ?? run.pipelineId}
           </h1>
           <span className={`text-sm font-medium ${statusColor}`}>{run.status}</span>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-slate-500">
           {run.triggerType} · {new Date(run.createdAt).toLocaleString()}
           {run.finishedAt && (
             <> · {Math.round((new Date(run.finishedAt).getTime() - new Date(run.startedAt ?? run.createdAt).getTime()) / 1000)}s total</>
@@ -199,8 +209,8 @@ export default function RunDetail() {
         </div>
         {Object.keys(run.inputParams).length > 0 && (
           <div className="mt-3 text-xs">
-            <span className="text-gray-500 mr-2">Inputs:</span>
-            <code className="text-gray-300 bg-gray-900 px-2 py-1 rounded">
+            <span className="text-slate-500 mr-2">Inputs:</span>
+            <code className="text-slate-300 bg-slate-900 px-2 py-1 rounded">
               {JSON.stringify(run.inputParams)}
             </code>
           </div>
@@ -208,7 +218,7 @@ export default function RunDetail() {
       </div>
 
       {run.error && (
-        <div className="mb-6 p-4 bg-red-950 border border-red-800 rounded-lg text-sm text-red-300">
+        <div className="mb-6 p-4 bg-rose-950/30 border border-rose-900/50 rounded-lg text-sm text-rose-300">
           {run.error}
         </div>
       )}
@@ -223,7 +233,7 @@ export default function RunDetail() {
           />
         ))}
         {steps.length === 0 && run.status === "queued" && (
-          <div className="text-sm text-gray-500">Waiting to start...</div>
+          <div className="text-sm text-slate-500">Waiting to start...</div>
         )}
       </div>
     </div>
