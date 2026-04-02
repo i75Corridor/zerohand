@@ -4,21 +4,21 @@
 
 ## Installation
 
-The CLI is published to GitHub Packages under the `@zerohand` scope. You need a GitHub personal access token (PAT) with `read:packages` permission.
+The CLI is published to GitHub Packages under the `@i75corridor` scope. You need a GitHub personal access token (PAT) with `read:packages` permission.
 
 ```bash
 # Set your GitHub PAT (needs read:packages scope)
 export NODE_AUTH_TOKEN=<your-pat>
 
-# Configure the @zerohand scope to use GitHub Packages (one-time)
-npm config set @zerohand:registry https://npm.pkg.github.com
+# Configure the @i75corridor scope to use GitHub Packages (one-time)
+npm config set @i75corridor:registry https://npm.pkg.github.com
 npm config set //npm.pkg.github.com/:_authToken ${NODE_AUTH_TOKEN}
 
 # Global install
-npm install -g @zerohand/cli
+npm install -g @i75corridor/zh-cli
 
 # Or run without installing
-npx @zerohand/cli <command>
+npx @i75corridor/zh-cli <command>
 ```
 
 If you are working inside this monorepo, copy `.npmrc.example` to `.npmrc` and set `NODE_AUTH_TOKEN` in your environment:
@@ -37,7 +37,7 @@ To test CLI changes locally without publishing:
 
 ```bash
 # Build the CLI
-pnpm --filter @zerohand/cli build
+pnpm --filter @i75corridor/zh-cli build
 
 # Link it globally — makes `zerohand` available in your PATH
 cd packages/cli
@@ -47,7 +47,7 @@ pnpm link --global
 zerohand --help
 
 # After each change, rebuild (the global link picks it up immediately)
-pnpm --filter @zerohand/cli build
+pnpm --filter @i75corridor/zh-cli build
 
 # When done, remove the global link
 cd packages/cli

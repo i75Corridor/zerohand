@@ -8,7 +8,7 @@ on:
       - packages/cli/**
 jobs:
   publish:
-    name: Publish @zerohand/cli to GitHub Packages
+    name: Publish @i75corridor/zh-cli to GitHub Packages
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,15 +26,15 @@ jobs:
           node-version: 22
           cache: pnpm
           registry-url: https://npm.pkg.github.com
-          scope: "@zerohand"
+          scope: "@i75corridor"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build CLI
-        run: pnpm --filter @zerohand/cli build
+        run: pnpm --filter @i75corridor/zh-cli build
 
       - name: Publish
-        run: pnpm --filter @zerohand/cli publish --no-git-checks
+        run: pnpm --filter @i75corridor/zh-cli publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

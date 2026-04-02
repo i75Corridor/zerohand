@@ -88,12 +88,12 @@ Open `http://localhost:8080`. API at `http://localhost:3009`.
 Install the CLI globally (published to GitHub Packages):
 
 ```bash
-# Configure the @zerohand scope once (needs read:packages PAT)
+# Configure the @i75corridor scope once (needs read:packages PAT)
 export NODE_AUTH_TOKEN=<your-github-pat>
-npm config set @zerohand:registry https://npm.pkg.github.com
+npm config set @i75corridor:registry https://npm.pkg.github.com
 npm config set //npm.pkg.github.com/:_authToken ${NODE_AUTH_TOKEN}
 
-npm install -g @zerohand/cli
+npm install -g @i75corridor/zh-cli
 ```
 
 Point it at your server (default is `http://localhost:3009`):
@@ -165,7 +165,7 @@ pnpm dev                          # start server + UI in parallel
 pnpm db:generate                  # regenerate SQL migrations from schema
 pnpm db:reset                     # wipe embedded postgres data (next dev re-seeds)
 pnpm typecheck                    # typecheck all packages
-pnpm --filter @zerohand/cli build # build the CLI binary
+pnpm --filter @i75corridor/zh-cli build # build the CLI binary
 ```
 
 ---

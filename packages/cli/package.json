@@ -1,5 +1,5 @@
 {
-  "name": "@zerohand/cli",
+  "name": "@i75corridor/zh-cli",
   "version": "0.1.0",
   "description": "Zerohand CLI — manage pipelines, runs, and packages from the terminal",
   "type": "module",
