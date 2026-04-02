@@ -24,11 +24,11 @@ function MarkdownOutput({ serverPath }: { serverPath: string }) {
       .catch(() => setError(true));
   }, [serverPath]);
 
-  if (error) return <p className="text-xs text-red-400 italic">Could not load file.</p>;
-  if (content === null) return <p className="text-xs text-gray-500 italic">Loading...</p>;
+  if (error) return <p className="text-xs text-rose-400 italic">Could not load file.</p>;
+  if (content === null) return <p className="text-xs text-slate-500 italic">Loading...</p>;
 
   return (
-    <div className="prose prose-invert prose-sm max-w-none text-gray-300">
+    <div className="prose prose-invert prose-sm max-w-none text-slate-300">
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );
@@ -49,7 +49,7 @@ export default function OutputPreview({ text, compact = false }: OutputPreviewPr
       <img
         src={fileUrl(text.trim())}
         alt="Pipeline output"
-        className="rounded-md max-w-full border border-gray-700"
+        className="rounded-xl max-w-full border border-slate-700/60"
         style={compact ? { maxHeight: "300px", objectFit: "contain" } : undefined}
       />
     );
@@ -66,7 +66,7 @@ export default function OutputPreview({ text, compact = false }: OutputPreviewPr
   // Plain text fallback
   return (
     <pre
-      className={`text-xs text-gray-300 whitespace-pre-wrap font-mono leading-relaxed ${
+      className={`text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed ${
         compact ? "max-h-96 overflow-y-auto" : ""
       }`}
     >

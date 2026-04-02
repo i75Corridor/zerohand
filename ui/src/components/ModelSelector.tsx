@@ -84,7 +84,7 @@ export default function ModelSelector({
         className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
       />
       {selectedModel && (
-        <div className="mt-1 flex gap-3 text-xs text-gray-500">
+        <div className="mt-1 flex gap-3 text-xs text-slate-500">
           <span>{(selectedModel.contextWindow / 1000).toFixed(0)}k ctx</span>
           {selectedModel.costInputPerM > 0 && (
             <span>
