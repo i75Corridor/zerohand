@@ -34,6 +34,7 @@ An agentic workflow orchestrator built on [pi.dev](https://github.com/badlogic/p
 |---------|-------------|
 | `packages/db` | Drizzle ORM schema + migration client |
 | `packages/shared` | Shared API types, status enums, WebSocket message types |
+| `packages/cli` | `zerohand` CLI — manage pipelines, runs, and packages from the terminal |
 | `server` | Express API + embedded PostgreSQL + execution engine |
 | `ui` | React + Vite + TailwindCSS operator dashboard |
 
@@ -75,12 +76,44 @@ docker compose up -d
 
 Open `http://localhost:8080`. API at `http://localhost:3009`.
 
-### Run a pipeline
+### Run a pipeline (web)
 
 1. Go to **Pipelines** → click **Run** next to "The Daily Absurdist"
 2. Enter a topic (e.g. `"AI replacing middle managers"`)
 3. Click **Run Pipeline** → redirected to Run Detail
 4. Watch steps execute in real-time
+
+### Run a pipeline (CLI)
+
+Install the CLI globally (published to GitHub Packages):
+
+```bash
+# Configure the @zerohand scope once
+npm config set @zerohand:registry https://npm.pkg.github.com
+npm config set //npm.pkg.github.com/:_authToken <your-github-pat>
+
+npm install -g @zerohand/cli
+```
+
+Point it at your server (default is `http://localhost:3009`):
+
+```bash
+zerohand config set server http://localhost:3009
+```
+
+Trigger a run and stream output:
+
+```bash
+zerohand run "The Daily Absurdist" --input topic="AI hype" --watch
+```
+
+Scaffold a new pipeline package:
+
+```bash
+zerohand new my-pipeline
+```
+
+See [`docs/cli.md`](./docs/cli.md) for the full command reference.
 
 ---
 
@@ -89,19 +122,8 @@ Open `http://localhost:8080`. API at `http://localhost:3009`.
 ### Pipelines
 Define multi-step workflows as YAML packages. Each step references a skill or worker, a prompt template, and optional configuration. Steps execute sequentially; outputs are accessible in downstream prompt templates via `{{steps.N.output}}`.
 
-### Skill-based Execution (recommended)
-Skills are folders in `SKILLS_DIR` with a `SKILL.md` (system prompt + frontmatter) and optional `scripts/` directory (executable tools). Three skill types:
-- **`pi`** — LLM agent session using the pipeline's model, with skill system prompt and script tools
-- **`imagen`** — Google Imagen image generation
-- **`publish`** — Assembles and writes a markdown file to disk
-
-The Daily Absurdist pipeline uses `researcher`, `writer`, `editor`, `imagen`, and `publisher` skills.
-
-### Workers (legacy, backwards compatible)
-Worker DB records with their own model, system prompt, and tool config. Three built-in types:
-- **`pi`** — LLM agent via pi.dev (Gemini, Claude, GPT)
-- **`imagen`** — Google Imagen image generation
-- **`publish`** — Assembles and writes a markdown file to disk
+### Skill-based Execution
+Skills are folders in `SKILLS_DIR` with a `SKILL.md` (system prompt + frontmatter) and an optional `scripts/` directory of executable tools. Each skill runs as a `pi` LLM agent session using the pipeline's configured model. Specialized capabilities like image generation and publishing are provided by external skill packages rather than built into the server.
 
 ### Cron Triggers
 Schedule pipelines to run automatically. Set a cron expression, timezone, and default inputs — the trigger manager fires the pipeline at the scheduled time.
@@ -138,10 +160,11 @@ All step events stream to the UI over WebSocket as they happen — text deltas, 
 ## Useful Scripts
 
 ```bash
-pnpm dev          # start server + UI in parallel
-pnpm db:generate  # regenerate SQL migrations from schema
-pnpm db:reset     # wipe embedded postgres data (next dev re-seeds)
-pnpm typecheck    # typecheck all packages
+pnpm dev                          # start server + UI in parallel
+pnpm db:generate                  # regenerate SQL migrations from schema
+pnpm db:reset                     # wipe embedded postgres data (next dev re-seeds)
+pnpm typecheck                    # typecheck all packages
+pnpm --filter @zerohand/cli build # build the CLI binary
 ```
 
 ---
