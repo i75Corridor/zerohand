@@ -4,6 +4,7 @@ import type {
   ApiPipeline,
   ApiPipelineRun,
   ApiPipelineStep,
+  ApiSecurityReport,
   ApiStepRun,
 } from "@zerohand/shared";
 
@@ -105,8 +106,16 @@ export class ApiClient {
     return this.request("GET", `/packages/discover${qs}`);
   }
 
-  installPackage(repoUrl: string): Promise<object> {
-    return this.request("POST", "/packages/install", { repoUrl });
+  installPackage(repoUrl: string, force?: boolean): Promise<object> {
+    return this.request("POST", "/packages/install", { repoUrl, force: force ?? false });
+  }
+
+  scanPackage(repoUrl: string): Promise<ApiSecurityReport> {
+    return this.request("POST", "/packages/scan", { repoUrl });
+  }
+
+  getPackageSecurity(id: string): Promise<ApiSecurityReport> {
+    return this.request("GET", `/packages/${id}/security`);
   }
 
   installLocalPackage(localPath: string): Promise<object> {

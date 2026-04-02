@@ -20,9 +20,10 @@ import {
 import { join, resolve, sep, basename } from "node:path";
 import { eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { installedPackages, pipelines, secrets } from "@zerohand/db";
+import { installedPackages, packageSecurityChecks, pipelines, secrets } from "@zerohand/db";
 import { importPipelinePackage } from "./pipeline-import.js";
 import { decrypt } from "./crypto.js";
+import { scanPackage, type SecurityReport } from "./security-scanner.js";
 
 // ── git helpers ────────────────────────────────────────────────────────────────
 
@@ -152,6 +153,7 @@ function getPackageSkillNames(packageDir: string): string[] {
 export interface PackageInstallResult {
   pipelineName: string;
   skills: SkillInstallResult;
+  security: SecurityReport;
 }
 
 export async function installPackage(
@@ -159,6 +161,7 @@ export async function installPackage(
   repoUrl: string,
   packagesDir: string,
   skillsDir: string,
+  options: { force?: boolean } = {},
 ): Promise<PackageInstallResult> {
   const { repo, repoFullName } = parseRepoUrl(repoUrl);
 
@@ -189,6 +192,19 @@ export async function installPackage(
     throw new Error(`Repository ${repoFullName} does not contain a pipeline.yaml at root`);
   }
 
+  // Security scan — runs before any skills are installed
+  const security = scanPackage(localPath);
+  if (security.level === "high" && !options.force) {
+    rmSync(localPath, { recursive: true, force: true });
+    const summary = security.findings
+      .filter((f) => f.level === "high")
+      .map((f) => `  • [${f.file}] ${f.description}`)
+      .join("\n");
+    throw new Error(
+      `Package ${repoFullName} failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
+    );
+  }
+
   // Install skills
   mkdirSync(skillsDir, { recursive: true });
   const skillResult = installSkills(localPath, skillsDir);
@@ -215,7 +231,7 @@ export async function installPackage(
     .limit(1);
   const pipelineId = pipelineRows[0]?.id ?? null;
 
-  await db.insert(installedPackages).values({
+  const [installed] = await db.insert(installedPackages).values({
     repoUrl,
     repoFullName,
     pipelineId,
@@ -225,16 +241,27 @@ export async function installPackage(
     localPath,
     skills: skillNames,
     metadata: { description: "", stars: 0 },
+  }).returning({ id: installedPackages.id });
+
+  // Persist security scan result
+  await db.insert(packageSecurityChecks).values({
+    packageId: installed.id,
+    repoUrl,
+    level: security.level,
+    findings: security.findings as unknown as Array<Record<string, unknown>>,
+    scannedFiles: security.scannedFiles,
+    scannedAt: new Date(security.scannedAt),
   });
 
-  console.log(`[Packages] Installed ${repoFullName}: ${pipelineManifestName}`);
-  return { pipelineName: pipelineManifestName, skills: skillResult };
+  console.log(`[Packages] Installed ${repoFullName}: ${pipelineManifestName} (security: ${security.level})`);
+  return { pipelineName: pipelineManifestName, skills: skillResult, security };
 }
 
 export async function updatePackage(
   db: Db,
   packageId: string,
   skillsDir: string,
+  options: { force?: boolean } = {},
 ): Promise<PackageInstallResult> {
   const pkg = await db
     .select()
@@ -259,6 +286,20 @@ export async function updatePackage(
 
   await git(["pull", "--ff-only"], localPath);
 
+  // Security scan after pull
+  const security = scanPackage(localPath);
+  if (security.level === "high" && !options.force) {
+    // Roll back to previous state by resetting to the installed ref
+    try { await git(["reset", "--hard", pkg[0].installedRef ?? "HEAD~1"], localPath); } catch { /* best effort */ }
+    const summary = security.findings
+      .filter((f) => f.level === "high")
+      .map((f) => `  • [${f.file}] ${f.description}`)
+      .join("\n");
+    throw new Error(
+      `Package ${pkg[0].repoFullName} update failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
+    );
+  }
+
   const skillResult = installSkills(localPath, skillsDir);
   const skillNames = getPackageSkillNames(localPath);
   await importPipelinePackage(db, localPath);
@@ -275,6 +316,16 @@ export async function updatePackage(
     })
     .where(eq(installedPackages.id, packageId));
 
+  // Persist updated security scan result
+  await db.insert(packageSecurityChecks).values({
+    packageId,
+    repoUrl,
+    level: security.level,
+    findings: security.findings as unknown as Array<Record<string, unknown>>,
+    scannedFiles: security.scannedFiles,
+    scannedAt: new Date(security.scannedAt),
+  });
+
   const pipelineName = (() => {
     try {
       const yaml = readFileSync(join(localPath, "pipeline.yaml"), "utf-8");
@@ -283,8 +334,8 @@ export async function updatePackage(
     } catch { return basename(localPath); }
   })();
 
-  console.log(`[Packages] Updated ${pkg[0].repoFullName}`);
-  return { pipelineName, skills: skillResult };
+  console.log(`[Packages] Updated ${pkg[0].repoFullName} (security: ${security.level})`);
+  return { pipelineName, skills: skillResult, security };
 }
 
 export async function uninstallPackage(

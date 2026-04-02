@@ -141,6 +141,23 @@ export interface ApiBudgetPolicy {
   createdAt: string;
 }
 
+export type SecurityLevel = "low" | "medium" | "high";
+
+export interface ApiSecurityFinding {
+  level: SecurityLevel;
+  category: string;
+  file: string;
+  line?: number;
+  description: string;
+}
+
+export interface ApiSecurityReport {
+  level: SecurityLevel;
+  findings: ApiSecurityFinding[];
+  scannedFiles: number;
+  scannedAt: string;
+}
+
 export interface ApiInstalledPackage {
   id: string;
   repoUrl: string;

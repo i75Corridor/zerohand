@@ -8,3 +8,4 @@ export * from "./budgets.js";
 export * from "./settings.js";
 export * from "./secrets.js";
 export * from "./packages.js";
+export * from "./security-checks.js";
