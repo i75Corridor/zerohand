@@ -7,12 +7,12 @@
 The CLI is published to GitHub Packages under the `@zerohand` scope. You need a GitHub personal access token (PAT) with `read:packages` permission.
 
 ```bash
-# Authenticate with GitHub Packages (one-time)
-export GITHUB_TOKEN=<your-pat>
+# Set your GitHub PAT (needs read:packages scope)
+export NODE_AUTH_TOKEN=<your-pat>
 
 # Configure the @zerohand scope to use GitHub Packages (one-time)
 npm config set @zerohand:registry https://npm.pkg.github.com
-npm config set //npm.pkg.github.com/:_authToken ${GITHUB_TOKEN}
+npm config set //npm.pkg.github.com/:_authToken ${NODE_AUTH_TOKEN}
 
 # Global install
 npm install -g @zerohand/cli
@@ -21,7 +21,15 @@ npm install -g @zerohand/cli
 npx @zerohand/cli <command>
 ```
 
-If you are working inside this monorepo, the `.npmrc` at the repo root already configures the `@zerohand` scope — set `GITHUB_TOKEN` in your environment and `pnpm install` will resolve the package correctly.
+If you are working inside this monorepo, copy `.npmrc.example` to `.npmrc` and set `NODE_AUTH_TOKEN` in your environment:
+
+```bash
+cp .npmrc.example .npmrc
+export NODE_AUTH_TOKEN=<your-pat>
+pnpm install
+```
+
+`.npmrc` is gitignored — your token stays local.
 
 ### Local development install
 

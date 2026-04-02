@@ -35,6 +35,13 @@ jobs:
       - name: Build CLI
         run: pnpm --filter @zerohand/cli build
 
+      - name: Configure GitHub Packages registry
+        run: |
+          echo "@zerohand:registry=https://npm.pkg.github.com" >> packages/cli/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> packages/cli/.npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish
         run: pnpm --filter @zerohand/cli publish --no-git-checks
         env:

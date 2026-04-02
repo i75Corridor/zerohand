@@ -1,4 +1,5 @@
 .env
+.npmrc
 output/*
 !output/.gitkeep
 node_modules/

@@ -88,9 +88,10 @@ Open `http://localhost:8080`. API at `http://localhost:3009`.
 Install the CLI globally (published to GitHub Packages):
 
 ```bash
-# Configure the @zerohand scope once
+# Configure the @zerohand scope once (needs read:packages PAT)
+export NODE_AUTH_TOKEN=<your-github-pat>
 npm config set @zerohand:registry https://npm.pkg.github.com
-npm config set //npm.pkg.github.com/:_authToken <your-github-pat>
+npm config set //npm.pkg.github.com/:_authToken ${NODE_AUTH_TOKEN}
 
 npm install -g @zerohand/cli
 ```
