@@ -166,6 +166,25 @@ export interface ApiDiscoveredPackage {
   installed: boolean;
 }
 
+export interface ApiModelEntry {
+  /** e.g. "gemini-2.5-flash" */
+  id: string;
+  /** Full ID including provider: "google/gemini-2.5-flash" */
+  fullId: string;
+  /** Human-readable name */
+  name: string;
+  provider: string;
+  contextWindow: number;
+  maxTokens: number;
+  reasoning: boolean;
+  /** Cents per 1M input tokens (from registry, may be 0 if unknown) */
+  costInputPerM: number;
+  /** Cents per 1M output tokens */
+  costOutputPerM: number;
+  /** True if the env var for this provider is set */
+  available: boolean;
+}
+
 // WebSocket message types
 export interface WsStepEvent {
   type: "step_event";

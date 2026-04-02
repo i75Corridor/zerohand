@@ -10,7 +10,7 @@ import {
   type ResourceLoader,
   type Skill,
 } from "@mariozechner/pi-coding-agent";
-import { getModel } from "@mariozechner/pi-ai";
+import { getModel, getProviders, getEnvApiKey } from "@mariozechner/pi-ai";
 import type { StepRunEventType } from "@zerohand/shared";
 import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -20,9 +20,10 @@ mkdirSync(AUTH_DIR, { recursive: true });
 
 export function makeAuthStorage(): AuthStorage {
   const auth = AuthStorage.create(`${AUTH_DIR}/auth.json`);
-  if (process.env.GEMINI_API_KEY) auth.setRuntimeApiKey("google", process.env.GEMINI_API_KEY);
-  if (process.env.ANTHROPIC_API_KEY) auth.setRuntimeApiKey("anthropic", process.env.ANTHROPIC_API_KEY);
-  if (process.env.OPENAI_API_KEY) auth.setRuntimeApiKey("openai", process.env.OPENAI_API_KEY);
+  for (const provider of getProviders()) {
+    const key = getEnvApiKey(provider);
+    if (key) auth.setRuntimeApiKey(provider, key);
+  }
   return auth;
 }
 

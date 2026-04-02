@@ -13,7 +13,9 @@ function toApi(row: typeof settings.$inferSelect): ApiSetting {
   };
 }
 
-export function createSettingsRouter(db: Db): Router {
+const MODEL_KEYS = new Set(["agent_model", "default_pipeline_model"]);
+
+export function createSettingsRouter(db: Db, onModelChange?: () => void): Router {
   const router = Router();
 
   router.get("/settings", async (_req, res, next) => {
@@ -49,9 +51,12 @@ export function createSettingsRouter(db: Db): Router {
         })
         .returning();
 
-      // Invalidate the model costs cache whenever pricing is updated
+      // Invalidate caches whenever related settings change
       if (req.params.key === "model_costs") {
         invalidateModelCostsCache();
+      }
+      if (MODEL_KEYS.has(req.params.key) && onModelChange) {
+        onModelChange();
       }
 
       res.json(toApi(row));

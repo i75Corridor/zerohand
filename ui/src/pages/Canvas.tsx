@@ -24,17 +24,17 @@ function OutputCard({
   const text = (step.output as { text?: string })?.text ?? "";
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden flex flex-col">
-      <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+    <div className="bg-slate-900/50 border border-slate-800/60 rounded-2xl overflow-hidden flex flex-col card-glow">
+      <div className="px-4 py-3 border-b border-slate-800/60 flex items-center gap-2">
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-gray-200 truncate">{pipelineName}</div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs font-medium text-slate-200 truncate">{pipelineName}</div>
+          <div className="text-xs text-slate-500">
             Step {step.stepIndex + 1} · {new Date(runDate).toLocaleDateString()}
           </div>
         </div>
         <Link
           to={`/runs/${runId}`}
-          className="text-indigo-400 hover:text-indigo-300 flex-shrink-0"
+          className="text-sky-400 hover:text-sky-300 flex-shrink-0 transition-colors"
           title="View run"
         >
           <ExternalLink size={12} />
@@ -80,20 +80,20 @@ export default function Canvas() {
 
   const completedRuns = runs.filter((r) => r.status === "completed").slice(0, 20);
 
-  if (isLoading) return <div className="p-8 text-gray-500">Loading...</div>;
+  if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
 
   return (
     <div className="p-8">
       <div className="flex items-center gap-3 mb-6">
-        <Image size={20} className="text-indigo-400" />
-        <h1 className="text-2xl font-bold text-white">Canvas</h1>
-        <span className="text-sm text-gray-500">{completedRuns.length} completed runs</span>
+        <Image size={20} className="text-sky-400" />
+        <h1 className="text-2xl font-display font-bold text-white tracking-tight">Canvas</h1>
+        <span className="text-sm text-slate-500">{completedRuns.length} completed runs</span>
       </div>
 
       {completedRuns.length === 0 ? (
-        <div className="text-gray-500 text-sm">
+        <div className="text-slate-500 text-sm">
           No completed runs yet.{" "}
-          <Link to="/pipelines" className="text-indigo-400 hover:underline">
+          <Link to="/pipelines" className="text-sky-400 hover:text-sky-300 transition-colors">
             Trigger a pipeline
           </Link>{" "}
           to generate output.

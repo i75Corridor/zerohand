@@ -14,6 +14,7 @@ import type { Db } from "@zerohand/db";
 import { pipelines, pipelineRuns, pipelineSteps, stepRuns, costEvents } from "@zerohand/db";
 import type { WsGlobalAgentEvent, WsDataChanged, WsIncomingGlobalChat } from "@zerohand/shared";
 import { makeAuthStorage, makeResourceLoader } from "./pi-executor.js";
+import { readModelSetting } from "./model-utils.js";
 
 const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
 
@@ -109,8 +110,9 @@ export class GlobalAgentService {
   private async ensureSession(): Promise<AgentSession> {
     if (this.session) return this.session;
 
-    const model = getModel("google" as any, "gemini-2.5-flash" as any);
-    if (!model) throw new Error("Model not found: google/gemini-2.5-flash");
+    const { provider, modelId } = await readModelSetting(this.db, "agent_model", "google/gemini-2.5-flash");
+    const model = getModel(provider as any, modelId as any);
+    if (!model) throw new Error(`Model not found: ${provider}/${modelId}`);
 
     const authStorage = makeAuthStorage();
     const modelRegistry = ModelRegistry.inMemory(authStorage);
@@ -157,6 +159,10 @@ export class GlobalAgentService {
 
     this.session = session;
     return session;
+  }
+
+  async resetSession(): Promise<void> {
+    await this.destroySession();
   }
 
   private async destroySession(): Promise<void> {

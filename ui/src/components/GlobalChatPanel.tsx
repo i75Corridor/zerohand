@@ -113,20 +113,20 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 border-l border-gray-800">
+    <div className="flex flex-col h-full bg-slate-950 border-l border-slate-800/60">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-gray-800 flex-shrink-0">
-        <span className="text-sm font-semibold text-white flex-1">Agent</span>
+      <div className="flex items-center px-4 py-3 border-b border-slate-800/60 flex-shrink-0">
+        <span className="text-sm font-semibold text-white flex-1">Agent AI</span>
         <button
           onClick={handleReset}
-          className="p-1.5 text-gray-500 hover:text-gray-300 rounded-md hover:bg-gray-800 transition-colors mr-1"
+          className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg hover:bg-slate-800/60 transition-colors mr-1"
           title="Reset conversation"
         >
           <RotateCcw size={14} />
         </button>
         <button
           onClick={onClose}
-          className="p-1.5 text-gray-500 hover:text-gray-300 rounded-md hover:bg-gray-800 transition-colors"
+          className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg hover:bg-slate-800/60 transition-colors"
           title="Close"
         >
           <X size={14} />
@@ -137,7 +137,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
         {messages.length === 0 && !streamingText && !isStreaming && (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-600 text-sm text-center px-4">
+            <p className="text-slate-600 text-sm text-center px-4">
               Ask me about pipelines, runs, skills, or tell me to trigger a run.
             </p>
           </div>
@@ -146,10 +146,10 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[90%] rounded-lg px-3 py-2 text-sm ${
+              className={`max-w-[90%] rounded-xl px-3 py-2 text-sm ${
                 msg.role === "user"
-                  ? "bg-gray-700 text-white"
-                  : "bg-gray-800 text-gray-200"
+                  ? "bg-sky-500/10 text-white border border-sky-500/20"
+                  : "bg-slate-800/60 text-slate-200 border border-slate-700/50"
               }`}
             >
               {msg.role === "assistant" ? (
@@ -166,8 +166,8 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {/* Tool call indicator */}
         {activeToolCall && (
           <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-lg px-3 py-2 text-xs text-indigo-400 flex items-center gap-2">
-              <span className="inline-block w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-sky-400 flex items-center gap-2">
+              <span className="inline-block w-1.5 h-1.5 bg-sky-400 rounded-full animate-pulse" />
               {activeToolCall.replace(/_/g, " ")}
             </div>
           </div>
@@ -176,11 +176,11 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {/* Streaming text */}
         {streamingText && (
           <div className="flex justify-start">
-            <div className="max-w-[90%] bg-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200">
+            <div className="max-w-[90%] bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-slate-200">
               <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-ul:my-1 prose-li:my-0">
                 <ReactMarkdown>{streamingText}</ReactMarkdown>
               </div>
-              <span className="inline-block w-1 h-3.5 bg-gray-400 ml-0.5 animate-pulse align-middle" />
+              <span className="inline-block w-1 h-3.5 bg-sky-400 ml-0.5 animate-pulse align-middle opacity-70" />
             </div>
           </div>
         )}
@@ -188,10 +188,10 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {/* Typing indicator */}
         {isStreaming && !streamingText && !activeToolCall && (
           <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-lg px-3 py-2 text-sm flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" />
-              <span className="inline-block w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
-              <span className="inline-block w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2 text-sm flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" />
+              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:300ms]" />
             </div>
           </div>
         )}
@@ -200,11 +200,11 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-gray-800">
+      <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-slate-800/60">
         <div className="flex gap-2">
           <input
             ref={inputRef}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+            className="flex-1 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
             placeholder={isStreaming ? "Waiting..." : "Ask anything..."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -214,7 +214,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {isStreaming ? (
             <button
               onClick={handleAbort}
-              className="px-2.5 py-2 bg-red-800 hover:bg-red-700 text-white rounded-lg transition-colors"
+              className="px-2.5 py-2 bg-rose-900/60 hover:bg-rose-800/60 border border-rose-800/50 text-rose-400 rounded-xl transition-colors"
               title="Abort"
             >
               <StopCircle size={14} />
@@ -223,7 +223,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
             <button
               onClick={sendMessage}
               disabled={!input.trim()}
-              className="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50"
+              className="px-2.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl transition-colors disabled:opacity-40"
               title="Send"
             >
               <Send size={14} />

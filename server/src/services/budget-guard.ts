@@ -2,19 +2,23 @@ import { eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { costEvents, settings } from "@zerohand/db";
 import type { ModelCostEntry } from "@zerohand/shared";
+import { listAllModels } from "./model-utils.js";
 
 const SETTINGS_KEY = "model_costs";
 const CACHE_TTL_MS = 60_000;
 
-// Default pricing used if the settings table has no entry yet (cents per 1M tokens)
-const DEFAULT_MODEL_COSTS: Record<string, ModelCostEntry> = {
-  "gemini-2.5-flash": { inputPerM: 7.5, outputPerM: 30 },
-  "gemini-2.5-pro": { inputPerM: 125, outputPerM: 500 },
-  "gemini-2.0-flash": { inputPerM: 7.5, outputPerM: 30 },
-  "claude-sonnet-4-6": { inputPerM: 300, outputPerM: 1500 },
-  "claude-opus-4-6": { inputPerM: 1500, outputPerM: 7500 },
-  "gpt-4o": { inputPerM: 250, outputPerM: 1000 },
-};
+// Build default pricing from the pi-ai registry (cents per 1M tokens)
+function buildDefaultModelCosts(): Record<string, ModelCostEntry> {
+  const costs: Record<string, ModelCostEntry> = {};
+  for (const m of listAllModels()) {
+    if (m.costInputPerM > 0 || m.costOutputPerM > 0) {
+      costs[`${m.provider}/${m.id}`] = { inputPerM: m.costInputPerM, outputPerM: m.costOutputPerM };
+    }
+  }
+  return costs;
+}
+
+const DEFAULT_MODEL_COSTS: Record<string, ModelCostEntry> = buildDefaultModelCosts();
 
 let cachedCosts: Record<string, ModelCostEntry> | null = null;
 let cacheTime = 0;
@@ -52,7 +56,11 @@ export function estimateCostCents(
   inputTokens: number,
   outputTokens: number,
 ): number {
-  const rates = costs[modelName] ?? { inputPerM: 50, outputPerM: 150 };
+  // Look up by bare name, then by any provider/name key ending in /modelName
+  const rates =
+    costs[modelName] ??
+    Object.entries(costs).find(([k]) => k.endsWith(`/${modelName}`))?.[1] ??
+    { inputPerM: 50, outputPerM: 150 };
   return Math.ceil(
     (inputTokens * rates.inputPerM + outputTokens * rates.outputPerM) / 1_000_000,
   );

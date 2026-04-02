@@ -10,6 +10,7 @@ import type {
   ApiSecret,
   ApiInstalledPackage,
   ApiDiscoveredPackage,
+  ApiModelEntry,
 } from "@zerohand/shared";
 
 const BASE = "/api";
@@ -137,6 +138,9 @@ export const api = {
   updatePackage: (id: string) => request<{ pipelineName: string }>(`/packages/${id}/update`, { method: "POST" }),
   uninstallPackage: (id: string) => request<void>(`/packages/${id}`, { method: "DELETE" }),
   checkForUpdates: () => request<{ message: string }>("/packages/check-updates", { method: "POST" }),
+
+  // Models
+  listModels: () => request<ApiModelEntry[]>("/models"),
 
   // Budgets
   listBudgets: (scopeType?: string, scopeId?: string) => {
