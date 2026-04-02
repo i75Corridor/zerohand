@@ -9,6 +9,14 @@
   "exports": {
     ".": "./dist/cli.cjs"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/i75Corridor/zerohand.git",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs --banner:js=\"#!/usr/bin/env node\" --external:ws",
     "dev": "tsx src/index.ts",
