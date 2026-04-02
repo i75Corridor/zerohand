@@ -192,7 +192,5 @@ zerohand/
 
 ## Roadmap
 
-See [ROADMAP.md](./ROADMAP.md) for the full phased implementation plan with detailed feature breakdowns, file references, and verification steps.
-
-**Next up: Phase 4 — Global Agent Chat Interface** (persistent AI assistant accessible from every page).
+Tracked on the [i75Corridor project board](https://github.com/orgs/i75Corridor/projects/8/views/1).
 

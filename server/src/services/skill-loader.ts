@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import { Type } from "@mariozechner/pi-ai";
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
+import { isDockerAvailable, runInSandbox } from "./script-sandbox.js";
 
 const SCRIPT_TIMEOUT_MS = 30_000;
 const STDOUT_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB
@@ -38,6 +39,10 @@ export interface SkillDef {
   systemPrompt: string;
   scriptPaths: string[];
   metadata?: Record<string, unknown>;
+  /** Whether scripts in this skill need outbound network access (default false) */
+  network?: boolean;
+  /** Secret keys from the secrets store to inject as env vars when running scripts */
+  secrets?: string[];
 }
 
 export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | null {
@@ -78,6 +83,8 @@ export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | n
   }
 
   const skillMetadata = fm.metadata as Record<string, unknown> | undefined;
+  const skillNetwork = (fm.network as boolean | undefined) ?? false;
+  const skillSecrets = (fm.secrets as string[] | undefined) ?? [];
 
   return {
     name: String(fm.name ?? skillName),
@@ -89,13 +96,46 @@ export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | n
     systemPrompt: body,
     scriptPaths,
     metadata: skillMetadata,
+    network: skillNetwork,
+    secrets: skillSecrets,
   };
+}
+
+interface ExecScriptOpts {
+  networkEnabled?: boolean;
+  secretEnv?: Record<string, string>;
+  timeoutMs?: number;
 }
 
 async function execScript(
   scriptPath: string,
   input: Record<string, unknown>,
+  opts: ExecScriptOpts = {},
 ): Promise<string> {
+  const timeoutMs = opts.timeoutMs ?? SCRIPT_TIMEOUT_MS;
+
+  // Use Docker sandbox if available
+  if (isDockerAvailable()) {
+    try {
+      return await runInSandbox({
+        scriptPath,
+        input,
+        networkEnabled: opts.networkEnabled ?? false,
+        timeoutMs,
+        maxStdout: STDOUT_SIZE_LIMIT,
+        secretEnv: opts.secretEnv,
+      });
+    } catch (err) {
+      // If it's a Docker-specific failure (image missing, etc.), fall through to subprocess
+      const msg = String(err);
+      if (msg.includes("Unable to find image") || msg.includes("No such image")) {
+        console.warn("[Sandbox] Docker image not found, falling back to subprocess");
+      } else {
+        throw err;
+      }
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const ext = extname(scriptPath);
     let cmd: string;
@@ -114,8 +154,8 @@ async function execScript(
 
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
-      reject(new Error(`Script timed out after ${SCRIPT_TIMEOUT_MS / 1000}s: ${scriptPath}`));
-    }, SCRIPT_TIMEOUT_MS);
+      reject(new Error(`Script timed out after ${timeoutMs / 1000}s: ${scriptPath}`));
+    }, timeoutMs);
 
     child.stdin.write(JSON.stringify(input));
     child.stdin.end();
@@ -145,7 +185,7 @@ async function execScript(
   });
 }
 
-export function makeScriptTools(scriptPaths: string[]): ToolDefinition[] {
+export function makeScriptTools(scriptPaths: string[], execOpts: ExecScriptOpts = {}): ToolDefinition[] {
   return scriptPaths.map((scriptPath) => {
     const toolName = basename(scriptPath, extname(scriptPath));
     return {
@@ -157,7 +197,7 @@ export function makeScriptTools(scriptPaths: string[]): ToolDefinition[] {
         maxResults: Type.Optional(Type.Number({ description: "Maximum results" })),
       }),
       execute: async (_id: string, params: Record<string, unknown>) => {
-        const stdout = await execScript(scriptPath, params);
+        const stdout = await execScript(scriptPath, params, execOpts);
         return { content: [{ type: "text" as const, text: stdout.trim() }], details: {} };
       },
     } as ToolDefinition;
@@ -172,6 +212,7 @@ export function makeScriptTools(scriptPaths: string[]): ToolDefinition[] {
 export async function runPrimaryScript(
   skill: SkillDef,
   input: Record<string, unknown>,
+  execOpts: ExecScriptOpts = {},
 ): Promise<string> {
   if (skill.scriptPaths.length === 0) {
     throw new Error(`Skill "${skill.name}" has no scripts in its scripts/ directory`);
@@ -179,7 +220,7 @@ export async function runPrimaryScript(
   const primary =
     skill.scriptPaths.find((p) => basename(p, extname(p)) === "generate") ??
     skill.scriptPaths[0];
-  return execScript(primary, input);
+  return execScript(primary, input, execOpts);
 }
 
 export function interpolateContext(text: string, context: Record<string, string>): string {

@@ -11,6 +11,8 @@ import { WsManager } from "./ws/index.js";
 import { ExecutionEngine } from "./services/execution-engine.js";
 import { TriggerManager } from "./services/trigger-manager.js";
 import { importAllPackages } from "./services/pipeline-import.js";
+import { checkForUpdates } from "./services/package-manager.js";
+import { detectDocker } from "./services/script-sandbox.js";
 import { createHealthRouter } from "./routes/health.js";
 import { createPipelinesRouter } from "./routes/pipelines.js";
 import { createPipelineRunsRouter } from "./routes/pipeline-runs.js";
@@ -22,6 +24,8 @@ import { createSettingsRouter } from "./routes/settings.js";
 import { createFilesRouter } from "./routes/files.js";
 import { createWebhooksRouter } from "./routes/webhooks.js";
 import { createSkillsRouter } from "./routes/skills.js";
+import { createSecretsRouter } from "./routes/secrets.js";
+import { createPackagesRouter } from "./routes/packages.js";
 import { ChannelManager } from "./services/channel-manager.js";
 import { GlobalAgentService } from "./services/global-agent.js";
 
@@ -107,6 +111,20 @@ async function main() {
   const pipelinesDir = process.env.PIPELINES_DIR ?? join(process.cwd(), "..", "pipelines");
   await importAllPackages(db, pipelinesDir);
 
+  // Non-blocking startup update check
+  void checkForUpdates(db).catch((err) =>
+    console.error("[Packages] Startup update check failed:", err),
+  );
+
+  // Check Docker availability for script sandbox
+  void detectDocker().then((available) => {
+    if (available) {
+      console.log("[Sandbox] Docker available — skill scripts will run in containers");
+    } else {
+      console.warn("[Sandbox] Docker not available — skill scripts will run as subprocesses");
+    }
+  });
+
   const app = express();
 
   app.use(cors());
@@ -122,6 +140,8 @@ async function main() {
   app.use("/api", createSettingsRouter(db));
   app.use("/api", createFilesRouter());
   app.use("/api", createSkillsRouter());
+  app.use("/api", createSecretsRouter(db));
+  app.use("/api", createPackagesRouter(db));
 
   // 404 handler
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));

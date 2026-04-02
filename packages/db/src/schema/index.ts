@@ -6,3 +6,5 @@ export * from "./approvals.js";
 export * from "./costs.js";
 export * from "./budgets.js";
 export * from "./settings.js";
+export * from "./secrets.js";
+export * from "./packages.js";

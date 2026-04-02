@@ -16,17 +16,23 @@ import { runSkillStep } from "./pi-executor.js";
 import { runImagenWorker, runPublishWorker } from "./builtin-workers.js";
 import { recordCost } from "./budget-guard.js";
 import { SessionRegistry } from "./session-registry.js";
+import { loadSecretsMap } from "../routes/secrets.js";
 
 export function resolvePrompt(
   template: string,
   inputParams: Record<string, unknown>,
   stepOutputs: Map<number, string>,
+  secretsMap: Map<string, string> = new Map(),
 ): string {
   return template.replace(/\{\{([^}]+)\}\}/g, (_, path: string) => {
     const parts = path.trim().split(".");
 
     if (parts[0] === "input" && parts.length === 2) {
       return String(inputParams[parts[1]] ?? "");
+    }
+
+    if (parts[0] === "secret" && parts.length === 2) {
+      return secretsMap.get(parts[1]) ?? `{{${path}}}`;
     }
 
     if (parts[0] === "steps" && parts.length >= 3) {
@@ -158,6 +164,9 @@ export class ExecutionEngine {
     const pipelineModelProvider = pipeline?.modelProvider ?? "google";
     const pipelineModelName = pipeline?.modelName ?? "gemini-2.5-flash";
 
+    // Load all secrets once for {{secret.KEY}} interpolation
+    const secretsMap = await loadSecretsMap(this.db);
+
     const steps = await this.db.query.pipelineSteps.findMany({
       where: eq(pipelineSteps.pipelineId, run.pipelineId),
       orderBy: [asc(pipelineSteps.stepIndex)],
@@ -276,7 +285,7 @@ export class ExecutionEngine {
         status: "queued",
       });
 
-      const resolvedPrompt = resolvePrompt(step.promptTemplate, run.inputParams, stepOutputs);
+      const resolvedPrompt = resolvePrompt(step.promptTemplate, run.inputParams, stepOutputs, secretsMap);
 
       await this.db
         .update(stepRuns)
@@ -326,6 +335,18 @@ export class ExecutionEngine {
         const skill = loadSkillDef(step.skillName, skillsDir);
         if (!skill) throw new Error(`Skill not found: ${step.skillName}`);
 
+        // Build secretEnv for script sandbox: only inject secrets declared by the skill
+        const skillSecretKeys = skill.secrets ?? [];
+        const scriptSecretEnv: Record<string, string> = {};
+        for (const key of skillSecretKeys) {
+          const val = secretsMap.get(key);
+          if (val !== undefined) scriptSecretEnv[key] = val;
+        }
+        const scriptExecOpts = {
+          networkEnabled: skill.network ?? false,
+          secretEnv: scriptSecretEnv,
+        };
+
         if (skill.type === "pi") {
           const sessionDir = join(this.sessionsDir, "skills", runId, step.skillName + "-" + step.stepIndex);
           mkdirSync(sessionDir, { recursive: true });
@@ -345,6 +366,7 @@ export class ExecutionEngine {
                 pipelineRunId: runId,
               });
             },
+            scriptExecOpts,
           );
           this.sessionRegistry.unregister(stepRun.id);
           output = result.output;
@@ -368,7 +390,7 @@ export class ExecutionEngine {
               aspectRatio,
               personGeneration,
               apiKey: process.env.GEMINI_API_KEY,
-            });
+            }, scriptExecOpts);
             const parsed = JSON.parse(result) as { imagePath?: string };
             output = parsed.imagePath ?? result.trim();
             onEvent("text_delta", `Image saved: ${output}`);
@@ -382,7 +404,7 @@ export class ExecutionEngine {
 
           if (skill.scriptPaths.length > 0) {
             const { runPrimaryScript } = await import("./skill-loader.js");
-            const result = await runPrimaryScript(skill, { article: resolvedPrompt, imagePath, outputDir });
+            const result = await runPrimaryScript(skill, { article: resolvedPrompt, imagePath, outputDir }, scriptExecOpts);
             const parsed = JSON.parse(result) as { publishedPath?: string };
             output = parsed.publishedPath ?? result.trim();
             onEvent("text_delta", `Article published: ${output}`);

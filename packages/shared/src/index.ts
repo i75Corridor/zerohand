@@ -110,6 +110,13 @@ export interface ApiSetting {
   updatedAt: string;
 }
 
+export interface ApiSecret {
+  key: string;
+  maskedValue: string;
+  description: string | null;
+  updatedAt: string;
+}
+
 export interface ApiApproval {
   id: string;
   pipelineRunId: string;
@@ -132,6 +139,31 @@ export interface ApiBudgetPolicy {
   warnPercent: number;
   hardStopEnabled: boolean;
   createdAt: string;
+}
+
+export interface ApiInstalledPackage {
+  id: string;
+  repoUrl: string;
+  repoFullName: string;
+  pipelineId: string | null;
+  pipelineName: string | null;
+  skills: string[];
+  updateAvailable: boolean;
+  installedRef: string | null;
+  latestRef: string | null;
+  metadata: Record<string, unknown> | null;
+  installedAt: string | null;
+  lastCheckedAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface ApiDiscoveredPackage {
+  fullName: string;
+  description: string;
+  url: string;
+  stars: number;
+  topics: string[];
+  installed: boolean;
 }
 
 // WebSocket message types

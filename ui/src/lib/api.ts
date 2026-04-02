@@ -7,6 +7,9 @@ import type {
   ApiApproval,
   ApiBudgetPolicy,
   ApiSkill,
+  ApiSecret,
+  ApiInstalledPackage,
+  ApiDiscoveredPackage,
 } from "@zerohand/shared";
 
 const BASE = "/api";
@@ -106,6 +109,34 @@ export const api = {
     const filename = serverPath.split("/").pop() ?? serverPath;
     return `/api/files/${encodeURIComponent(filename)}`;
   },
+
+  // Secrets
+  listSecrets: () => request<ApiSecret[]>("/secrets"),
+  createSecret: (key: string, value: string, description?: string) =>
+    request<ApiSecret>("/secrets", {
+      method: "POST",
+      body: JSON.stringify({ key, value, description }),
+    }),
+  updateSecret: (key: string, value: string, description?: string) =>
+    request<ApiSecret>(`/secrets/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      body: JSON.stringify({ value, description }),
+    }),
+  deleteSecret: (key: string) =>
+    request<void>(`/secrets/${encodeURIComponent(key)}`, { method: "DELETE" }),
+
+  // Packages
+  listInstalledPackages: () => request<ApiInstalledPackage[]>("/packages"),
+  discoverPackages: (q?: string) =>
+    request<ApiDiscoveredPackage[]>(`/packages/discover${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  installPackage: (repoUrl: string) =>
+    request<{ pipelineName: string }>("/packages/install", {
+      method: "POST",
+      body: JSON.stringify({ repoUrl }),
+    }),
+  updatePackage: (id: string) => request<{ pipelineName: string }>(`/packages/${id}/update`, { method: "POST" }),
+  uninstallPackage: (id: string) => request<void>(`/packages/${id}`, { method: "DELETE" }),
+  checkForUpdates: () => request<{ message: string }>("/packages/check-updates", { method: "POST" }),
 
   // Budgets
   listBudgets: (scopeType?: string, scopeId?: string) => {
