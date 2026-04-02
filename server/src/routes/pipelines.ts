@@ -1,8 +1,12 @@
+import { writeFileSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { Router } from "express";
 import { eq, asc } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { pipelines, pipelineSteps } from "@zerohand/db";
+import { pipelines, pipelineSteps, installedPackages } from "@zerohand/db";
 import type { ApiPipeline, ApiPipelineStep } from "@zerohand/shared";
+import { stringify } from "yaml";
 
 function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineStep {
   return {
@@ -38,6 +42,46 @@ async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise<ApiPip
     createdAt: pipeline.createdAt.toISOString(),
     steps: steps.map((s) => toApiStep(s)),
   };
+}
+
+function pipelineToYaml(pipeline: ApiPipeline): string {
+  const doc: Record<string, unknown> = { name: pipeline.name };
+  if (pipeline.description) doc.description = pipeline.description;
+  if (pipeline.modelProvider && pipeline.modelName) doc.model = `${pipeline.modelProvider}/${pipeline.modelName}`;
+  if (pipeline.systemPrompt) doc.systemPrompt = pipeline.systemPrompt;
+  if (pipeline.inputSchema && Object.keys(pipeline.inputSchema).length > 0) doc.inputSchema = pipeline.inputSchema;
+  doc.steps = pipeline.steps.map((s) => {
+    const step: Record<string, unknown> = { name: s.name };
+    if (s.skillName) step.skill = s.skillName;
+    step.promptTemplate = s.promptTemplate;
+    if (s.timeoutSeconds && s.timeoutSeconds !== 300) step.timeoutSeconds = s.timeoutSeconds;
+    if (s.approvalRequired) step.approvalRequired = true;
+    if (s.metadata && Object.keys(s.metadata).length > 0) step.metadata = s.metadata;
+    return step;
+  });
+  return stringify(doc, { lineWidth: 100 });
+}
+
+async function syncLocalPackageToDisk(db: Db, pipelineId: string): Promise<void> {
+  const pkgs = await db
+    .select()
+    .from(installedPackages)
+    .where(eq(installedPackages.pipelineId, pipelineId));
+
+  const localPkg = pkgs.find((p) => (p.metadata as Record<string, unknown> | null)?.isLocal === true);
+  if (!localPkg) return;
+
+  const localPath = localPkg.localPath;
+  if (!existsSync(localPath)) {
+    console.warn(`[Local Package] Directory no longer exists, skipping disk write: ${localPath}`);
+    return;
+  }
+
+  const pipeline = await loadPipelineWithSteps(db, pipelineId);
+  if (!pipeline) return;
+
+  writeFileSync(join(localPath, "pipeline.yaml"), pipelineToYaml(pipeline), "utf-8");
+  console.log(`[Local Package] Wrote pipeline.yaml to ${localPath}`);
 }
 
 export function createPipelinesRouter(db: Db): Router {
@@ -105,6 +149,7 @@ export function createPipelinesRouter(db: Db): Router {
         .returning();
       if (!row) return res.status(404).json({ error: "Pipeline not found" });
       const result = await loadPipelineWithSteps(db, row.id);
+      await syncLocalPackageToDisk(db, row.id);
       res.json(result);
     } catch (err) {
       next(err);
@@ -164,6 +209,7 @@ export function createPipelinesRouter(db: Db): Router {
         .where(eq(pipelineSteps.id, req.params.stepId))
         .returning();
       if (!row) return res.status(404).json({ error: "Step not found" });
+      await syncLocalPackageToDisk(db, req.params.pipelineId);
       res.json(toApiStep(row));
     } catch (err) {
       next(err);
