@@ -67,6 +67,7 @@ export async function runSkillStep(
   sessionDir?: string,
   signal?: AbortSignal,
   onSessionCreated?: (session: AgentSession) => void,
+  scriptExecOpts?: { networkEnabled?: boolean; secretEnv?: Record<string, string> },
 ): Promise<PiRunResult> {
   const provider = skill.modelProvider ?? modelProvider;
   const name = skill.modelName ?? modelName;
@@ -82,7 +83,7 @@ export async function runSkillStep(
   const modelRegistry = ModelRegistry.inMemory(authStorage);
   const resourceLoader = makeResourceLoader(fullSystemPrompt, []);
 
-  const customTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths);
+  const customTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths, scriptExecOpts ?? {});
 
   const sessionManager = sessionDir
     ? SessionManager.create(sessionDir)
