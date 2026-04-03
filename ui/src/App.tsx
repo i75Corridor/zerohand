@@ -9,6 +9,8 @@ import Approvals from "./pages/Approvals.tsx";
 import Canvas from "./pages/Canvas.tsx";
 import Settings from "./pages/Settings.tsx";
 import Packages from "./pages/Packages.tsx";
+import Skills from "./pages/Skills.tsx";
+import SkillDetail from "./pages/SkillDetail.tsx";
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/canvas" element={<Canvas />} />
         <Route path="/packages" element={<Packages />} />
+        <Route path="/skills" element={<Skills />} />
+        <Route path="/skills/:name" element={<SkillDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/runs/:id" element={<RunDetail />} />
       </Routes>

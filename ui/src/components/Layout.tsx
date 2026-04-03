@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package } from "lucide-react";
+import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu } from "lucide-react";
 
 function FistIcon({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
@@ -26,7 +26,7 @@ function FistIcon({ size = 24, className = "" }: { size?: number; className?: st
   );
 }
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api.ts";
@@ -71,6 +71,7 @@ function ApprovalsNavItem() {
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/pipelines", label: "Pipelines", icon: GitBranch },
+  { to: "/skills", label: "Skills", icon: Cpu },
   { to: "/packages", label: "Packages", icon: Package },
   { to: "/canvas", label: "Canvas", icon: Image },
 ];
@@ -81,6 +82,33 @@ const bottomNav = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [agentOpen, setAgentOpen] = useState(false);
+  const [agentWidth, setAgentWidth] = useState(384); // 96 * 4 = w-96 default
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+
+  const onDragStart = useCallback((e: React.MouseEvent) => {
+    isDragging.current = true;
+    startX.current = e.clientX;
+    startWidth.current = agentWidth;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = startX.current - e.clientX;
+      setAgentWidth(Math.min(700, Math.max(280, startWidth.current + delta)));
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [agentWidth]);
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -174,9 +202,15 @@ export default function Layout({ children }: { children: ReactNode }) {
         </main>
 
         {agentOpen && (
-          <div className="w-96 flex-shrink-0">
-            <GlobalChatPanel onClose={() => setAgentOpen(false)} />
-          </div>
+          <>
+            <div
+              className="w-1 flex-shrink-0 cursor-col-resize hover:bg-sky-500/40 active:bg-sky-500/60 transition-colors"
+              onMouseDown={onDragStart}
+            />
+            <div className="flex-shrink-0" style={{ width: agentWidth }}>
+              <GlobalChatPanel onClose={() => setAgentOpen(false)} />
+            </div>
+          </>
         )}
       </div>
     </div>

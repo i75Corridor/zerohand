@@ -110,12 +110,6 @@ export interface ApiSetting {
   updatedAt: string;
 }
 
-export interface ApiSecret {
-  key: string;
-  maskedValue: string;
-  description: string | null;
-  updatedAt: string;
-}
 
 export interface ApiApproval {
   id: string;
@@ -141,6 +135,23 @@ export interface ApiBudgetPolicy {
   createdAt: string;
 }
 
+export type SecurityLevel = "low" | "medium" | "high";
+
+export interface ApiSecurityFinding {
+  level: SecurityLevel;
+  category: string;
+  file: string;
+  line?: number;
+  description: string;
+}
+
+export interface ApiSecurityReport {
+  level: SecurityLevel;
+  findings: ApiSecurityFinding[];
+  scannedFiles: number;
+  scannedAt: string;
+}
+
 export interface ApiInstalledPackage {
   id: string;
   repoUrl: string;
@@ -155,6 +166,17 @@ export interface ApiInstalledPackage {
   installedAt: string | null;
   lastCheckedAt: string | null;
   updatedAt: string | null;
+}
+
+export interface ApiSkillBundleScript {
+  filename: string;
+  content: string;
+}
+
+export interface ApiSkillBundle {
+  name: string;
+  skillMd: string;
+  scripts: ApiSkillBundleScript[];
 }
 
 export interface ApiDiscoveredPackage {

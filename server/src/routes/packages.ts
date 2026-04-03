@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { basename, join } from "node:path";
-import { eq } from "drizzle-orm";
+import { tmpdir } from "node:os";
+import { desc, eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { installedPackages, pipelines } from "@zerohand/db";
+import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
 import {
   installPackage,
   updatePackage,
@@ -12,14 +13,8 @@ import {
   checkForUpdates,
 } from "../services/package-manager.js";
 import { importPipelinePackage } from "../services/pipeline-import.js";
-
-function getPackagesDir(): string {
-  return process.env.PACKAGES_DIR ?? join(process.env.DATA_DIR ?? join(process.cwd(), ".data"), "packages");
-}
-
-function getSkillsDir(): string {
-  return process.env.SKILLS_DIR ?? join(process.cwd(), "..", "skills");
-}
+import { scanPackage } from "../services/security-scanner.js";
+import { packagesDir as getPackagesDir, skillsDir as getSkillsDir } from "../services/paths.js";
 
 export function createPackagesRouter(db: Db): Router {
   const router = Router();
@@ -76,26 +71,89 @@ export function createPackagesRouter(db: Db): Router {
     }
   });
 
-  // POST /api/packages/install — { repoUrl }
+  // POST /api/packages/install — { repoUrl, force? }
   router.post("/packages/install", async (req, res, next) => {
     try {
-      const { repoUrl } = req.body as { repoUrl?: string };
+      const { repoUrl, force } = req.body as { repoUrl?: string; force?: boolean };
       if (!repoUrl || typeof repoUrl !== "string") {
         res.status(400).json({ error: "repoUrl is required" });
         return;
       }
-      const result = await installPackage(db, repoUrl, getPackagesDir(), getSkillsDir());
+      const result = await installPackage(db, repoUrl, getPackagesDir(), getSkillsDir(), { force: force === true });
       res.status(201).json(result);
     } catch (err) {
       next(err);
     }
   });
 
+  // POST /api/packages/scan — { repoUrl } — preview security scan without installing
+  router.post("/packages/scan", async (req, res, next) => {
+    let tempDir: string | null = null;
+    try {
+      const { repoUrl } = req.body as { repoUrl?: string };
+      if (!repoUrl || typeof repoUrl !== "string") {
+        res.status(400).json({ error: "repoUrl is required" });
+        return;
+      }
+
+      // Clone to a temp directory, scan, then delete
+      tempDir = mkdtempSync(join(tmpdir(), "zerohand-scan-"));
+      const { spawn } = await import("node:child_process");
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn("git", ["clone", "--depth", "1", repoUrl, tempDir!], {
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        child.on("close", (code) => {
+          if (code === 0) resolve();
+          else reject(new Error(`git clone failed for ${repoUrl}`));
+        });
+        child.on("error", reject);
+      });
+
+      const report = scanPackage(tempDir);
+      res.json(report);
+    } catch (err) {
+      next(err);
+    } finally {
+      if (tempDir && existsSync(tempDir)) {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    }
+  });
+
   // POST /api/packages/:id/update — pull latest
   router.post("/packages/:id/update", async (req, res, next) => {
     try {
-      const result = await updatePackage(db, req.params.id, getSkillsDir());
+      const { force } = req.body as { force?: boolean };
+      const result = await updatePackage(db, req.params.id, getSkillsDir(), { force: force === true });
       res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // GET /api/packages/:id/security — latest security report for a package
+  router.get("/packages/:id/security", async (req, res, next) => {
+    try {
+      const rows = await db
+        .select()
+        .from(packageSecurityChecks)
+        .where(eq(packageSecurityChecks.packageId, req.params.id))
+        .orderBy(desc(packageSecurityChecks.scannedAt))
+        .limit(1);
+
+      if (rows.length === 0) {
+        res.status(404).json({ error: "No security scan found for this package" });
+        return;
+      }
+
+      const row = rows[0];
+      res.json({
+        level: row.level,
+        findings: row.findings,
+        scannedFiles: row.scannedFiles,
+        scannedAt: row.scannedAt?.toISOString() ?? null,
+      });
     } catch (err) {
       next(err);
     }
@@ -194,14 +252,11 @@ export function createPackagesRouter(db: Db): Router {
     }
   });
 
-  // POST /api/packages/check-updates — background update check
+  // POST /api/packages/check-updates — synchronous update check
   router.post("/packages/check-updates", async (_req, res, next) => {
     try {
-      // Fire off non-blocking, respond immediately
-      void checkForUpdates(db).catch((err) =>
-        console.error("[Packages] check-updates failed:", err),
-      );
-      res.json({ message: "Update check started" });
+      await checkForUpdates(db);
+      res.json({ message: "Update check complete" });
     } catch (err) {
       next(err);
     }

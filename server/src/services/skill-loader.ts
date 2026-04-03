@@ -5,6 +5,7 @@ import { parse as parseYaml } from "yaml";
 import { Type } from "@mariozechner/pi-ai";
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { isDockerAvailable, runInSandbox } from "./script-sandbox.js";
+import { outputDir as getOutputDir } from "./paths.js";
 
 const SCRIPT_TIMEOUT_MS = 30_000;
 const STDOUT_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB
@@ -26,6 +27,7 @@ function safeChildEnv(): NodeJS.ProcessEnv {
     join(process.cwd(), "node_modules"),       // server/node_modules
     join(process.cwd(), "..", "node_modules"), // monorepo root node_modules
   ].join(":");
+  env.OUTPUT_DIR = getOutputDir();
   return env;
 }
 
@@ -33,7 +35,7 @@ export interface SkillDef {
   name: string;
   version: string;
   description: string;
-  type: "pi" | "imagen" | "publish";
+  type: "pi";
   modelProvider?: string;
   modelName?: string;
   systemPrompt: string;
@@ -86,11 +88,14 @@ export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | n
   const skillNetwork = (fm.network as boolean | undefined) ?? false;
   const skillSecrets = (fm.secrets as string[] | undefined) ?? [];
 
+  // version lives in metadata per spec; fall back to top-level for old skills
+  const version = String(skillMetadata?.version ?? fm.version ?? "0.0.0");
+
   return {
     name: String(fm.name ?? skillName),
-    version: String(fm.version ?? "0.0.0"),
+    version,
     description: String(fm.description ?? ""),
-    type: (fm.type as "pi" | "imagen" | "publish") ?? "pi",
+    type: "pi",
     modelProvider,
     modelName,
     systemPrompt: body,
@@ -148,7 +153,7 @@ async function execScript(
     else { reject(new Error(`Unsupported script type: ${ext}`)); return; }
 
     const child = spawn(cmd, args, {
-      env: safeChildEnv(),
+      env: { ...safeChildEnv(), ...opts.secretEnv },
       cwd: dirname(scriptPath), // cwd = script's own directory, not server root
     });
 
@@ -191,10 +196,18 @@ export function makeScriptTools(scriptPaths: string[], execOpts: ExecScriptOpts 
     return {
       name: toolName,
       label: toolName.replace(/_/g, " "),
-      description: `Run the ${toolName} tool`,
+      description: `Run the ${toolName} script. Pass whatever parameters the skill body instructs — all fields are forwarded as JSON to the script via stdin.`,
       parameters: Type.Object({
-        query: Type.Optional(Type.String({ description: "Search query or input text" })),
-        maxResults: Type.Optional(Type.Number({ description: "Maximum results" })),
+        query: Type.Optional(Type.String({ description: "Search query or text input" })),
+        prompt: Type.Optional(Type.String({ description: "Text prompt for generation tools" })),
+        maxResults: Type.Optional(Type.Number({ description: "Maximum number of results" })),
+        outputDir: Type.Optional(Type.String({ description: "Output directory path" })),
+        slug: Type.Optional(Type.String({ description: "Filename slug (lowercase, hyphens)" })),
+        aspectRatio: Type.Optional(Type.String({ description: "Aspect ratio, e.g. '16:9'" })),
+        personGeneration: Type.Optional(Type.String({ description: "Person generation setting" })),
+        modelName: Type.Optional(Type.String({ description: "Model name override" })),
+        article: Type.Optional(Type.String({ description: "Article text for publishing tools" })),
+        imagePath: Type.Optional(Type.String({ description: "Image file path" })),
       }),
       execute: async (_id: string, params: Record<string, unknown>) => {
         const stdout = await execScript(scriptPath, params, execOpts);

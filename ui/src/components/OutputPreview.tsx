@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 
 function getOutputType(text: string): "image" | "markdown" | "text" {
   const lower = text.toLowerCase();
@@ -12,6 +13,23 @@ function fileUrl(serverPath: string): string {
   const filename = serverPath.split("/").pop() ?? serverPath;
   return `/api/files/${encodeURIComponent(filename)}`;
 }
+
+const markdownComponents: Components = {
+  img({ src, alt }) {
+    // Rewrite bare filenames or relative paths through the files API
+    const resolved =
+      src && !src.startsWith("http") && !src.startsWith("/api/")
+        ? `/api/files/${encodeURIComponent(src.split("/").pop() ?? src)}`
+        : src;
+    return (
+      <img
+        src={resolved}
+        alt={alt ?? ""}
+        className="rounded-xl max-w-full border border-slate-700/60 my-4"
+      />
+    );
+  },
+};
 
 function MarkdownOutput({ serverPath }: { serverPath: string }) {
   const [content, setContent] = useState<string | null>(null);
@@ -29,7 +47,7 @@ function MarkdownOutput({ serverPath }: { serverPath: string }) {
 
   return (
     <div className="prose prose-invert prose-sm max-w-none text-slate-300">
-      <ReactMarkdown>{content}</ReactMarkdown>
+      <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
     </div>
   );
 }

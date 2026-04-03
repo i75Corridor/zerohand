@@ -88,6 +88,10 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    if (!isStreaming) inputRef.current?.focus();
+  }, [isStreaming]);
+
   const sendMessage = () => {
     const text = input.trim();
     if (!text || isStreaming) return;
@@ -146,14 +150,14 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[90%] rounded-xl px-3 py-2 text-sm ${
+              className={`min-w-0 rounded-xl px-3 py-2 text-sm ${
                 msg.role === "user"
-                  ? "bg-sky-500/10 text-white border border-sky-500/20"
-                  : "bg-slate-800/60 text-slate-200 border border-slate-700/50"
+                  ? "max-w-[90%] bg-sky-500/10 text-white border border-sky-500/20"
+                  : "w-full bg-slate-800/60 text-slate-200 border border-slate-700/50"
               }`}
             >
               {msg.role === "assistant" ? (
-                <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-ul:my-1 prose-li:my-0">
+                <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               ) : (
@@ -176,8 +180,8 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {/* Streaming text */}
         {streamingText && (
           <div className="flex justify-start">
-            <div className="max-w-[90%] bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-slate-200">
-              <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-ul:my-1 prose-li:my-0">
+            <div className="max-w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-slate-200 min-w-0">
+              <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
                 <ReactMarkdown>{streamingText}</ReactMarkdown>
               </div>
               <span className="inline-block w-1 h-3.5 bg-sky-400 ml-0.5 animate-pulse align-middle opacity-70" />
@@ -205,11 +209,10 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           <input
             ref={inputRef}
             className="flex-1 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-            placeholder={isStreaming ? "Waiting..." : "Ask anything..."}
+            placeholder="Ask anything..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            disabled={isStreaming}
           />
           {isStreaming ? (
             <button

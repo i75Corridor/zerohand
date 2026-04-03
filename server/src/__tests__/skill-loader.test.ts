@@ -117,28 +117,6 @@ You research things.`,
     expect(skill!.modelName).toBe("gemini-2.5-flash");
   });
 
-  it("parses imagen type with metadata", () => {
-    const skillDir = join(skillsDir, "imagen");
-    mkdirSync(skillDir, { recursive: true });
-    writeFileSync(
-      join(skillDir, "SKILL.md"),
-      `---
-name: imagen
-version: "1.0.0"
-description: "Image generator"
-type: imagen
-metadata:
-  aspectRatio: "16:9"
-  personGeneration: allow_all
----
-Generate an image.`,
-    );
-
-    const skill = loadSkillDef("imagen", skillsDir);
-    expect(skill!.type).toBe("imagen");
-    expect(skill!.metadata?.aspectRatio).toBe("16:9");
-    expect(skill!.metadata?.personGeneration).toBe("allow_all");
-  });
 
   it("uses skill folder name as fallback when name is missing from frontmatter", () => {
     const skillDir = join(skillsDir, "myfallback");

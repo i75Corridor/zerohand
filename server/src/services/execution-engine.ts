@@ -13,17 +13,15 @@ import {
 import type { StepRunEventType, WsIncomingChat } from "@zerohand/shared";
 import type { WsManager } from "../ws/index.js";
 import { runSkillStep } from "./pi-executor.js";
-import { runImagenWorker, runPublishWorker } from "./builtin-workers.js";
+import { dataDir, skillsDir as getSkillsDir } from "./paths.js";
 import { recordCost } from "./budget-guard.js";
 import { SessionRegistry } from "./session-registry.js";
-import { loadSecretsMap } from "../routes/secrets.js";
 import { readModelSetting } from "./model-utils.js";
 
 export function resolvePrompt(
   template: string,
   inputParams: Record<string, unknown>,
   stepOutputs: Map<number, string>,
-  secretsMap: Map<string, string> = new Map(),
 ): string {
   return template.replace(/\{\{([^}]+)\}\}/g, (_, path: string) => {
     const parts = path.trim().split(".");
@@ -33,7 +31,7 @@ export function resolvePrompt(
     }
 
     if (parts[0] === "secret" && parts.length === 2) {
-      return secretsMap.get(parts[1]) ?? `{{${path}}}`;
+      return process.env[parts[1]] ?? `{{${path}}}`;
     }
 
     if (parts[0] === "steps" && parts.length >= 3) {
@@ -71,10 +69,7 @@ export class ExecutionEngine {
     private db: Db,
     private ws: WsManager,
   ) {
-    this.sessionsDir = resolve(
-      process.env.DATA_DIR ?? join(process.cwd(), ".data"),
-      "sessions",
-    );
+    this.sessionsDir = resolve(dataDir(), "sessions");
     mkdirSync(this.sessionsDir, { recursive: true });
   }
 
@@ -166,13 +161,26 @@ export class ExecutionEngine {
     const pipelineModelProvider = pipeline?.modelProvider ?? defaultModel.provider;
     const pipelineModelName = pipeline?.modelName ?? defaultModel.modelId;
 
-    // Load all secrets once for {{secret.KEY}} interpolation
-    const secretsMap = await loadSecretsMap(this.db);
-
     const steps = await this.db.query.pipelineSteps.findMany({
       where: eq(pipelineSteps.pipelineId, run.pipelineId),
       orderBy: [asc(pipelineSteps.stepIndex)],
     });
+
+    // Validate all env vars declared in skill secrets fields exist before starting
+    const { loadSkillDef: loadSkillDefForValidation } = await import("./skill-loader.js");
+    const skillsDir = getSkillsDir();
+    const missing: string[] = [];
+    for (const step of steps) {
+      if (!step.skillName) continue;
+      const skill = loadSkillDefForValidation(step.skillName, skillsDir);
+      if (!skill) continue;
+      for (const key of skill.secrets ?? []) {
+        if (!process.env[key] && !missing.includes(key)) missing.push(key);
+      }
+    }
+    if (missing.length > 0) {
+      throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+    }
 
     // Load completed step outputs for resume support
     const existingStepRuns = await this.db.query.stepRuns.findMany({
@@ -287,7 +295,7 @@ export class ExecutionEngine {
         status: "queued",
       });
 
-      const resolvedPrompt = resolvePrompt(step.promptTemplate, run.inputParams, stepOutputs, secretsMap);
+      const resolvedPrompt = resolvePrompt(step.promptTemplate, run.inputParams, stepOutputs);
 
       await this.db
         .update(stepRuns)
@@ -332,16 +340,14 @@ export class ExecutionEngine {
           throw new Error(`Step "${step.name}" has no skillName configured`);
         }
 
-        const skillsDir = process.env.SKILLS_DIR ?? join(process.cwd(), "..", "skills");
         const { loadSkillDef } = await import("./skill-loader.js");
         const skill = loadSkillDef(step.skillName, skillsDir);
         if (!skill) throw new Error(`Skill not found: ${step.skillName}`);
 
-        // Build secretEnv for script sandbox: only inject secrets declared by the skill
-        const skillSecretKeys = skill.secrets ?? [];
+        // Inject only the env vars declared in the skill's secrets field
         const scriptSecretEnv: Record<string, string> = {};
-        for (const key of skillSecretKeys) {
-          const val = secretsMap.get(key);
+        for (const key of skill.secrets ?? []) {
+          const val = process.env[key];
           if (val !== undefined) scriptSecretEnv[key] = val;
         }
         const scriptExecOpts = {
@@ -349,71 +355,30 @@ export class ExecutionEngine {
           secretEnv: scriptSecretEnv,
         };
 
-        if (skill.type === "pi") {
-          const sessionDir = join(this.sessionsDir, "skills", runId, step.skillName + "-" + step.stepIndex);
-          mkdirSync(sessionDir, { recursive: true });
-          const result = await runSkillStep(
-            skill,
-            pipelineSystemPrompt,
-            pipelineModelProvider,
-            pipelineModelName,
-            resolvedPrompt,
-            pipelineContext,
-            onEvent,
-            sessionDir,
-            signal,
-            (session) => {
-              this.sessionRegistry.register(stepRun.id, {
-                session,
-                pipelineRunId: runId,
-              });
-            },
-            scriptExecOpts,
-          );
-          this.sessionRegistry.unregister(stepRun.id);
-          output = result.output;
-          usage = result.usage;
-          await recordCost(this.db, stepRun.id, step.skillName, runId, pipelineModelProvider, pipelineModelName, usage);
-        } else if (skill.type === "imagen") {
-          const outputDir = process.env.OUTPUT_DIR ?? join(process.cwd(), "..", "output");
-          const slug = `${run.id.slice(0, 8)}-step${step.stepIndex}`;
-          const modelName = skill.modelName ?? "imagen-4.0-generate-001";
-          const aspectRatio = (skill.metadata?.aspectRatio as string | undefined) ?? "16:9";
-          const personGeneration = (skill.metadata?.personGeneration as string | undefined) ?? "allow_all";
-
-          if (skill.scriptPaths.length > 0) {
-            const { runPrimaryScript } = await import("./skill-loader.js");
-            onEvent("text_delta", `Generating image with model: ${modelName} (${aspectRatio})`);
-            const result = await runPrimaryScript(skill, {
-              prompt: resolvedPrompt,
-              modelName,
-              outputDir,
-              slug,
-              aspectRatio,
-              personGeneration,
-              apiKey: process.env.GEMINI_API_KEY,
-            }, scriptExecOpts);
-            const parsed = JSON.parse(result) as { imagePath?: string };
-            output = parsed.imagePath ?? result.trim();
-            onEvent("text_delta", `Image saved: ${output}`);
-          } else {
-            output = await runImagenWorker(resolvedPrompt, modelName, outputDir, slug, (msg) => onEvent("text_delta", msg), aspectRatio, personGeneration);
-          }
-        } else if (skill.type === "publish") {
-          const outputDir = process.env.OUTPUT_DIR ?? join(process.cwd(), "..", "output");
-          const imageStepIndex = step.metadata?.imageStepIndex as number | undefined;
-          const imagePath = imageStepIndex !== undefined ? (stepOutputs.get(imageStepIndex) ?? "") : "";
-
-          if (skill.scriptPaths.length > 0) {
-            const { runPrimaryScript } = await import("./skill-loader.js");
-            const result = await runPrimaryScript(skill, { article: resolvedPrompt, imagePath, outputDir }, scriptExecOpts);
-            const parsed = JSON.parse(result) as { publishedPath?: string };
-            output = parsed.publishedPath ?? result.trim();
-            onEvent("text_delta", `Article published: ${output}`);
-          } else {
-            output = await runPublishWorker(resolvedPrompt, imagePath, outputDir, (msg) => onEvent("text_delta", msg));
-          }
-        }
+        const sessionDir = join(this.sessionsDir, "skills", runId, step.skillName + "-" + step.stepIndex);
+        mkdirSync(sessionDir, { recursive: true });
+        const result = await runSkillStep(
+          skill,
+          pipelineSystemPrompt,
+          pipelineModelProvider,
+          pipelineModelName,
+          resolvedPrompt,
+          pipelineContext,
+          onEvent,
+          sessionDir,
+          signal,
+          (session) => {
+            this.sessionRegistry.register(stepRun.id, {
+              session,
+              pipelineRunId: runId,
+            });
+          },
+          scriptExecOpts,
+        );
+        this.sessionRegistry.unregister(stepRun.id);
+        output = result.output;
+        usage = result.usage;
+        await recordCost(this.db, stepRun.id, step.skillName, runId, pipelineModelProvider, pipelineModelName, usage);
 
         stepOutputs.set(step.stepIndex, output);
 

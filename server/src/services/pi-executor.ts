@@ -14,6 +14,7 @@ import { getModel, getProviders, getEnvApiKey } from "@mariozechner/pi-ai";
 import type { StepRunEventType } from "@zerohand/shared";
 import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { skillsDir as getSkillsDir } from "./paths.js";
 
 const AUTH_DIR = "/tmp/zerohand";
 mkdirSync(AUTH_DIR, { recursive: true });
@@ -29,7 +30,7 @@ export function makeAuthStorage(): AuthStorage {
 
 function loadWorkerSkills(skillNames: string[]): Skill[] {
   if (skillNames.length === 0) return [];
-  const skillsDir = process.env.SKILLS_DIR ?? join(process.cwd(), "..", "skills");
+  const skillsDir = getSkillsDir();
   if (!existsSync(skillsDir)) return [];
   const { skills } = loadSkillsFromDir({ dir: skillsDir, source: "zerohand" });
   return skillNames.length > 0
