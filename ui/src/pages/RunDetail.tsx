@@ -114,10 +114,57 @@ function StepCard({
   );
 }
 
+const EVENT_COLORS: Record<string, string> = {
+  run_start: "text-slate-400",
+  run_end: "text-slate-400",
+  step_start: "text-sky-400",
+  step_end: "text-emerald-400",
+  prompt: "text-violet-400",
+  tool_call: "text-amber-400",
+  tool_result: "text-amber-300",
+  llm_delta: "text-slate-500",
+  llm_output: "text-emerald-300",
+  error: "text-rose-400",
+};
+
+function DebugLogTab({ runId }: { runId: string }) {
+  const { data: entries = [] } = useQuery({
+    queryKey: ["run-log", runId],
+    queryFn: () => api.getRunLog(runId),
+    refetchInterval: 5000,
+  });
+
+  if (entries.length === 0) {
+    return (
+      <div className="text-sm text-slate-500 italic">
+        No log entries. Set <code className="bg-slate-900 px-1 rounded">LOG_LEVEL=info</code> or <code className="bg-slate-900 px-1 rounded">LOG_LEVEL=debug</code> to enable logging.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1 font-mono text-xs">
+      {entries.map((entry, i) => {
+        const { ts, event, ...rest } = entry;
+        const color = EVENT_COLORS[event as string] ?? "text-slate-400";
+        const tsStr = typeof ts === "string" ? new Date(ts).toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
+        return (
+          <div key={i} className="flex gap-3 py-0.5 border-b border-slate-900">
+            <span className="text-slate-600 shrink-0 w-28">{tsStr}</span>
+            <span className={`shrink-0 w-24 ${color}`}>{String(event)}</span>
+            <span className="text-slate-400 truncate">{JSON.stringify(rest)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function RunDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [liveSteps, setLiveSteps] = useState<Map<number, LiveStep>>(new Map());
+  const [activeTab, setActiveTab] = useState<"steps" | "log">("steps");
 
   const { data: run } = useQuery({
     queryKey: ["run", id],
@@ -223,19 +270,38 @@ export default function RunDetail() {
         </div>
       )}
 
-      <div className="space-y-3">
-        {steps.map((step) => (
-          <StepCard
-            key={step.id}
-            step={step}
-            liveData={liveSteps.get(step.stepIndex)}
-            onSend={wsSend}
-          />
-        ))}
-        {steps.length === 0 && run.status === "queued" && (
-          <div className="text-sm text-slate-500">Waiting to start...</div>
-        )}
+      <div className="flex gap-1 mb-4 border-b border-slate-800">
+        <button
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "steps" ? "text-white border-b-2 border-sky-500" : "text-slate-500 hover:text-slate-300"}`}
+          onClick={() => setActiveTab("steps")}
+        >
+          Steps
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "log" ? "text-white border-b-2 border-sky-500" : "text-slate-500 hover:text-slate-300"}`}
+          onClick={() => setActiveTab("log")}
+        >
+          Debug Log
+        </button>
       </div>
+
+      {activeTab === "steps" && (
+        <div className="space-y-3">
+          {steps.map((step) => (
+            <StepCard
+              key={step.id}
+              step={step}
+              liveData={liveSteps.get(step.stepIndex)}
+              onSend={wsSend}
+            />
+          ))}
+          {steps.length === 0 && run.status === "queued" && (
+            <div className="text-sm text-slate-500">Waiting to start...</div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "log" && <DebugLogTab runId={id!} />}
     </div>
   );
 }
