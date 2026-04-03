@@ -10,7 +10,7 @@ import {
   pipelines,
   approvals,
 } from "@zerohand/db";
-import type { StepRunEventType, WsIncomingChat } from "@zerohand/shared";
+import type { StepRunEventType, WsIncomingChat, RetryConfig } from "@zerohand/shared";
 import type { WsManager } from "../ws/index.js";
 import { runSkillStep } from "./pi-executor.js";
 import { dataDir, skillsDir as getSkillsDir } from "./paths.js";
@@ -18,6 +18,24 @@ import { RunLogger } from "./run-logger.js";
 import { recordCost } from "./budget-guard.js";
 import { SessionRegistry } from "./session-registry.js";
 import { readModelSetting } from "./model-utils.js";
+
+export function classifyError(err: unknown): "timeout" | "budget_exceeded" | "unknown" {
+  const msg = String(err).toLowerCase();
+  if (msg.includes("budget exceeded") || msg.includes("budget limit")) return "budget_exceeded";
+  if (msg.includes("timed out") || msg.includes("timeout")) return "timeout";
+  return "unknown";
+}
+
+export function isRetryable(err: unknown, config: RetryConfig | null | undefined): boolean {
+  if (classifyError(err) === "budget_exceeded") return false;
+  if (!config?.retryOnErrors?.length) return true;
+  const category = classifyError(err);
+  return config.retryOnErrors.includes(category);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export function resolvePrompt(
   template: string,
@@ -348,91 +366,129 @@ export class ExecutionEngine {
         }
       };
 
-      // ── Dispatch ───────────────────────────────────────────────────────────
+      // ── Dispatch (with retry) ──────────────────────────────────────────────
       let output = "";
       let usage: Record<string, unknown> = {};
+      const retryConfig = (step.retryConfig as RetryConfig | null) ?? null;
+      const maxRetries = retryConfig?.maxRetries ?? 0;
+      let attempt = 0;
 
-      try {
-        if (!step.skillName) {
-          throw new Error(`Step "${step.name}" has no skillName configured`);
-        }
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        try {
+          if (!step.skillName) {
+            throw new Error(`Step "${step.name}" has no skillName configured`);
+          }
 
-        const { loadSkillDef } = await import("./skill-loader.js");
-        const skill = loadSkillDef(step.skillName, skillsDir);
-        if (!skill) throw new Error(`Skill not found: ${step.skillName}`);
+          const { loadSkillDef } = await import("./skill-loader.js");
+          const skill = loadSkillDef(step.skillName, skillsDir);
+          if (!skill) throw new Error(`Skill not found: ${step.skillName}`);
 
-        // Inject only the env vars declared in the skill's secrets field
-        const scriptSecretEnv: Record<string, string> = {};
-        for (const key of skill.secrets ?? []) {
-          const val = process.env[key];
-          if (val !== undefined) scriptSecretEnv[key] = val;
-        }
-        const scriptExecOpts = {
-          networkEnabled: skill.network ?? false,
-          secretEnv: scriptSecretEnv,
-        };
+          // Inject only the env vars declared in the skill's secrets field
+          const scriptSecretEnv: Record<string, string> = {};
+          for (const key of skill.secrets ?? []) {
+            const val = process.env[key];
+            if (val !== undefined) scriptSecretEnv[key] = val;
+          }
+          const scriptExecOpts = {
+            networkEnabled: skill.network ?? false,
+            secretEnv: scriptSecretEnv,
+          };
 
-        const sessionDir = join(this.sessionsDir, "skills", runId, step.skillName + "-" + step.stepIndex);
-        mkdirSync(sessionDir, { recursive: true });
-        const result = await runSkillStep(
-          skill,
-          pipelineSystemPrompt,
-          pipelineModelProvider,
-          pipelineModelName,
-          resolvedPrompt,
-          pipelineContext,
-          onEvent,
-          sessionDir,
-          signal,
-          (session) => {
-            this.sessionRegistry.register(stepRun.id, {
-              session,
+          const sessionDir = join(this.sessionsDir, "skills", runId, step.skillName + "-" + step.stepIndex);
+          mkdirSync(sessionDir, { recursive: true });
+          const result = await runSkillStep(
+            skill,
+            pipelineSystemPrompt,
+            pipelineModelProvider,
+            pipelineModelName,
+            resolvedPrompt,
+            pipelineContext,
+            onEvent,
+            sessionDir,
+            signal,
+            (session) => {
+              this.sessionRegistry.register(stepRun.id, {
+                session,
+                pipelineRunId: runId,
+              });
+            },
+            scriptExecOpts,
+          );
+          this.sessionRegistry.unregister(stepRun.id);
+          output = result.output;
+          usage = result.usage;
+          await recordCost(this.db, stepRun.id, step.skillName, runId, pipelineModelProvider, pipelineModelName, usage);
+
+          stepOutputs.set(step.stepIndex, output);
+
+          await this.db
+            .update(stepRuns)
+            .set({ status: "completed", output: { text: output }, usageJson: usage, finishedAt: new Date(), updatedAt: new Date() })
+            .where(eq(stepRuns.id, stepRun.id));
+
+          logger.info("step_end", { stepIndex: step.stepIndex, status: "completed", durationMs: Date.now() - stepStartMs, usage, attempt });
+          logger.debug("llm_output", { stepIndex: step.stepIndex, output });
+          onEvent("status_change", "completed", { status: "completed" });
+          this.ws.broadcast({
+            type: "step_status",
+            pipelineRunId: runId,
+            stepRunId: stepRun.id,
+            stepIndex: step.stepIndex,
+            status: "completed",
+          });
+          break;
+        } catch (err) {
+          this.sessionRegistry.unregister(stepRun.id);
+
+          if (attempt < maxRetries && isRetryable(err, retryConfig)) {
+            attempt++;
+            const backoffMs = (retryConfig?.backoffMs ?? 1000) * Math.pow(2, attempt - 1);
+            logger.info("step_retry", { stepIndex: step.stepIndex, attempt, backoffMs, error: String(err) });
+            await this.db
+              .update(stepRuns)
+              .set({ status: "retrying", updatedAt: new Date() })
+              .where(eq(stepRuns.id, stepRun.id));
+            this.ws.broadcast({
+              type: "step_status",
               pipelineRunId: runId,
+              stepRunId: stepRun.id,
+              stepIndex: step.stepIndex,
+              status: "retrying",
             });
-          },
-          scriptExecOpts,
-        );
-        this.sessionRegistry.unregister(stepRun.id);
-        output = result.output;
-        usage = result.usage;
-        await recordCost(this.db, stepRun.id, step.skillName, runId, pipelineModelProvider, pipelineModelName, usage);
+            await sleep(backoffMs);
+            await this.db
+              .update(stepRuns)
+              .set({ status: "running", updatedAt: new Date() })
+              .where(eq(stepRuns.id, stepRun.id));
+            this.ws.broadcast({
+              type: "step_status",
+              pipelineRunId: runId,
+              stepRunId: stepRun.id,
+              stepIndex: step.stepIndex,
+              status: "running",
+            });
+            continue;
+          }
 
-        stepOutputs.set(step.stepIndex, output);
-
-        await this.db
-          .update(stepRuns)
-          .set({ status: "completed", output: { text: output }, usageJson: usage, finishedAt: new Date(), updatedAt: new Date() })
-          .where(eq(stepRuns.id, stepRun.id));
-
-        logger.info("step_end", { stepIndex: step.stepIndex, status: "completed", durationMs: Date.now() - stepStartMs, usage });
-        logger.debug("llm_output", { stepIndex: step.stepIndex, output });
-        onEvent("status_change", "completed", { status: "completed" });
-        this.ws.broadcast({
-          type: "step_status",
-          pipelineRunId: runId,
-          stepRunId: stepRun.id,
-          stepIndex: step.stepIndex,
-          status: "completed",
-        });
-      } catch (err) {
-        this.sessionRegistry.unregister(stepRun.id);
-        const errMsg = String(err);
-        await this.db
-          .update(stepRuns)
-          .set({ status: "failed", error: errMsg, finishedAt: new Date(), updatedAt: new Date() })
-          .where(eq(stepRuns.id, stepRun.id));
-        logger.info("step_end", { stepIndex: step.stepIndex, status: "failed", durationMs: Date.now() - stepStartMs, error: errMsg });
-        onEvent("error", errMsg);
-        this.ws.broadcast({
-          type: "step_status",
-          pipelineRunId: runId,
-          stepRunId: stepRun.id,
-          stepIndex: step.stepIndex,
-          status: "failed",
-        });
-        logger.info("run_end", { status: "failed", durationMs: Date.now() - runStartMs });
-        logger.close();
-        throw err;
+          const errMsg = String(err);
+          await this.db
+            .update(stepRuns)
+            .set({ status: "failed", error: errMsg, finishedAt: new Date(), updatedAt: new Date() })
+            .where(eq(stepRuns.id, stepRun.id));
+          logger.info("step_end", { stepIndex: step.stepIndex, status: "failed", durationMs: Date.now() - stepStartMs, error: errMsg, attempt });
+          onEvent("error", errMsg);
+          this.ws.broadcast({
+            type: "step_status",
+            pipelineRunId: runId,
+            stepRunId: stepRun.id,
+            stepIndex: step.stepIndex,
+            status: "failed",
+          });
+          logger.info("run_end", { status: "failed", durationMs: Date.now() - runStartMs });
+          logger.close();
+          throw err;
+        }
       }
     }
 

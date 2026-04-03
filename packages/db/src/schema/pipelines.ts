@@ -26,6 +26,7 @@ export const pipelineSteps = pgTable(
     promptTemplate: text("prompt_template").notNull(),
     timeoutSeconds: integer("timeout_seconds").notNull().default(300),
     approvalRequired: boolean("approval_required").notNull().default(false),
+    retryConfig: jsonb("retry_config").$type<{ maxRetries?: number; backoffMs?: number; retryOnErrors?: string[] }>(),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

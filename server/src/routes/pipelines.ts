@@ -17,6 +17,7 @@ function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineStep {
     promptTemplate: row.promptTemplate,
     timeoutSeconds: row.timeoutSeconds,
     approvalRequired: row.approvalRequired,
+    retryConfig: (row.retryConfig as import("@zerohand/shared").RetryConfig) ?? null,
     metadata: (row.metadata as Record<string, unknown>) ?? null,
   };
 }
@@ -192,6 +193,7 @@ export function createPipelinesRouter(db: Db): Router {
           promptTemplate: body.promptTemplate ?? "",
           timeoutSeconds: body.timeoutSeconds ?? 300,
           approvalRequired: body.approvalRequired ?? false,
+          retryConfig: body.retryConfig ?? null,
         })
         .returning();
       res.status(201).json(toApiStep(row));

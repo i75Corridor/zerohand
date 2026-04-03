@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ReactFlow, Background, Handle, Position, type Node, type Edge, type NodeProps } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check } from "lucide-react";
+import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square } from "lucide-react";
 import { api } from "../lib/api.ts";
 import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun } from "@zerohand/shared";
 
@@ -189,11 +189,18 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
 // ── Recent runs ───────────────────────────────────────────────────────────────
 
 function RecentRuns({ pipelineId }: { pipelineId: string }) {
+  const queryClient = useQueryClient();
   const { data: runs = [] } = useQuery({
     queryKey: ["runs", pipelineId],
     queryFn: () => api.listRuns(pipelineId),
     refetchInterval: 10_000,
   });
+
+  function handleCancel(runId: string) {
+    void api.cancelRun(runId).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["runs", pipelineId] });
+    });
+  }
 
   if (runs.length === 0) {
     return <p className="text-sm text-slate-600">No runs yet.</p>;
@@ -206,6 +213,7 @@ function RecentRuns({ pipelineId }: { pipelineId: string }) {
         const duration = run.startedAt && run.finishedAt
           ? Math.round((new Date(run.finishedAt).getTime() - new Date(run.startedAt).getTime()) / 1000)
           : null;
+        const isActive = run.status === "running" || run.status === "queued";
         return (
           <Link
             key={run.id}
@@ -220,6 +228,16 @@ function RecentRuns({ pipelineId }: { pipelineId: string }) {
               {new Date(run.createdAt).toLocaleString()}
               {duration !== null && ` · ${duration}s`}
             </span>
+            {isActive && (
+              <button
+                className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 transition-colors shrink-0"
+                onClick={(e) => { e.preventDefault(); handleCancel(run.id); }}
+                title="Stop run"
+              >
+                <Square size={11} />
+                Stop
+              </button>
+            )}
           </Link>
         );
       })}
