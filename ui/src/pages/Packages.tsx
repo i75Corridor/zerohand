@@ -307,7 +307,7 @@ export default function Packages() {
 
   const checkUpdates = useMutation({
     mutationFn: () => api.checkForUpdates(),
-    onSuccess: () => { setTimeout(() => invalidate(), 3000); },
+    onSuccess: () => invalidate(),
   });
 
   const handleDiscover = () => void runDiscover();
@@ -342,7 +342,7 @@ export default function Packages() {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
         >
           <RefreshCw size={12} className={checkUpdates.isPending ? "animate-spin" : ""} />
-          Check for updates
+          {checkUpdates.isPending ? "Checking..." : "Check for updates"}
         </button>
       </div>
 

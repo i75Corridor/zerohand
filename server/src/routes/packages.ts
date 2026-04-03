@@ -252,14 +252,11 @@ export function createPackagesRouter(db: Db): Router {
     }
   });
 
-  // POST /api/packages/check-updates — background update check
+  // POST /api/packages/check-updates — synchronous update check
   router.post("/packages/check-updates", async (_req, res, next) => {
     try {
-      // Fire off non-blocking, respond immediately
-      void checkForUpdates(db).catch((err) =>
-        console.error("[Packages] check-updates failed:", err),
-      );
-      res.json({ message: "Update check started" });
+      await checkForUpdates(db);
+      res.json({ message: "Update check complete" });
     } catch (err) {
       next(err);
     }
