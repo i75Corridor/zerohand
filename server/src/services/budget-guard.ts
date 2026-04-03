@@ -75,8 +75,8 @@ export async function recordCost(
   modelName: string,
   usage: Record<string, unknown>,
 ): Promise<void> {
-  const inputTokens = Number(usage.input_tokens ?? usage.inputTokens ?? 0);
-  const outputTokens = Number(usage.output_tokens ?? usage.outputTokens ?? 0);
+  const inputTokens = Number(usage.input_tokens ?? usage.inputTokens ?? usage.input ?? 0);
+  const outputTokens = Number(usage.output_tokens ?? usage.outputTokens ?? usage.output ?? 0);
   if (inputTokens === 0 && outputTokens === 0) return;
 
   const costs = await getModelCosts(db);

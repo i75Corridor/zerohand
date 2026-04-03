@@ -188,6 +188,19 @@ export interface ApiDiscoveredPackage {
   installed: boolean;
 }
 
+export interface ApiCostBreakdown {
+  daily: { date: string; costCents: number }[];
+  bySkill: { skillName: string; costCents: number }[];
+  byPipeline: { pipelineName: string; costCents: number }[];
+  summary: {
+    totalThisMonth: number;
+    dailyAverage: number;
+    projectedMonthEnd: number;
+    topSkill: string | null;
+    topPipeline: string | null;
+  };
+}
+
 export interface ApiModelEntry {
   /** e.g. "gemini-2.5-flash" */
   id: string;

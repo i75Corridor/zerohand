@@ -11,6 +11,7 @@ import type {
   ApiInstalledPackage,
   ApiDiscoveredPackage,
   ApiModelEntry,
+  ApiCostBreakdown,
 } from "@zerohand/shared";
 
 const BASE = "/api";
@@ -103,6 +104,13 @@ export const api = {
   // Stats
   getStats: () =>
     request<{ runsThisMonth: number; activeRuns: number; costCentsThisMonth: number }>("/stats"),
+  getCostBreakdown: (from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    const qs = params.toString();
+    return request<ApiCostBreakdown>(`/stats/costs${qs ? `?${qs}` : ""}`);
+  },
 
   // Settings
   getSettings: () => request<import("@zerohand/shared").ApiSetting[]>("/settings"),
