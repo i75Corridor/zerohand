@@ -21,7 +21,7 @@ All variables are optional unless marked **required**. Defaults assume the serve
 | `SKILLS_DIR` | `$DATA_DIR/skills` | Where skill folders (`SKILL.md` + `scripts/`) are stored. Each subdirectory is one skill. |
 | `PACKAGES_DIR` | `$DATA_DIR/packages` | Where cloned package repos are stored after `packages install`. |
 | `PIPELINES_DIR` | `server/../pipelines` | Directory of local pipeline YAML files imported at startup. |
-| `OUTPUT_DIR` | `server/../output` | Where skill script output files (images, exported articles, etc.) are written. |
+| `OUTPUT_DIR` | `$DATA_DIR/output` | Where skill script output files (images, exported articles, etc.) are written. |
 
 ---
 

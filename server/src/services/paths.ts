@@ -14,3 +14,8 @@ export function packagesDir(): string {
 export function skillsDir(): string {
   return process.env.SKILLS_DIR ?? join(dataDir(), "skills");
 }
+
+/** Where skill script output files (images, articles, etc.) are written */
+export function outputDir(): string {
+  return process.env.OUTPUT_DIR ?? join(dataDir(), "output");
+}

@@ -5,6 +5,7 @@ import { parse as parseYaml } from "yaml";
 import { Type } from "@mariozechner/pi-ai";
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { isDockerAvailable, runInSandbox } from "./script-sandbox.js";
+import { outputDir as getOutputDir } from "./paths.js";
 
 const SCRIPT_TIMEOUT_MS = 30_000;
 const STDOUT_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB
@@ -26,6 +27,7 @@ function safeChildEnv(): NodeJS.ProcessEnv {
     join(process.cwd(), "node_modules"),       // server/node_modules
     join(process.cwd(), "..", "node_modules"), // monorepo root node_modules
   ].join(":");
+  env.OUTPUT_DIR = getOutputDir();
   return env;
 }
 
@@ -194,10 +196,18 @@ export function makeScriptTools(scriptPaths: string[], execOpts: ExecScriptOpts 
     return {
       name: toolName,
       label: toolName.replace(/_/g, " "),
-      description: `Run the ${toolName} tool`,
+      description: `Run the ${toolName} script. Pass whatever parameters the skill body instructs — all fields are forwarded as JSON to the script via stdin.`,
       parameters: Type.Object({
-        query: Type.Optional(Type.String({ description: "Search query or input text" })),
-        maxResults: Type.Optional(Type.Number({ description: "Maximum results" })),
+        query: Type.Optional(Type.String({ description: "Search query or text input" })),
+        prompt: Type.Optional(Type.String({ description: "Text prompt for generation tools" })),
+        maxResults: Type.Optional(Type.Number({ description: "Maximum number of results" })),
+        outputDir: Type.Optional(Type.String({ description: "Output directory path" })),
+        slug: Type.Optional(Type.String({ description: "Filename slug (lowercase, hyphens)" })),
+        aspectRatio: Type.Optional(Type.String({ description: "Aspect ratio, e.g. '16:9'" })),
+        personGeneration: Type.Optional(Type.String({ description: "Person generation setting" })),
+        modelName: Type.Optional(Type.String({ description: "Model name override" })),
+        article: Type.Optional(Type.String({ description: "Article text for publishing tools" })),
+        imagePath: Type.Optional(Type.String({ description: "Image file path" })),
       }),
       execute: async (_id: string, params: Record<string, unknown>) => {
         const stdout = await execScript(scriptPath, params, execOpts);
