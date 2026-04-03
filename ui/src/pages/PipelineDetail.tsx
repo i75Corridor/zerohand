@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ReactFlow, Background, Handle, Position, type Node, type Edge, type NodeProps } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch } from "lucide-react";
+import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check } from "lucide-react";
 import { api } from "../lib/api.ts";
 import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun } from "@zerohand/shared";
 
@@ -232,6 +232,7 @@ function RecentRuns({ pipelineId }: { pipelineId: string }) {
 export default function PipelineDetail() {
   const { id } = useParams<{ id: string }>();
   const [showRun, setShowRun] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data: pipeline, isLoading, error } = useQuery({
     queryKey: ["pipeline", id],
@@ -239,8 +240,23 @@ export default function PipelineDetail() {
     enabled: !!id,
   });
 
+  const { data: packages = [] } = useQuery({
+    queryKey: ["packages"],
+    queryFn: () => api.listInstalledPackages(),
+  });
+
   if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
   if (error || !pipeline) return <div className="p-8 text-rose-400">Pipeline not found.</div>;
+
+  const isFromPackage = packages.some((pkg) => pkg.pipelineId === pipeline.id);
+  const exportCmd = `zerohand packages export "${pipeline.name}"`;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(exportCmd).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   return (
     <div className="p-8 max-w-4xl">
@@ -295,6 +311,26 @@ export default function PipelineDetail() {
           <PipelineDAG pipeline={pipeline} />
         )}
       </div>
+
+      {/* Export snippet */}
+      {!isFromPackage && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+            Export
+          </h2>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex items-center gap-3">
+            <code className="font-mono text-xs text-sky-300 flex-1">{exportCmd}</code>
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0"
+              title="Copy to clipboard"
+            >
+              {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Recent runs */}
       <div>

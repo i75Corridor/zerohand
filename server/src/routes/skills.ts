@@ -1,8 +1,22 @@
 import { Router } from "express";
-import { readdirSync, readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { join, basename, extname, resolve, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
 import type { ApiSkill } from "@zerohand/shared";
+import { skillsDir as getSkillsDir } from "../services/paths.js";
+
+const ALLOWED_EXTS = [".js", ".ts", ".py", ".sh"];
+
+function safeScriptPath(skillsDir: string, skillName: string, filename: string): string | null {
+  const base = basename(filename);
+  if (base !== filename) return null;
+  if (!ALLOWED_EXTS.includes(extname(base))) return null;
+  if (!/^[a-z0-9_-]+\.[a-z]+$/.test(base)) return null;
+  const skillDir = join(skillsDir, skillName);
+  const resolved = resolve(join(skillDir, "scripts", base));
+  if (!resolved.startsWith(resolve(skillsDir) + sep)) return null;
+  return resolved;
+}
 
 function parseSkillFile(skillDir: string): ApiSkill | null {
   const skillPath = join(skillDir, "SKILL.md");
@@ -40,7 +54,7 @@ function parseSkillFile(skillDir: string): ApiSkill | null {
 }
 
 export function createSkillsRouter(): Router {
-  const skillsDir = process.env.SKILLS_DIR ?? join(process.cwd(), "..", "skills");
+  const skillsDir = getSkillsDir();
   const router = Router();
 
   router.get("/skills", (_req, res) => {
@@ -69,6 +83,63 @@ export function createSkillsRouter(): Router {
     const skillPath = join(skillDir, "SKILL.md");
     const content = readFileSync(skillPath, "utf-8");
     res.json({ ...skill, content });
+  });
+
+  // GET /api/skills/:name/bundle — full file contents for package export
+  router.get("/skills/:name/bundle", (req, res) => {
+    const skillDir = join(skillsDir, req.params.name);
+    if (!existsSync(skillDir)) {
+      return res.status(404).json({ error: "Skill not found" });
+    }
+    const skillPath = join(skillDir, "SKILL.md");
+    if (!existsSync(skillPath)) {
+      return res.status(404).json({ error: "Skill not found or invalid SKILL.md" });
+    }
+    const skillMd = readFileSync(skillPath, "utf-8");
+
+    const scripts: Array<{ filename: string; content: string }> = [];
+    const scriptsDir = join(skillDir, "scripts");
+    if (existsSync(scriptsDir)) {
+      const files = readdirSync(scriptsDir).filter((f: string) => /\.(js|cjs|ts|py|sh)$/.test(f));
+      for (const filename of files) {
+        const content = readFileSync(join(scriptsDir, filename), "utf-8");
+        scripts.push({ filename, content });
+      }
+    }
+
+    res.json({ name: req.params.name, skillMd, scripts });
+  });
+
+  // PUT /api/skills/:name/scripts/:filename — create or update a script file
+  router.put("/skills/:name/scripts/:filename", (req, res) => {
+    const { content } = req.body as { content?: string };
+    if (typeof content !== "string") {
+      return res.status(400).json({ error: "content is required" });
+    }
+    const scriptPath = safeScriptPath(skillsDir, req.params.name, req.params.filename);
+    if (!scriptPath) {
+      return res.status(400).json({ error: "Invalid skill name or filename" });
+    }
+    const skillDir = join(skillsDir, req.params.name);
+    if (!existsSync(skillDir)) {
+      return res.status(404).json({ error: "Skill not found" });
+    }
+    mkdirSync(join(skillDir, "scripts"), { recursive: true });
+    writeFileSync(scriptPath, content, "utf-8");
+    res.json({ filename: req.params.filename });
+  });
+
+  // DELETE /api/skills/:name/scripts/:filename — remove a script file
+  router.delete("/skills/:name/scripts/:filename", (req, res) => {
+    const scriptPath = safeScriptPath(skillsDir, req.params.name, req.params.filename);
+    if (!scriptPath) {
+      return res.status(400).json({ error: "Invalid skill name or filename" });
+    }
+    if (!existsSync(scriptPath)) {
+      return res.status(404).json({ error: "Script not found" });
+    }
+    rmSync(scriptPath);
+    res.status(204).end();
   });
 
   return router;

@@ -110,12 +110,6 @@ export interface ApiSetting {
   updatedAt: string;
 }
 
-export interface ApiSecret {
-  key: string;
-  maskedValue: string;
-  description: string | null;
-  updatedAt: string;
-}
 
 export interface ApiApproval {
   id: string;
@@ -172,6 +166,17 @@ export interface ApiInstalledPackage {
   installedAt: string | null;
   lastCheckedAt: string | null;
   updatedAt: string | null;
+}
+
+export interface ApiSkillBundleScript {
+  filename: string;
+  content: string;
+}
+
+export interface ApiSkillBundle {
+  name: string;
+  skillMd: string;
+  scripts: ApiSkillBundleScript[];
 }
 
 export interface ApiDiscoveredPackage {

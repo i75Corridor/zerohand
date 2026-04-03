@@ -18,6 +18,9 @@ import { makeListSkills } from "./list-skills.js";
 import { makeGetSkill } from "./get-skill.js";
 import { makeCreateSkill } from "./create-skill.js";
 import { makeUpdateSkill } from "./update-skill.js";
+import { makeCreateSkillScript } from "./create-skill-script.js";
+import { makeUpdateSkillScript } from "./update-skill-script.js";
+import { makeDeleteSkillScript } from "./delete-skill-script.js";
 
 export type { AgentToolContext } from "./context.js";
 
@@ -41,5 +44,8 @@ export function makeAllTools(ctx: AgentToolContext): ToolDefinition[] {
     makeGetSkill(ctx),
     makeCreateSkill(ctx),
     makeUpdateSkill(ctx),
+    makeCreateSkillScript(ctx),
+    makeUpdateSkillScript(ctx),
+    makeDeleteSkillScript(ctx),
   ];
 }

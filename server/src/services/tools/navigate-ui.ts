@@ -6,7 +6,7 @@ export function makeNavigateUi(ctx: AgentToolContext): ToolDefinition {
   return {
     name: "navigate_ui",
     label: "Navigate UI",
-    description: "Navigate the user's browser to a specific page in the UI. Valid paths: /dashboard, /pipelines, /pipelines/:id, /pipelines/:id/edit, /pipelines/new, /workers, /approvals, /settings, /runs/:id",
+    description: "Navigate the user's browser to a specific page in the UI. Valid paths: /dashboard, /pipelines, /pipelines/:id, /pipelines/:id/edit, /pipelines/new, /skills, /skills/:name, /packages, /approvals, /settings, /runs/:id",
     parameters: Type.Object({
       path: Type.String({ description: "The UI path to navigate to (e.g. /dashboard, /pipelines/abc123)" }),
     }),

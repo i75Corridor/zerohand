@@ -11,9 +11,107 @@ import {
   CheckCircle,
   ExternalLink,
   Link,
+  ShieldAlert,
 } from "lucide-react";
 import { api } from "../lib/api.ts";
 import type { ApiInstalledPackage, ApiDiscoveredPackage } from "@zerohand/shared";
+
+// ── Security error parsing ─────────────────────────────────────────────────────
+
+interface SecurityFinding {
+  level: "HIGH" | "MEDIUM" | "LOW";
+  file: string;
+  description: string;
+}
+
+interface ParsedSecurityError {
+  repoName: string;
+  findings: SecurityFinding[];
+}
+
+function parseSecurityError(err: unknown): ParsedSecurityError | null {
+  const msg = String(err);
+  // Extract JSON body from the fetch error string
+  const jsonMatch = msg.match(/\{.*\}/s);
+  if (!jsonMatch) return null;
+  let inner: string;
+  try {
+    inner = (JSON.parse(jsonMatch[0]) as { error?: string }).error ?? "";
+  } catch {
+    return null;
+  }
+  if (!inner.includes("failed security check")) return null;
+
+  const repoMatch = inner.match(/^Error: Package (.+?) failed security check/);
+  const repoName = repoMatch?.[1] ?? "package";
+
+  const findings: SecurityFinding[] = [];
+  for (const line of inner.split("\n")) {
+    const m = line.match(/•\s*\[(HIGH|MEDIUM|LOW)\]\s*\[(.+?)\]\s*(.+)/);
+    if (m) {
+      findings.push({ level: m[1] as SecurityFinding["level"], file: m[2], description: m[3].trim() });
+    }
+  }
+
+  return findings.length > 0 ? { repoName, findings } : null;
+}
+
+function SecurityErrorPanel({
+  repoUrl,
+  error,
+  onForce,
+  forcing,
+}: {
+  repoUrl: string;
+  error: unknown;
+  onForce: () => void;
+  forcing: boolean;
+}) {
+  const parsed = parseSecurityError(error);
+  if (!parsed) {
+    return <p className="mb-4 text-xs text-red-400">Install failed: {String(error)}</p>;
+  }
+
+  const levelStyle: Record<SecurityFinding["level"], string> = {
+    HIGH: "text-red-400 bg-red-500/10 border-red-500/20",
+    MEDIUM: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    LOW: "text-slate-400 bg-slate-500/10 border-slate-500/20",
+  };
+
+  return (
+    <div className="mb-4 bg-red-950/20 border border-red-500/20 rounded-2xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldAlert size={14} className="text-red-400 flex-shrink-0" />
+        <span className="text-sm font-semibold text-red-300">Security check failed</span>
+        <span className="text-xs text-slate-500">{parsed.repoName}</span>
+      </div>
+      <div className="flex flex-col gap-2 mb-4">
+        {parsed.findings.map((f, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border flex-shrink-0 mt-0.5 ${levelStyle[f.level]}`}>
+              {f.level}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-mono text-slate-400 truncate">{f.file}</p>
+              <p className="text-xs text-slate-300">{f.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between pt-3 border-t border-red-500/10">
+        <p className="text-xs text-slate-500">Only install if you trust this source.</p>
+        <button
+          onClick={onForce}
+          disabled={forcing}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+        >
+          <Download size={11} />
+          {forcing ? "Installing..." : "Install anyway"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ── Installed package card ─────────────────────────────────────────────────────
 
@@ -170,6 +268,7 @@ export default function Packages() {
   const [discoverQuery, setDiscoverQuery] = useState("");
   const [manualUrl, setManualUrl] = useState("");
   const [installingId, setInstallingId] = useState<string | null>(null);
+  const [failedInstallUrl, setFailedInstallUrl] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [uninstallingId, setUninstallingId] = useState<string | null>(null);
 
@@ -187,8 +286,10 @@ export default function Packages() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["packages"] });
 
   const install = useMutation({
-    mutationFn: (repoUrl: string) => api.installPackage(repoUrl),
-    onSuccess: () => { invalidate(); setManualUrl(""); },
+    mutationFn: ({ repoUrl, force }: { repoUrl: string; force?: boolean }) =>
+      api.installPackage(repoUrl, force),
+    onSuccess: () => { invalidate(); setManualUrl(""); setFailedInstallUrl(null); },
+    onError: (_err, vars) => { setFailedInstallUrl(vars.repoUrl); },
     onSettled: () => setInstallingId(null),
   });
 
@@ -213,13 +314,19 @@ export default function Packages() {
 
   const handleInstallDiscovered = (pkg: ApiDiscoveredPackage) => {
     setInstallingId(pkg.fullName);
-    install.mutate(`https://github.com/${pkg.fullName}`);
+    install.mutate({ repoUrl: `https://github.com/${pkg.fullName}` });
   };
 
   const handleInstallManual = () => {
     if (!manualUrl.trim()) return;
     setInstallingId("manual");
-    install.mutate(manualUrl.trim());
+    install.mutate({ repoUrl: manualUrl.trim() });
+  };
+
+  const handleForceInstall = () => {
+    if (!failedInstallUrl) return;
+    setInstallingId("force");
+    install.mutate({ repoUrl: failedInstallUrl, force: true });
   };
 
   return (
@@ -314,10 +421,13 @@ export default function Packages() {
           </div>
         )}
 
-        {install.isError && (
-          <p className="mb-4 text-xs text-red-400">
-            Install failed: {String(install.error)}
-          </p>
+        {install.isError && failedInstallUrl && (
+          <SecurityErrorPanel
+            repoUrl={failedInstallUrl}
+            error={install.error}
+            onForce={handleForceInstall}
+            forcing={installingId === "force"}
+          />
         )}
 
         {/* Manual URL install */}

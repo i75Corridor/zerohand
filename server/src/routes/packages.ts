@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename } from "node:path";
 import { tmpdir } from "node:os";
 import { desc, eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
@@ -14,14 +14,7 @@ import {
 } from "../services/package-manager.js";
 import { importPipelinePackage } from "../services/pipeline-import.js";
 import { scanPackage } from "../services/security-scanner.js";
-
-function getPackagesDir(): string {
-  return process.env.PACKAGES_DIR ?? join(process.env.DATA_DIR ?? join(process.cwd(), ".data"), "packages");
-}
-
-function getSkillsDir(): string {
-  return process.env.SKILLS_DIR ?? join(process.cwd(), "..", "skills");
-}
+import { packagesDir as getPackagesDir, skillsDir as getSkillsDir } from "../services/paths.js";
 
 export function createPackagesRouter(db: Db): Router {
   const router = Router();

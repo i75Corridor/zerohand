@@ -5,6 +5,7 @@ import type {
   ApiPipelineRun,
   ApiPipelineStep,
   ApiSecurityReport,
+  ApiSkillBundle,
   ApiStepRun,
 } from "@zerohand/shared";
 
@@ -108,6 +109,10 @@ export class ApiClient {
 
   installPackage(repoUrl: string, force?: boolean): Promise<object> {
     return this.request("POST", "/packages/install", { repoUrl, force: force ?? false });
+  }
+
+  getSkillBundle(name: string): Promise<ApiSkillBundle> {
+    return this.request("GET", `/skills/${encodeURIComponent(name)}/bundle`);
   }
 
   scanPackage(repoUrl: string): Promise<ApiSecurityReport> {

@@ -7,7 +7,7 @@ import type {
   ApiApproval,
   ApiBudgetPolicy,
   ApiSkill,
-  ApiSecret,
+  ApiSkillBundle,
   ApiInstalledPackage,
   ApiDiscoveredPackage,
   ApiModelEntry,
@@ -57,6 +57,14 @@ export const api = {
   // Skills
   listSkills: () => request<ApiSkill[]>("/skills"),
   getSkill: (name: string) => request<ApiSkill>(`/skills/${name}`),
+  getSkillBundle: (name: string) => request<ApiSkillBundle>(`/skills/${encodeURIComponent(name)}/bundle`),
+  saveSkillScript: (skillName: string, filename: string, content: string) =>
+    request<{ filename: string }>(`/skills/${encodeURIComponent(skillName)}/scripts/${encodeURIComponent(filename)}`, {
+      method: "PUT",
+      body: JSON.stringify({ content }),
+    }),
+  deleteSkillScript: (skillName: string, filename: string) =>
+    request<void>(`/skills/${encodeURIComponent(skillName)}/scripts/${encodeURIComponent(filename)}`, { method: "DELETE" }),
 
   // Pipeline runs
   listRuns: (pipelineId?: string) =>
@@ -111,29 +119,14 @@ export const api = {
     return `/api/files/${encodeURIComponent(filename)}`;
   },
 
-  // Secrets
-  listSecrets: () => request<ApiSecret[]>("/secrets"),
-  createSecret: (key: string, value: string, description?: string) =>
-    request<ApiSecret>("/secrets", {
-      method: "POST",
-      body: JSON.stringify({ key, value, description }),
-    }),
-  updateSecret: (key: string, value: string, description?: string) =>
-    request<ApiSecret>(`/secrets/${encodeURIComponent(key)}`, {
-      method: "PUT",
-      body: JSON.stringify({ value, description }),
-    }),
-  deleteSecret: (key: string) =>
-    request<void>(`/secrets/${encodeURIComponent(key)}`, { method: "DELETE" }),
-
   // Packages
   listInstalledPackages: () => request<ApiInstalledPackage[]>("/packages"),
   discoverPackages: (q?: string) =>
     request<ApiDiscoveredPackage[]>(`/packages/discover${q ? `?q=${encodeURIComponent(q)}` : ""}`),
-  installPackage: (repoUrl: string) =>
+  installPackage: (repoUrl: string, force?: boolean) =>
     request<{ pipelineName: string }>("/packages/install", {
       method: "POST",
-      body: JSON.stringify({ repoUrl }),
+      body: JSON.stringify({ repoUrl, force: force ?? false }),
     }),
   updatePackage: (id: string) => request<{ pipelineName: string }>(`/packages/${id}/update`, { method: "POST" }),
   uninstallPackage: (id: string) => request<void>(`/packages/${id}`, { method: "DELETE" }),

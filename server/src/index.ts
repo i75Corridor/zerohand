@@ -24,14 +24,13 @@ import { createSettingsRouter } from "./routes/settings.js";
 import { createFilesRouter } from "./routes/files.js";
 import { createWebhooksRouter } from "./routes/webhooks.js";
 import { createSkillsRouter } from "./routes/skills.js";
-import { createSecretsRouter } from "./routes/secrets.js";
 import { createPackagesRouter } from "./routes/packages.js";
 import { createModelsRouter } from "./routes/models.js";
 import { ChannelManager } from "./services/channel-manager.js";
 import { GlobalAgentService } from "./services/global-agent.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
-const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), ".data");
+const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
 const DB_NAME = "zerohand";
 const DB_USER = "zerohand";
 const DB_PASS = "zerohand";
@@ -112,10 +111,13 @@ async function main() {
   const pipelinesDir = process.env.PIPELINES_DIR ?? join(process.cwd(), "..", "pipelines");
   await importAllPackages(db, pipelinesDir);
 
-  // Non-blocking startup update check
-  void checkForUpdates(db).catch((err) =>
-    console.error("[Packages] Startup update check failed:", err),
-  );
+  // Non-blocking startup update check, then every 30 minutes
+  const runUpdateCheck = () =>
+    void checkForUpdates(db).catch((err) =>
+      console.error("[Packages] Update check failed:", err),
+    );
+  runUpdateCheck();
+  setInterval(runUpdateCheck, 30 * 60 * 1000);
 
   // Check Docker availability for script sandbox
   void detectDocker().then((available) => {
@@ -142,7 +144,6 @@ async function main() {
   app.use("/api", createSettingsRouter(db, () => { void globalAgentRef?.resetSession(); }));
   app.use("/api", createFilesRouter());
   app.use("/api", createSkillsRouter());
-  app.use("/api", createSecretsRouter(db));
   app.use("/api", createPackagesRouter(db));
   app.use("/api", createModelsRouter());
 

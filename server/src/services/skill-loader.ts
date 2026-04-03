@@ -33,7 +33,7 @@ export interface SkillDef {
   name: string;
   version: string;
   description: string;
-  type: "pi" | "imagen" | "publish";
+  type: "pi";
   modelProvider?: string;
   modelName?: string;
   systemPrompt: string;
@@ -86,11 +86,14 @@ export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | n
   const skillNetwork = (fm.network as boolean | undefined) ?? false;
   const skillSecrets = (fm.secrets as string[] | undefined) ?? [];
 
+  // version lives in metadata per spec; fall back to top-level for old skills
+  const version = String(skillMetadata?.version ?? fm.version ?? "0.0.0");
+
   return {
     name: String(fm.name ?? skillName),
-    version: String(fm.version ?? "0.0.0"),
+    version,
     description: String(fm.description ?? ""),
-    type: (fm.type as "pi" | "imagen" | "publish") ?? "pi",
+    type: "pi",
     modelProvider,
     modelName,
     systemPrompt: body,
@@ -148,7 +151,7 @@ async function execScript(
     else { reject(new Error(`Unsupported script type: ${ext}`)); return; }
 
     const child = spawn(cmd, args, {
-      env: safeChildEnv(),
+      env: { ...safeChildEnv(), ...opts.secretEnv },
       cwd: dirname(scriptPath), // cwd = script's own directory, not server root
     });
 

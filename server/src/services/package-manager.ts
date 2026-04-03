@@ -20,9 +20,8 @@ import {
 import { join, resolve, sep, basename } from "node:path";
 import { eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { installedPackages, packageSecurityChecks, pipelines, secrets } from "@zerohand/db";
+import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
 import { importPipelinePackage } from "./pipeline-import.js";
-import { decrypt } from "./crypto.js";
 import { scanPackage, type SecurityReport } from "./security-scanner.js";
 
 // ── git helpers ────────────────────────────────────────────────────────────────
@@ -53,19 +52,8 @@ function parseRepoUrl(url: string): { owner: string; repo: string; repoFullName:
   return { owner: match[1], repo: match[2], repoFullName: `${match[1]}/${match[2]}` };
 }
 
-async function getGithubToken(db: Db): Promise<string | null> {
-  try {
-    const rows = await db
-      .select()
-      .from(secrets)
-      .where(eq(secrets.key, "GITHUB_TOKEN"))
-      .limit(1);
-    const row = rows[0];
-    if (!row) return null;
-    return decrypt(row.encryptedValue, row.iv, row.authTag);
-  } catch {
-    return null;
-  }
+function getGithubToken(): string | null {
+  return process.env.GITHUB_TOKEN ?? null;
 }
 
 function buildAuthUrl(repoUrl: string, token: string | null): string {
@@ -175,7 +163,7 @@ export async function installPackage(
     throw new Error(`Package ${repoFullName} is already installed`);
   }
 
-  const token = await getGithubToken(db);
+  const token = getGithubToken();
   const authUrl = buildAuthUrl(repoUrl, token);
   const localPath = join(packagesDir, repo);
 
@@ -197,8 +185,7 @@ export async function installPackage(
   if (security.level === "high" && !options.force) {
     rmSync(localPath, { recursive: true, force: true });
     const summary = security.findings
-      .filter((f) => f.level === "high")
-      .map((f) => `  • [${f.file}] ${f.description}`)
+      .map((f) => `  • [${f.level.toUpperCase()}] [${f.file}] ${f.description}`)
       .join("\n");
     throw new Error(
       `Package ${repoFullName} failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
@@ -279,7 +266,7 @@ export async function updatePackage(
     // Already a full clone or network error — try pull directly
   }
 
-  const token = await getGithubToken(db);
+  const token = getGithubToken();
   if (token) {
     await git(["config", `url.${buildAuthUrl(repoUrl, token)}.insteadOf`, repoUrl], localPath);
   }
@@ -292,8 +279,7 @@ export async function updatePackage(
     // Roll back to previous state by resetting to the installed ref
     try { await git(["reset", "--hard", pkg[0].installedRef ?? "HEAD~1"], localPath); } catch { /* best effort */ }
     const summary = security.findings
-      .filter((f) => f.level === "high")
-      .map((f) => `  • [${f.file}] ${f.description}`)
+      .map((f) => `  • [${f.level.toUpperCase()}] [${f.file}] ${f.description}`)
       .join("\n");
     throw new Error(
       `Package ${pkg[0].repoFullName} update failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
@@ -381,7 +367,7 @@ export async function uninstallPackage(
 
 export async function checkForUpdates(db: Db): Promise<void> {
   const pkgs = await db.select().from(installedPackages);
-  const token = await getGithubToken(db);
+  const token = getGithubToken();
 
   for (const pkg of pkgs) {
     try {
@@ -419,7 +405,7 @@ export async function discoverPackages(
   db: Db,
   query?: string,
 ): Promise<DiscoveredPackage[]> {
-  const token = await getGithubToken(db);
+  const token = getGithubToken();
   const q = `topic:zerohand-package${query ? `+${encodeURIComponent(query)}` : ""}`;
   const url = `https://api.github.com/search/repositories?q=${q}&sort=stars&per_page=30`;
 

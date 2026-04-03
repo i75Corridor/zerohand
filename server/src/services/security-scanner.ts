@@ -42,7 +42,7 @@ const JS_PATTERNS: PatternRule[] = [
   { pattern: /\bnew\s+Function\s*\(/, level: "high", category: "dangerous_pattern", description: "Use of new Function() — allows arbitrary code execution" },
   { pattern: /require\s*\(\s*['"]child_process['"]/, level: "high", category: "dangerous_pattern", description: "child_process import — can spawn system processes" },
   { pattern: /from\s+['"]child_process['"]/, level: "high", category: "dangerous_pattern", description: "child_process import — can spawn system processes" },
-  { pattern: /process\.exit\s*\(/, level: "high", category: "dangerous_pattern", description: "process.exit() — can terminate the host process" },
+  { pattern: /process\.exit\s*\(/, level: "medium", category: "dangerous_pattern", description: "process.exit() — can terminate the host process" },
   { pattern: /rm\s+-rf/, level: "high", category: "dangerous_pattern", description: "rm -rf pattern detected" },
   { pattern: /[A-Za-z0-9+/]{100,}={0,2}/, level: "high", category: "obfuscation", description: "Long base64-like string — possible obfuscated payload" },
   { pattern: /(?:\\x[0-9a-fA-F]{2}){10,}/, level: "high", category: "obfuscation", description: "Dense hex escape sequences — possible obfuscated code" },
