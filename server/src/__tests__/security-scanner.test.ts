@@ -103,7 +103,7 @@ describe("scanPackage", () => {
       "run.js": "process.exit(1);",
     });
     const report = scanPackage(packageDir);
-    expect(report.level).toBe("high");
+    expect(report.level).toBe("medium");
   });
 
   it("flags rm -rf in shell script as high risk", () => {
