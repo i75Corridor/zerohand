@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
-import { basename } from "node:path";
+import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { desc, eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";

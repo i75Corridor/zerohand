@@ -9,13 +9,14 @@
     "build": "pnpm --filter @zerohand/db build && pnpm --filter server build && pnpm --filter ui build && pnpm --filter @i75corridor/zh-cli build",
     "db:generate": "pnpm --filter @zerohand/db generate",
     "db:reset": "rm -rf .data/postgres && echo 'Database reset. Run pnpm dev to re-initialize.'",
-"reset": "rm -rf .data && echo 'Full reset complete. Run pnpm dev to re-initialize.'",
+    "reset": "rm -rf .data && echo 'Full reset complete. Run pnpm dev to re-initialize.'",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --filter='{./server}...' --filter=@i75corridor/zh-cli test",
     "test:watch": "pnpm --filter server test:watch"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",
+    "lefthook": "^2.1.4",
     "typescript": "^5.8.0"
   },
   "pnpm": {

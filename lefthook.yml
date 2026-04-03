@@ -1,0 +1,9 @@
+pre-push:
+  parallel: false
+  commands:
+    typecheck:
+      run: pnpm -r typecheck
+    test:
+      run: pnpm -r test
+    build:
+      run: pnpm build

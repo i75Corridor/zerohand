@@ -40,3 +40,10 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 console.log("[postinstall] Done.");
+
+// Install lefthook git hooks (non-fatal if lefthook isn't available yet)
+const lefthook = join(ROOT, "node_modules/.bin/lefthook");
+if (existsSync(lefthook)) {
+  console.log("[postinstall] Installing lefthook hooks...");
+  spawnSync(lefthook, ["install", "--force"], { cwd: ROOT, stdio: "inherit" });
+}
