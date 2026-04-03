@@ -276,7 +276,7 @@ export interface WsIncomingGlobalChat {
 
 export interface WsDataChanged {
   type: "data_changed";
-  entity: "pipeline" | "step";
+  entity: "pipeline" | "step" | "skill";
   action: "created" | "updated" | "deleted";
   id: string;
 }

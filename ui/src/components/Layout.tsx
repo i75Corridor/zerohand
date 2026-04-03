@@ -31,6 +31,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api.ts";
 import GlobalChatPanel from "./GlobalChatPanel.tsx";
+import { useDataChangedListener } from "../hooks/useDataChangedListener.ts";
 
 function ApprovalsNavItem() {
   const { data: pending = [] } = useQuery({
@@ -82,6 +83,7 @@ const bottomNav = [
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
+  useDataChangedListener();
   const [agentOpen, setAgentOpen] = useState(false);
   const [agentWidth, setAgentWidth] = useState(384); // 96 * 4 = w-96 default
   const isDragging = useRef(false);

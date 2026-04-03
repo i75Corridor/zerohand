@@ -29,6 +29,7 @@ export function makeDeleteSkillScript(ctx: AgentToolContext): ToolDefinition {
       }
 
       rmSync(scriptPath);
+      ctx.broadcastDataChanged("skill", "updated", params.skillName);
       return { content: [{ type: "text" as const, text: `Deleted script "${params.filename}" from skill "${params.skillName}".` }], details: {} };
     },
   };
