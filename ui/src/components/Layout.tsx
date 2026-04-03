@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu } from "lucide-react";
+import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu, DollarSign } from "lucide-react";
 
 function FistIcon({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
@@ -73,6 +73,7 @@ const nav = [
   { to: "/pipelines", label: "Pipelines", icon: GitBranch },
   { to: "/skills", label: "Skills", icon: Cpu },
   { to: "/packages", label: "Packages", icon: Package },
+  { to: "/costs", label: "Costs", icon: DollarSign },
   { to: "/canvas", label: "Canvas", icon: Image },
 ];
 
