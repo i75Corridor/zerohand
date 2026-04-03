@@ -73,6 +73,7 @@ describe("pipelineToYaml", () => {
         promptTemplate: "Research: {{input.topic}}",
         timeoutSeconds: 120,
         approvalRequired: false,
+        retryConfig: null,
         metadata: null,
       },
     ],

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Zap, Activity, CreditCard } from "lucide-react";
+import { Zap, Activity, CreditCard, Square } from "lucide-react";
 import { api } from "../lib/api.ts";
 import { useWebSocket } from "../lib/ws.ts";
 import type { WsMessage } from "@zerohand/shared";
@@ -53,12 +53,13 @@ function formatCost(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-function RunRow({ run }: { run: ApiPipelineRun }) {
+function RunRow({ run, onCancel }: { run: ApiPipelineRun; onCancel: (id: string) => void }) {
   const duration = run.finishedAt
     ? `${Math.round((new Date(run.finishedAt).getTime() - new Date(run.startedAt ?? run.createdAt).getTime()) / 1000)}s`
     : run.startedAt
     ? "running..."
     : "queued";
+  const isActive = run.status === "running" || run.status === "queued";
 
   return (
     <tr className="hover:bg-slate-800/30 transition-colors cursor-pointer group">
@@ -79,7 +80,16 @@ function RunRow({ run }: { run: ApiPipelineRun }) {
         {new Date(run.createdAt).toLocaleString()}
       </td>
       <td className="px-6 py-4 text-right text-xs font-mono text-slate-400">
-        {duration}
+        {isActive ? (
+          <button
+            className="inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 transition-colors"
+            onClick={(e) => { e.preventDefault(); onCancel(run.id); }}
+            title="Stop run"
+          >
+            <Square size={11} />
+            Stop
+          </button>
+        ) : duration}
       </td>
     </tr>
   );
@@ -87,6 +97,13 @@ function RunRow({ run }: { run: ApiPipelineRun }) {
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+
+  function handleCancel(runId: string) {
+    void api.cancelRun(runId).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["runs"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+    });
+  }
 
   const { data: runs = [], isLoading: runsLoading } = useQuery({
     queryKey: ["runs"],
@@ -182,7 +199,7 @@ export default function Dashboard() {
               </thead>
               <tbody className="divide-y divide-slate-800/40">
                 {runs.map((run) => (
-                  <RunRow key={run.id} run={run} />
+                  <RunRow key={run.id} run={run} onCancel={handleCancel} />
                 ))}
               </tbody>
             </table>

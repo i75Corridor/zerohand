@@ -3,7 +3,7 @@ export const PIPELINE_RUN_STATUS = ["queued", "running", "paused", "completed", 
 export type PipelineRunStatus = (typeof PIPELINE_RUN_STATUS)[number];
 
 // Step run statuses
-export const STEP_RUN_STATUS = ["queued", "running", "awaiting_approval", "completed", "failed", "cancelled"] as const;
+export const STEP_RUN_STATUS = ["queued", "running", "retrying", "awaiting_approval", "completed", "failed", "cancelled"] as const;
 export type StepRunStatus = (typeof STEP_RUN_STATUS)[number];
 
 // Trigger types
@@ -73,6 +73,12 @@ export interface ApiPipeline {
   createdAt: string;
 }
 
+export interface RetryConfig {
+  maxRetries?: number;
+  backoffMs?: number;
+  retryOnErrors?: string[];
+}
+
 export interface ApiPipelineStep {
   id: string;
   stepIndex: number;
@@ -81,6 +87,7 @@ export interface ApiPipelineStep {
   promptTemplate: string;
   timeoutSeconds: number;
   approvalRequired: boolean;
+  retryConfig: RetryConfig | null;
   metadata: Record<string, unknown> | null;
 }
 
