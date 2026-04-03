@@ -1,4 +1,3 @@
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ApiClient } from "./api-client.js";
 import { createMcpServer } from "./server.js";
 import { registerPipelineTools } from "./tools/pipeline-tools.js";
@@ -14,31 +13,96 @@ function validateUrl(raw: string): string {
       throw new Error(`Unsupported protocol: ${url.protocol}`);
     }
     return url.origin;
-  } catch (err) {
+  } catch {
     console.error(`[zerohand-mcp] Invalid ZEROHAND_URL: ${raw}`);
     process.exit(1);
   }
 }
 
-async function main() {
-  const rawUrl = process.env.ZEROHAND_URL ?? "http://localhost:3009";
-  const serverUrl = validateUrl(rawUrl);
-  const client = new ApiClient(serverUrl);
-
+function buildServer(client: ApiClient) {
   const server = createMcpServer(client);
-
-  // Register all tools, resources, and prompts
   registerPipelineTools(server, client);
   registerRunTools(server, client);
   registerSkillTools(server, client);
   registerResources(server, client);
   registerPrompts(server, client);
+  return server;
+}
 
-  // Connect stdio transport
+async function runStdio(client: ApiClient) {
+  const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
+  const server = buildServer(client);
   const transport = new StdioServerTransport();
   await server.connect(transport);
-
   console.error("[zerohand-mcp] Server running via stdio");
+}
+
+async function runHttp(client: ApiClient) {
+  const { default: express } = await import("express");
+  const { default: cors } = await import("cors");
+  const { StreamableHTTPServerTransport } = await import("@modelcontextprotocol/sdk/server/streamableHttp.js");
+
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
+
+  // API key auth middleware (optional — only enforced when MCP_API_KEY is set)
+  const mcpApiKey = process.env.MCP_API_KEY;
+  if (mcpApiKey) {
+    app.use("/mcp", (req, res, next) => {
+      const auth = req.headers.authorization;
+      if (!auth || auth !== `Bearer ${mcpApiKey}`) {
+        res.status(401).json({ error: "Unauthorized — provide a valid Bearer token" });
+        return;
+      }
+      next();
+    });
+    console.error("[zerohand-mcp] API key authentication enabled");
+  }
+
+  // Stateless: new server + transport per request
+  app.post("/mcp", async (req, res) => {
+    try {
+      const server = buildServer(client);
+      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+      res.on("close", () => { void transport.close(); });
+      await server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+    } catch (err) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Internal server error" });
+      }
+    }
+  });
+
+  // Handle GET and DELETE for SSE compatibility (returns 405)
+  app.get("/mcp", (_req, res) => {
+    res.status(405).json({ error: "Method not allowed. Use POST." });
+  });
+  app.delete("/mcp", (_req, res) => {
+    res.status(405).json({ error: "Method not allowed. Use POST." });
+  });
+
+  const host = process.env.MCP_HOST ?? "127.0.0.1";
+  const port = parseInt(process.env.MCP_PORT ?? "3100", 10);
+  app.listen(port, host, () => {
+    console.error(`[zerohand-mcp] Server running via HTTP at http://${host}:${port}/mcp`);
+  });
+}
+
+async function main() {
+  const rawUrl = process.env.ZEROHAND_URL ?? "http://localhost:3009";
+  const serverUrl = validateUrl(rawUrl);
+  const apiKey = process.env.ZEROHAND_API_KEY;
+  const client = new ApiClient(serverUrl, apiKey);
+
+  const transport = process.env.TRANSPORT ?? "stdio";
+
+  if (transport === "http") {
+    await runHttp(client);
+  } else {
+    await runStdio(client);
+  }
 }
 
 main().catch((err) => {
