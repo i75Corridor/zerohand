@@ -55,6 +55,8 @@ When writing the plan:
 - Break work into discrete, ordered steps
 - Call out any DB migrations, new dependencies, or breaking changes explicitly
 - Note which steps are risky or irreversible
+- Ensure unit tests are accounted for
+- Ask user any clarifying questions
 
 Present the plan to the user. Do not start executing until the user approves (explicitly or implicitly by saying "go", "looks good", etc.). Use `ExitPlanMode` once approved.
 
