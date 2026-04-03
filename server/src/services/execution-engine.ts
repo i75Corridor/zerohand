@@ -14,6 +14,7 @@ import type { StepRunEventType, WsIncomingChat } from "@zerohand/shared";
 import type { WsManager } from "../ws/index.js";
 import { runSkillStep } from "./pi-executor.js";
 import { dataDir, skillsDir as getSkillsDir } from "./paths.js";
+import { RunLogger } from "./run-logger.js";
 import { recordCost } from "./budget-guard.js";
 import { SessionRegistry } from "./session-registry.js";
 import { readModelSetting } from "./model-utils.js";
@@ -146,6 +147,9 @@ export class ExecutionEngine {
   }
 
   private async executeRun(runId: string, signal?: AbortSignal): Promise<void> {
+    const logger = new RunLogger(runId);
+    const runStartMs = Date.now();
+
     const run = await this.db.query.pipelineRuns.findFirst({
       where: eq(pipelineRuns.id, runId),
     });
@@ -165,6 +169,8 @@ export class ExecutionEngine {
       where: eq(pipelineSteps.pipelineId, run.pipelineId),
       orderBy: [asc(pipelineSteps.stepIndex)],
     });
+
+    logger.info("run_start", { pipelineId: run.pipelineId, pipelineName: pipeline?.name ?? run.pipelineId, inputs: run.inputParams });
 
     // Validate all env vars declared in skill secrets fields exist before starting
     const { loadSkillDef: loadSkillDefForValidation } = await import("./skill-loader.js");
@@ -309,6 +315,10 @@ export class ExecutionEngine {
         status: "running",
       });
 
+      const stepStartMs = Date.now();
+      logger.info("step_start", { stepIndex: step.stepIndex, skillName: step.skillName ?? "" });
+      logger.debug("prompt", { stepIndex: step.stepIndex, payload: resolvedPrompt });
+
       let seq = 0;
       const onEvent = (
         eventType: StepRunEventType,
@@ -329,6 +339,13 @@ export class ExecutionEngine {
           message,
           payload,
         });
+        if (eventType === "tool_call_start") {
+          logger.info("tool_call", { stepIndex: step.stepIndex, tool: payload?.toolName ?? message, input: payload?.input });
+        } else if (eventType === "tool_call_end") {
+          logger.debug("tool_result", { stepIndex: step.stepIndex, tool: payload?.toolCallId ?? message });
+        } else if (eventType === "text_delta") {
+          logger.debug("llm_delta", { stepIndex: step.stepIndex, delta: message });
+        }
       };
 
       // ── Dispatch ───────────────────────────────────────────────────────────
@@ -387,6 +404,8 @@ export class ExecutionEngine {
           .set({ status: "completed", output: { text: output }, usageJson: usage, finishedAt: new Date(), updatedAt: new Date() })
           .where(eq(stepRuns.id, stepRun.id));
 
+        logger.info("step_end", { stepIndex: step.stepIndex, status: "completed", durationMs: Date.now() - stepStartMs, usage });
+        logger.debug("llm_output", { stepIndex: step.stepIndex, output });
         onEvent("status_change", "completed", { status: "completed" });
         this.ws.broadcast({
           type: "step_status",
@@ -402,6 +421,7 @@ export class ExecutionEngine {
           .update(stepRuns)
           .set({ status: "failed", error: errMsg, finishedAt: new Date(), updatedAt: new Date() })
           .where(eq(stepRuns.id, stepRun.id));
+        logger.info("step_end", { stepIndex: step.stepIndex, status: "failed", durationMs: Date.now() - stepStartMs, error: errMsg });
         onEvent("error", errMsg);
         this.ws.broadcast({
           type: "step_status",
@@ -410,6 +430,8 @@ export class ExecutionEngine {
           stepIndex: step.stepIndex,
           status: "failed",
         });
+        logger.info("run_end", { status: "failed", durationMs: Date.now() - runStartMs });
+        logger.close();
         throw err;
       }
     }
@@ -419,6 +441,8 @@ export class ExecutionEngine {
       .update(pipelineRuns)
       .set({ status: "completed", output: lastOutput ? { text: lastOutput } : {}, finishedAt: new Date(), updatedAt: new Date() })
       .where(eq(pipelineRuns.id, runId));
+    logger.info("run_end", { status: "completed", durationMs: Date.now() - runStartMs });
+    logger.close();
     this.ws.broadcast({ type: "run_status", pipelineRunId: runId, status: "completed" });
     this.activeRunIds.delete(runId);
   }

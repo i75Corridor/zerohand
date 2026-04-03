@@ -80,6 +80,16 @@ export const api = {
   getRunSteps: (runId: string) => request<ApiStepRun[]>(`/runs/${runId}/steps`),
   getStepEvents: (runId: string, stepRunId: string) =>
     request<unknown[]>(`/runs/${runId}/steps/${stepRunId}/events`),
+  getRunLog: async (runId: string): Promise<Record<string, unknown>[]> => {
+    const res = await fetch(`${BASE}/runs/${runId}/log`);
+    if (res.status === 404) return [];
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const text = await res.text();
+    return text
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+  },
 
   // Triggers
   listTriggers: (pipelineId: string) =>

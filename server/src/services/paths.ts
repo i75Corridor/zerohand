@@ -19,3 +19,8 @@ export function skillsDir(): string {
 export function outputDir(): string {
   return process.env.OUTPUT_DIR ?? join(dataDir(), "output");
 }
+
+/** Where per-run JSONL log files are written */
+export function logsDir(): string {
+  return join(dataDir(), "logs", "runs");
+}

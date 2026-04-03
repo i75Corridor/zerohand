@@ -26,6 +26,7 @@ import { createWebhooksRouter } from "./routes/webhooks.js";
 import { createSkillsRouter } from "./routes/skills.js";
 import { createPackagesRouter } from "./routes/packages.js";
 import { createModelsRouter } from "./routes/models.js";
+import { createLogsRouter } from "./routes/logs.js";
 import { ChannelManager } from "./services/channel-manager.js";
 import { GlobalAgentService } from "./services/global-agent.js";
 
@@ -146,6 +147,7 @@ async function main() {
   app.use("/api", createSkillsRouter());
   app.use("/api", createPackagesRouter(db));
   app.use("/api", createModelsRouter());
+  app.use("/api", createLogsRouter());
 
   // 404 handler
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
