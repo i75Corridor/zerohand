@@ -148,7 +148,65 @@ This means any change to `pipeline.yaml` — adding a step, changing a model, up
 
 ---
 
-## Adding a New Pipeline Package
+## Authoring Pipelines In-App
+
+The recommended way to create and iterate on pipelines is entirely in the UI — no file editing or server restart required.
+
+### Create a pipeline
+
+1. Go to **Pipelines** → **New Pipeline** (or let the Agent AI scaffold one for you).
+2. Use the pipeline builder to add steps, assign skills, and configure the prompt template for each step.
+3. The pipeline is live immediately — trigger a run from the detail page to test it.
+
+### Create and edit skills
+
+1. Go to **Skills** → **New Skill** to scaffold a `SKILL.md` with name and description.
+2. Open the skill detail page and click **Edit** to modify the system prompt body directly in the browser.
+3. Use the Agent AI (the chat panel) to build out scripts — it can create, update, and delete `scripts/*.js` / `*.py` files for you.
+
+All changes write directly to `SKILLS_DIR/<name>/SKILL.md` and `scripts/` on disk.
+
+### Export as Package
+
+Once a pipeline is ready, export it as a redistributable `.tar.gz` archive:
+
+1. Open the pipeline detail page.
+2. Click **Export as Package**.
+3. The archive includes `pipeline.yaml`, `skills/<name>/SKILL.md`, and all associated scripts.
+
+### Publish to GitHub
+
+Publishing creates a GitHub repository from the pipeline, adds the `zerohand-package` topic (making it discoverable via `zerohand packages discover`), and records the package in your installed packages list.
+
+**Prerequisite:** The `gh` CLI must be installed and authenticated.
+
+```bash
+# Install the GitHub CLI
+brew install gh          # macOS
+# or see https://cli.github.com for other platforms
+
+# Authenticate (one-time, opens browser)
+gh auth login
+```
+
+`gh auth login` writes credentials to `~/.config/gh/hosts.yml`. The Zerohand server calls `gh repo create` via this credential — no additional environment variables are needed.
+
+> **Note:** `gh` auth is distinct from the `GITHUB_TOKEN` env var (which is used for API rate limiting and cloning private repos during `packages install`). For publishing, only `gh auth login` matters.
+
+To publish from the UI:
+
+1. Open the pipeline detail page.
+2. Click **Publish to GitHub**.
+3. Choose a repository name, visibility, and optional description.
+4. Click **Publish** — the repo is created on GitHub and the package is registered locally.
+
+> **Private repos:** A private repository won't appear in `zerohand packages discover` results (which searches public repos by topic). It can still be installed explicitly via `zerohand packages install https://github.com/YOUR_ORG/repo` if you have access.
+
+---
+
+## Adding a New Pipeline Package (File-based)
+
+The file-based workflow is still supported — useful for version-controlled pipeline definitions checked into a repo.
 
 1. Create a directory under `pipelines/`:
    ```

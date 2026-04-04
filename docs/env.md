@@ -51,7 +51,21 @@ These are **stripped from child process environments** when running skill script
 
 | Variable | Description |
 |----------|-------------|
-| `GITHUB_TOKEN` | GitHub personal access token. Used by `packages install` to clone private repos and by `packages discover` to raise the GitHub API rate limit. |
+| `GITHUB_TOKEN` | GitHub personal access token. Used by `packages install` to clone private repos and by `packages discover` to raise the GitHub API rate limit. **Not used for publishing** — see the `gh` CLI note below. |
+
+### GitHub auth for publishing
+
+**Publishing packages** (via the UI's "Publish to GitHub" button or `POST /api/packages/publish`) uses the `gh` CLI, not `GITHUB_TOKEN`. The server calls `gh repo create` as a subprocess, relying on whatever credentials `gh` has stored locally.
+
+To enable publishing, authenticate the `gh` CLI once on the machine running the server:
+
+```bash
+gh auth login    # opens browser, writes to ~/.config/gh/hosts.yml
+```
+
+The token that `gh auth login` stores needs the `repo` scope to create repositories.
+
+`GITHUB_TOKEN` and `gh` auth are independent — you can set `GITHUB_TOKEN` for rate-limit benefits without it affecting publishing, and vice versa.
 | `SLACK_BOT_TOKEN` | Slack bot token (`xoxb-...`). Required for the Slack channel trigger. |
 | `SLACK_SIGNING_SECRET` | Slack signing secret for validating incoming webhook payloads. Required alongside `SLACK_BOT_TOKEN`. |
 
