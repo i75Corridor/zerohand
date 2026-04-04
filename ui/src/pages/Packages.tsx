@@ -14,6 +14,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { api } from "../lib/api.ts";
+import EmptyState from "../components/EmptyState.tsx";
 import type { ApiInstalledPackage, ApiDiscoveredPackage } from "@zerohand/shared";
 
 // ── Security error parsing ─────────────────────────────────────────────────────
@@ -79,7 +80,7 @@ function SecurityErrorPanel({
   };
 
   return (
-    <div className="mb-4 bg-red-950/20 border border-red-500/20 rounded-2xl p-4">
+    <div className="mb-4 bg-red-950/20 border border-red-500/20 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
         <ShieldAlert size={14} className="text-red-400 flex-shrink-0" />
         <span className="text-sm font-semibold text-red-300">Security check failed</span>
@@ -88,7 +89,7 @@ function SecurityErrorPanel({
       <div className="flex flex-col gap-2 mb-4">
         {parsed.findings.map((f, i) => (
           <div key={i} className="flex items-start gap-2">
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border flex-shrink-0 mt-0.5 ${levelStyle[f.level]}`}>
+            <span className={`text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0 mt-0.5 tracking-wide ${levelStyle[f.level]}`}>
               {f.level}
             </span>
             <div className="min-w-0">
@@ -129,7 +130,7 @@ function InstalledCard({
   uninstalling: boolean;
 }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3 card-glow">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -175,7 +176,7 @@ function InstalledCard({
           {pkg.skills.map((skill) => (
             <span
               key={skill}
-              className="text-xs text-sky-400 bg-sky-900/40 border border-sky-800/50 px-2 py-0.5 rounded-full"
+              className="text-xs text-violet-400 bg-violet-900/40 border border-violet-800/50 px-2 py-0.5 rounded-full"
             >
               {skill}
             </span>
@@ -204,6 +205,7 @@ function InstalledCard({
             onClick={onUninstall}
             disabled={uninstalling}
             className="text-slate-600 hover:text-red-400 disabled:opacity-50 transition-colors"
+            aria-label="Uninstall package"
           >
             <Trash2 size={13} />
           </button>
@@ -225,7 +227,7 @@ function DiscoverCard({
   installing: boolean;
 }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <a
@@ -261,7 +263,7 @@ function DiscoverCard({
         <button
           onClick={onInstall}
           disabled={pkg.installed || installing}
-          className="flex items-center gap-1 px-3 py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500 hover:text-slate-950 text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-600 hover:text-white hover:border-sky-600 text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
         >
           <Download size={11} />
           {pkg.installed ? "Installed" : installing ? "Installing..." : "Install"}
@@ -340,11 +342,11 @@ export default function Packages() {
   };
 
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Package size={20} className="text-sky-400" />
-          <h1 className="text-2xl font-bold font-display text-white">Packages</h1>
+          <Package size={20} className="text-teal-400" />
+          <h1 className="text-2xl font-semibold font-display text-white tracking-tight">Packages</h1>
         </div>
         <button
           onClick={() => checkUpdates.mutate()}
@@ -357,18 +359,23 @@ export default function Packages() {
       </div>
 
       {/* Installed packages */}
-      <section className="mb-8">
-        <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+      <section className="mb-10">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
           Installed
         </h2>
         {loadingInstalled ? (
           <p className="text-xs text-slate-600">Loading...</p>
         ) : installed.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
-            <Package size={24} className="text-slate-700 mx-auto mb-2" />
-            <p className="text-sm text-slate-500">No packages installed yet.</p>
-            <p className="text-xs text-slate-600 mt-1">Discover packages below or install from a URL.</p>
-          </div>
+          <EmptyState
+            compact
+            icon={Package}
+            title="No packages installed"
+            description="Packages bundle pipelines and skills from GitHub repositories. Search below to discover community packages, or paste a repo URL to install directly."
+            actions={[
+              { label: "Search Packages", onClick: () => document.querySelector<HTMLInputElement>('[placeholder*="Search GitHub"]')?.focus() },
+            ]}
+            hint="Packages are version-tracked and can be updated from here."
+          />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {installed.map((pkg) => (
@@ -394,7 +401,7 @@ export default function Packages() {
 
       {/* Discover */}
       <section>
-        <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
           Discover
         </h2>
 
@@ -412,7 +419,7 @@ export default function Packages() {
           <button
             onClick={handleDiscover}
             disabled={loadingDiscover}
-            className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
           >
             {loadingDiscover ? "Searching..." : "Search"}
           </button>
@@ -441,7 +448,7 @@ export default function Packages() {
         )}
 
         {/* Manual URL install */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Link size={13} className="text-slate-500" />
             <span className="text-xs font-medium text-slate-400">Install from URL</span>
@@ -460,7 +467,7 @@ export default function Packages() {
             <button
               onClick={handleInstallManual}
               disabled={!manualUrl.trim() || (install.isPending && installingId === "manual")}
-              className="flex items-center gap-1 px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-medium rounded-xl disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium rounded-xl disabled:opacity-50 transition-colors"
             >
               <Download size={11} />
               {install.isPending && installingId === "manual" ? "Installing..." : "Install"}

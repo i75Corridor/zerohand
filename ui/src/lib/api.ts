@@ -16,14 +16,51 @@ import type {
 
 const BASE = "/api";
 
+/** Human-readable error messages by HTTP status code */
+const STATUS_MESSAGES: Record<number, string> = {
+  400: "Invalid request. Please check your input and try again.",
+  401: "Your session has expired. Please refresh the page.",
+  403: "You do not have permission to perform this action.",
+  404: "The requested resource was not found.",
+  409: "A conflict occurred. The resource may have been modified by another process.",
+  429: "Too many requests. Please wait a moment and try again.",
+  500: "An internal server error occurred. Please try again later.",
+  502: "The server is temporarily unavailable. Please try again shortly.",
+  503: "The service is temporarily unavailable. Please try again shortly.",
+};
+
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly statusText: string,
+    public readonly body: string,
+  ) {
+    const friendly = STATUS_MESSAGES[status] ?? `Request failed (${status})`;
+    // Include the raw body for debugging but lead with the friendly message
+    super(body ? `${friendly}\n${body}` : friendly);
+    this.name = "ApiError";
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
-    ...init,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      headers: { "Content-Type": "application/json", ...init?.headers },
+      ...init,
+    });
+  } catch (err) {
+    // Network-level failures (offline, DNS, CORS, etc.)
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw err; // Let AbortController cancellations propagate
+    }
+    throw new Error(
+      "Unable to reach the server. Check your network connection and try again.",
+    );
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText}: ${body}`);
+    throw new ApiError(res.status, res.statusText, body);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

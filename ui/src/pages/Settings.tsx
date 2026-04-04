@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Settings as SettingsIcon, Bot } from "lucide-react";
+import { Bot } from "lucide-react";
 import { api } from "../lib/api.ts";
 import ModelSelector from "../components/ModelSelector.tsx";
 
@@ -30,10 +30,10 @@ function ActiveModelsSection() {
   const pipelineModel = typeof pipelineModelSetting?.value === "string" ? pipelineModelSetting.value : null;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl mb-6 overflow-hidden">
-      <div className="px-6 py-5 border-b border-slate-800 flex items-center gap-3">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl mb-6 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-800 flex items-center gap-3">
         <Bot size={14} className="text-sky-400" />
-        <h2 className="text-sm font-semibold text-white">Active Models</h2>
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Models</h2>
       </div>
 
       <div className="p-6 space-y-6">
@@ -67,15 +67,10 @@ function ActiveModelsSection() {
 
 export default function Settings() {
   return (
-    <div className="p-8 max-w-3xl">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="p-3 bg-sky-500/10 rounded-2xl">
-          <SettingsIcon size={20} className="text-sky-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold font-display text-white">Settings</h1>
-          <p className="text-slate-400 text-sm">Manage your models and preferences.</p>
-        </div>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl pt-14 lg:pt-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold font-display text-white tracking-tight">Settings</h1>
+        <p className="text-sm text-slate-500 mt-1">Manage your models and preferences.</p>
       </div>
 
       <ActiveModelsSection />

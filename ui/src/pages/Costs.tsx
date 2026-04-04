@@ -13,19 +13,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { api } from "../lib/api.ts";
-
-function formatCost(cents: number): string {
-  if (cents === 0) return "$0.00";
-  if (cents < 1) return "<$0.01";
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
-function formatCostShort(cents: number): string {
-  if (cents === 0) return "$0";
-  if (cents < 100) return `<$1`;
-  return `$${(cents / 100).toFixed(0)}`;
-}
-
+import StatCard from "../components/StatCard.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import { formatCost, formatCostShort } from "../lib/format.ts";
 type Range = "7d" | "30d" | "90d";
 
 function getRangeDates(range: Range): { from: string; to: string } {
@@ -38,35 +28,6 @@ function getRangeDates(range: Range): { from: string; to: string } {
     from: from.toISOString().split("T")[0],
     to: to.toISOString().split("T")[0],
   };
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  iconBg = "bg-sky-500/10",
-}: {
-  icon: typeof DollarSign;
-  label: string;
-  value: string;
-  sub?: string;
-  iconBg?: string;
-}) {
-  return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 transition-all duration-300 card-glow group">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-2.5 ${iconBg} rounded-xl`}>
-          <Icon size={22} className="text-sky-400" />
-        </div>
-      </div>
-      <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">{label}</div>
-      <div className="text-2xl font-display font-bold text-white mt-1 group-hover:text-sky-400 transition-colors truncate">
-        {value}
-      </div>
-      {sub && <div className="text-xs text-slate-500 mt-2">{sub}</div>}
-    </div>
-  );
 }
 
 const CHART_TOOLTIP_STYLE = {
@@ -84,7 +45,7 @@ export default function Costs() {
   const [range, setRange] = useState<Range>("30d");
   const { from, to } = getRangeDates(range);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: fetchError } = useQuery({
     queryKey: ["costBreakdown", from, to],
     queryFn: () => api.getCostBreakdown(from, to),
     refetchInterval: 60_000,
@@ -97,22 +58,22 @@ export default function Costs() {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
       {/* Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 sm:mb-8">
         <div>
-          <p className="text-sky-500 text-xs font-bold uppercase tracking-widest mb-1">Spend</p>
-          <h1 className="text-3xl font-display font-bold text-white tracking-tight">Cost Dashboard</h1>
+          <p className="text-amber-400/80 text-xs font-medium uppercase tracking-wider mb-1">Spend</p>
+          <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Cost Dashboard</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {ranges.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 range === r.value
-                  ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20"
-                  : "bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800"
+                  ? "bg-sky-600 text-white"
+                  : "bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
               }`}
             >
               {r.label}
@@ -122,53 +83,53 @@ export default function Costs() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-10">
         <StatCard
           icon={DollarSign}
           label="Total this month"
           value={data ? formatCost(data.summary.totalThisMonth) : "—"}
-          iconBg="bg-sky-500/10"
+          accent="text-sky-400"
         />
         <StatCard
           icon={TrendingUp}
           label="Daily average"
           value={data ? formatCost(data.summary.dailyAverage) : "—"}
           sub="based on range"
-          iconBg="bg-emerald-500/10"
+          accent="text-emerald-400"
         />
         <StatCard
           icon={Calendar}
           label="Projected month-end"
           value={data ? formatCost(data.summary.projectedMonthEnd) : "—"}
           sub="at current rate"
-          iconBg="bg-amber-500/10"
+          accent="text-amber-400"
         />
         <StatCard
           icon={Award}
           label="Top skill"
           value={data ? (data.summary.topSkill ?? "None") : "—"}
           sub="most expensive"
-          iconBg="bg-purple-500/10"
+          accent="text-violet-400"
         />
         <StatCard
           icon={GitBranch}
           label="Top pipeline"
           value={data ? (data.summary.topPipeline ?? "None") : "—"}
           sub="most expensive"
-          iconBg="bg-rose-500/10"
+          accent="text-rose-400"
         />
       </div>
 
       {/* Line chart — spend over time */}
-      <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl overflow-hidden mb-6">
-        <div className="px-6 py-5 border-b border-slate-800 bg-slate-900/60">
-          <h2 className="text-sm font-bold text-white uppercase tracking-widest">Spend Over Time</h2>
+      <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/60">
+          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Spend Over Time</h2>
         </div>
         <div className="p-6">
           {isLoading ? (
-            <div className="h-48 flex items-center justify-center text-slate-500 text-sm">Loading...</div>
+            <div className="h-48 flex items-center justify-center text-slate-400 text-sm" role="status" aria-live="polite">Loading...</div>
           ) : !data || data.daily.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-slate-500 text-sm">No cost data for this period.</div>
+            <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No cost data for this period.</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={data.daily} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -208,17 +169,17 @@ export default function Costs() {
       </div>
 
       {/* Bar charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* By skill */}
-        <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-800 bg-slate-900/60">
-            <h2 className="text-sm font-bold text-white uppercase tracking-widest">By Skill</h2>
+        <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/60">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">By Skill</h2>
           </div>
           <div className="p-6">
             {isLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-500 text-sm">Loading...</div>
+              <div className="h-48 flex items-center justify-center text-slate-400 text-sm" role="status" aria-live="polite">Loading...</div>
             ) : !data || data.bySkill.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-slate-500 text-sm">No data.</div>
+              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No data.</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart
@@ -246,7 +207,7 @@ export default function Costs() {
                     {...CHART_TOOLTIP_STYLE}
                     formatter={(v) => [formatCost(Number(v ?? 0)), "Cost"]}
                   />
-                  <Bar dataKey="costCents" fill="#38bdf8" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="costCents" fill="#34d399" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -254,15 +215,15 @@ export default function Costs() {
         </div>
 
         {/* By pipeline */}
-        <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-800 bg-slate-900/60">
-            <h2 className="text-sm font-bold text-white uppercase tracking-widest">By Pipeline</h2>
+        <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/60">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">By Pipeline</h2>
           </div>
           <div className="p-6">
             {isLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-500 text-sm">Loading...</div>
+              <div className="h-48 flex items-center justify-center text-slate-400 text-sm" role="status" aria-live="polite">Loading...</div>
             ) : !data || data.byPipeline.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-slate-500 text-sm">No data.</div>
+              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No data.</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart

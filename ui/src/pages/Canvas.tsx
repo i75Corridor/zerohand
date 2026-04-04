@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ExternalLink, Layers, ChevronDown, ChevronRight } from "lucide-react";
 import { api } from "../lib/api.ts";
+import LoadingState from "../components/LoadingState.tsx";
 import OutputPreview from "../components/OutputPreview.tsx";
+import EmptyState from "../components/EmptyState.tsx";
 import type { ApiStepRun, ApiPipelineRun } from "@zerohand/shared";
 
 function getOutputText(step: ApiStepRun): string {
@@ -70,7 +72,7 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
   });
 
   return (
-    <div className="bg-slate-900/40 border border-slate-800/60 rounded-2xl overflow-hidden">
+    <div className="bg-slate-900/40 border border-slate-800/60 rounded-xl overflow-hidden">
       {/* Run header */}
       <button
         className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-800/30 transition-colors text-left"
@@ -109,9 +111,9 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
         <div
           className={
             isMixed
-              ? "grid grid-cols-[2fr_3fr] gap-0 divide-x divide-slate-800/60"
+              ? "grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-0 md:divide-x divide-y md:divide-y-0 divide-slate-800/60"
               : sorted.length > 1
-              ? "grid grid-cols-2 gap-0 divide-x divide-slate-800/60"
+              ? "grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-y md:divide-y-0 divide-slate-800/60"
               : ""
           }
         >
@@ -138,24 +140,26 @@ export default function Canvas() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 20);
 
-  if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
+  if (isLoading) return <LoadingState />;
 
   return (
-    <div className="p-8 max-w-6xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Layers size={20} className="text-sky-400" />
-        <h1 className="text-2xl font-display font-bold text-white tracking-tight">Canvas</h1>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl pt-14 lg:pt-8">
+      <div className="flex items-center gap-3 mb-8">
+        <Layers size={20} className="text-rose-400" />
+        <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Canvas</h1>
         <span className="text-sm text-slate-500">{completedRuns.length} completed runs</span>
       </div>
 
       {completedRuns.length === 0 ? (
-        <div className="text-slate-500 text-sm">
-          No completed runs yet.{" "}
-          <Link to="/pipelines" className="text-sky-400 hover:text-sky-300 transition-colors">
-            Trigger a pipeline
-          </Link>{" "}
-          to generate output.
-        </div>
+        <EmptyState
+          icon={Layers}
+          title="No completed runs yet"
+          description="The canvas displays artifacts from completed pipeline runs -- images, markdown documents, and other generated output. Run a pipeline to see results here."
+          actions={[
+            { label: "Go to Pipelines", to: "/pipelines" },
+          ]}
+          hint="Only runs that produce file outputs (images, markdown) appear on the canvas."
+        />
       ) : (
         <div className="space-y-6">
           {completedRuns.map((run, i) => (
