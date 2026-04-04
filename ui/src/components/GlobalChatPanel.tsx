@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import { RotateCcw, Send, StopCircle, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useWebSocket } from "../lib/ws.ts";
@@ -36,24 +35,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
-
   const { send: wsSend } = useWebSocket((msg: WsMessage) => {
-    if (msg.type === "data_changed") {
-      if (msg.entity === "pipeline") {
-        queryClient.invalidateQueries({ queryKey: ["pipelines"] });
-        queryClient.invalidateQueries({ queryKey: ["pipeline"] });
-      }
-      if (msg.entity === "step") {
-        queryClient.invalidateQueries({ queryKey: ["pipeline"] });
-      }
-      if (msg.entity === "skill") {
-        queryClient.invalidateQueries({ queryKey: ["skills"] });
-        queryClient.invalidateQueries({ queryKey: ["skill-bundle", msg.id] });
-      }
-      return;
-    }
-
     if (msg.type !== "global_agent_event") return;
 
     if (msg.eventType === "text_delta" && msg.message) {
