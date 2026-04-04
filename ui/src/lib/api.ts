@@ -59,6 +59,13 @@ export const api = {
   listSkills: () => request<ApiSkill[]>("/skills"),
   getSkill: (name: string) => request<ApiSkill>(`/skills/${name}`),
   getSkillBundle: (name: string) => request<ApiSkillBundle>(`/skills/${encodeURIComponent(name)}/bundle`),
+  createSkill: (body: { name: string; description?: string; version?: string; allowedTools?: string[] }) =>
+    request<ApiSkill>("/skills", { method: "POST", body: JSON.stringify(body) }),
+  updateSkillContent: (name: string, content: string) =>
+    request<ApiSkill & { content: string }>(`/skills/${encodeURIComponent(name)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ content }),
+    }),
   saveSkillScript: (skillName: string, filename: string, content: string) =>
     request<{ filename: string }>(`/skills/${encodeURIComponent(skillName)}/scripts/${encodeURIComponent(filename)}`, {
       method: "PUT",
@@ -138,6 +145,31 @@ export const api = {
   },
 
   // Packages
+  exportPackage: async (pipelineId: string): Promise<void> => {
+    const res = await fetch(`${BASE}/packages/export`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pipelineId }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`${res.status} ${res.statusText}: ${body}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const cd = res.headers.get("content-disposition") ?? "";
+    const filename = cd.match(/filename="([^"]+)"/)?.[1] ?? "package.tar.gz";
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  publishPackage: (body: { pipelineId: string; repo?: string; private?: boolean; description?: string }) =>
+    request<{ id: string; repoUrl: string; repoFullName: string }>("/packages/publish", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   listInstalledPackages: () => request<ApiInstalledPackage[]>("/packages"),
   discoverPackages: (q?: string) =>
     request<ApiDiscoveredPackage[]>(`/packages/discover${q ? `?q=${encodeURIComponent(q)}` : ""}`),

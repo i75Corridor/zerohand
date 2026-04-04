@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, GitBranch, CheckSquare } from "lucide-react";
 import { api } from "../lib/api.ts";
-import type { ApiPipeline, ApiPipelineStep, ApiSkill } from "@zerohand/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiSkill, WsMessage } from "@zerohand/shared";
 import ModelSelector from "../components/ModelSelector.tsx";
+import { useWebSocket } from "../lib/ws.ts";
 
 // ── Draft step type (before saving) ───────────────────────────────────────────
 
@@ -388,6 +389,19 @@ export default function PipelineBuilder() {
     );
     setStepsSynced(true);
   }
+
+  // Reset sync flags when the agent modifies the pipeline externally so re-fetched data is applied
+  useWebSocket(useCallback((msg: WsMessage) => {
+    if (msg.type !== "data_changed") return;
+    if ((msg.entity === "step" || msg.entity === "pipeline") && isEdit) {
+      queryClient.invalidateQueries({ queryKey: ["pipeline", id] });
+      setSynced(false);
+      setStepsSynced(false);
+    }
+    if (msg.entity === "skill") {
+      queryClient.invalidateQueries({ queryKey: ["skills"] });
+    }
+  }, [id, isEdit, queryClient]));
 
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);

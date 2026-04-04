@@ -142,6 +142,16 @@ function InstalledCard({
               {pkg.repoFullName}
               <ExternalLink size={11} className="text-slate-500" />
             </a>
+            {(pkg.metadata as Record<string, unknown> | null)?.origin === "authored" && (
+              <span className="text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-md">
+                authored
+              </span>
+            )}
+            {(pkg.metadata as Record<string, unknown> | null)?.isLocal === true && (
+              <span className="text-xs font-medium text-slate-400 bg-slate-700/40 border border-slate-700/50 px-1.5 py-0.5 rounded-md">
+                local
+              </span>
+            )}
             {pkg.updateAvailable ? (
               <span className="flex items-center gap-1 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
                 <ArrowUpCircle size={10} />

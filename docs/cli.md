@@ -292,17 +292,18 @@ my-pipeline/
   .gitignore
 ```
 
-The directory is `git init`'d automatically. To publish:
+The directory is `git init`'d automatically. To publish manually:
 
 ```bash
 cd my-pipeline
 git add .
 git commit -m "Initial pipeline package"
 gh repo create my-pipeline --public --push
+gh repo edit my-pipeline --add-topic zerohand-package
 zerohand packages install https://github.com/YOUR_ORG/my-pipeline
 ```
 
-> **Tip:** Add the `zerohand-package` topic to your GitHub repo so it appears in `zerohand packages discover` results.
+> **In-app alternative:** You can skip the CLI entirely and author pipelines + skills directly in the UI, then use the **Publish to GitHub** button on the pipeline detail page. See [`docs/pipeline-packages.md`](./pipeline-packages.md) for the full workflow.
 
 ---
 

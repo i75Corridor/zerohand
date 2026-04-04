@@ -117,6 +117,7 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       });
 
       writeFileSync(skillPath, content, "utf-8");
+      ctx.broadcastDataChanged("skill", "updated", params.skillName);
       return { content: [{ type: "text" as const, text: `Updated skill "${params.skillName}".` }], details: {} };
     },
   };

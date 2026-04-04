@@ -35,6 +35,7 @@ An agentic workflow orchestrator built on [pi.dev](https://github.com/badlogic/p
 | `packages/db` | Drizzle ORM schema + migration client |
 | `packages/shared` | Shared API types, status enums, WebSocket message types |
 | `packages/cli` | `zerohand` CLI — manage pipelines, runs, and packages from the terminal |
+| `packages/mcp` | MCP server — exposes pipelines, runs, and skills as MCP tools/resources |
 | `server` | Express API + embedded PostgreSQL + execution engine |
 | `ui` | React + Vite + TailwindCSS operator dashboard |
 
@@ -121,7 +122,10 @@ See [`docs/cli.md`](./docs/cli.md) for the full command reference.
 ## Features
 
 ### Pipelines
-Define multi-step workflows as YAML packages. Each step references a skill or worker, a prompt template, and optional configuration. Steps execute sequentially; outputs are accessible in downstream prompt templates via `{{steps.N.output}}`.
+Define multi-step workflows as YAML packages or build them entirely in-app. Each step references a skill, a prompt template, and optional configuration. Steps execute sequentially; outputs are accessible in downstream prompt templates via `{{steps.N.output}}`.
+
+### In-App Authoring
+Create pipelines and skills directly in the UI without touching files. The Agent AI (built-in chat panel) can scaffold skills, write scripts, and wire up pipeline steps — all changes write through to disk in real time. When ready, export as a `.tar.gz` archive or publish directly to a GitHub repository with one click. See [`docs/pipeline-packages.md`](./docs/pipeline-packages.md) for the full workflow including GitHub auth for publishing.
 
 ### Skill-based Execution
 Skills are folders in `SKILLS_DIR` with a `SKILL.md` (system prompt + frontmatter) and an optional `scripts/` directory of executable tools. Each skill runs as a `pi` LLM agent session using the pipeline's configured model. Specialized capabilities like image generation and publishing are provided by external skill packages rather than built into the server.

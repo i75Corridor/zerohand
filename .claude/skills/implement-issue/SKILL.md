@@ -1,6 +1,6 @@
 ---
-name: issue
-description: End-to-end GitHub issue workflow for i75Corridor/zerohand. Fetches issue details via `gh` CLI, enters plan mode to design the implementation, executes the plan, creates tests, then confirms with the user before committing, pushing, and opening a PR. Triggered by the slash command `/issue <number>` (e.g. `/issue 21`).
+name: implement-issue
+description: End-to-end GitHub issue implementation workflow for i75Corridor/zerohand. Fetches issue details via `gh` CLI, enters plan mode to design the implementation, executes the plan, creates tests, then confirms with the user before committing, pushing, and opening a PR. Triggered by the slash command `/implement-issue <number>` (e.g. `/implement-issue 21`).
 ---
 
 ## What this skill does

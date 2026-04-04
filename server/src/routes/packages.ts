@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 import { desc, eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
@@ -15,6 +16,86 @@ import {
 import { importPipelinePackage } from "../services/pipeline-import.js";
 import { scanPackage } from "../services/security-scanner.js";
 import { packagesDir as getPackagesDir, skillsDir as getSkillsDir } from "../services/paths.js";
+import { loadPipelineWithSteps } from "./pipelines.js";
+import { pipelineToYaml } from "@zerohand/shared";
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function ghAvailable(): boolean {
+  const result = spawnSync("gh", ["--version"], { stdio: "ignore" });
+  return result.status === 0;
+}
+
+async function buildPackageDir(
+  db: Db,
+  pipelineId: string,
+  outDir: string,
+): Promise<{ name: string; slugName: string } | null> {
+  const pipeline = await loadPipelineWithSteps(db, pipelineId);
+  if (!pipeline) return null;
+
+  const skillsDir = getSkillsDir();
+  const slugName = slugify(pipeline.name);
+
+  mkdirSync(outDir, { recursive: true });
+
+  // pipeline.yaml
+  writeFileSync(join(outDir, "pipeline.yaml"), pipelineToYaml(pipeline), "utf-8");
+
+  // skills
+  const skillNames = [...new Set(pipeline.steps.map((s) => s.skillName).filter((n): n is string => !!n))];
+  for (const skillName of skillNames) {
+    const skillDir = join(skillsDir, skillName);
+    if (!existsSync(skillDir)) continue;
+    const skillMdPath = join(skillDir, "SKILL.md");
+    if (!existsSync(skillMdPath)) continue;
+
+    const outSkillDir = join(outDir, "skills", skillName);
+    const outScriptsDir = join(outSkillDir, "scripts");
+    mkdirSync(outScriptsDir, { recursive: true });
+    writeFileSync(join(outSkillDir, "SKILL.md"), readFileSync(skillMdPath, "utf-8"), "utf-8");
+
+    const scriptsDir = join(skillDir, "scripts");
+    if (existsSync(scriptsDir)) {
+      const files = readdirSync(scriptsDir).filter((f) => /\.(js|cjs|ts|py|sh)$/.test(f));
+      for (const f of files) {
+        writeFileSync(join(outScriptsDir, f), readFileSync(join(scriptsDir, f), "utf-8"), "utf-8");
+      }
+    }
+  }
+
+  // README.md
+  const inputParam = (() => {
+    const schema = pipeline.inputSchema as Record<string, unknown> | null;
+    const props = (schema?.properties as Record<string, unknown> | undefined) ?? {};
+    return Object.keys(props)[0] ?? "";
+  })();
+  const readme = [
+    `# ${pipeline.name}`,
+    "",
+    pipeline.description || "",
+    "",
+    "## Install",
+    "",
+    "```bash",
+    `zerohand packages install https://github.com/YOUR_ORG/${slugName}`,
+    "```",
+    "",
+    "## Usage",
+    "",
+    "```bash",
+    inputParam
+      ? `zerohand run "${pipeline.name}" --input ${inputParam}="..." --watch`
+      : `zerohand run "${pipeline.name}" --watch`,
+    "```",
+  ].join("\n");
+  writeFileSync(join(outDir, "README.md"), readme + "\n", "utf-8");
+  writeFileSync(join(outDir, ".gitignore"), "node_modules/\n.env\n", "utf-8");
+
+  return { name: pipeline.name, slugName };
+}
 
 export function createPackagesRouter(db: Db): Router {
   const router = Router();
@@ -249,6 +330,132 @@ export function createPackagesRouter(db: Db): Router {
       });
     } catch (err) {
       next(err);
+    }
+  });
+
+  // POST /api/packages/export — bundle pipeline + skills as tar.gz download
+  router.post("/packages/export", async (req, res, next) => {
+    let tempDir: string | null = null;
+    try {
+      const { pipelineId } = req.body as { pipelineId?: string };
+      if (!pipelineId || typeof pipelineId !== "string") {
+        res.status(400).json({ error: "pipelineId is required" });
+        return;
+      }
+
+      tempDir = mkdtempSync(join(tmpdir(), "zerohand-export-"));
+      const result = await buildPackageDir(db, pipelineId, tempDir);
+      if (!result) {
+        res.status(404).json({ error: "Pipeline not found" });
+        return;
+      }
+
+      const archiveName = `${result.slugName}.tar.gz`;
+      const archivePath = join(tmpdir(), archiveName);
+
+      const tar = spawnSync("tar", ["-czf", archivePath, "."], {
+        cwd: tempDir,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      if (tar.status !== 0) {
+        res.status(500).json({ error: "Failed to create archive" });
+        return;
+      }
+
+      res.setHeader("Content-Type", "application/gzip");
+      res.setHeader("Content-Disposition", `attachment; filename="${archiveName}"`);
+      res.sendFile(archivePath, (err) => {
+        if (err && !res.headersSent) next(err);
+        if (existsSync(archivePath)) rmSync(archivePath, { force: true });
+      });
+    } catch (err) {
+      next(err);
+    } finally {
+      if (tempDir && existsSync(tempDir)) {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  // POST /api/packages/publish — publish to GitHub
+  router.post("/packages/publish", async (req, res, next) => {
+    let tempDir: string | null = null;
+    try {
+      const { pipelineId, repo, private: isPrivate, description } = req.body as {
+        pipelineId?: string;
+        repo?: string;
+        private?: boolean;
+        description?: string;
+      };
+
+      if (!pipelineId || typeof pipelineId !== "string") {
+        res.status(400).json({ error: "pipelineId is required" });
+        return;
+      }
+
+      if (!ghAvailable()) {
+        res.status(400).json({ error: "The 'gh' CLI is required to publish packages. Install from https://cli.github.com" });
+        return;
+      }
+
+      tempDir = mkdtempSync(join(tmpdir(), "zerohand-publish-"));
+      const result = await buildPackageDir(db, pipelineId, tempDir);
+      if (!result) {
+        res.status(404).json({ error: "Pipeline not found" });
+        return;
+      }
+
+      const repoName = repo ?? result.slugName;
+
+      // git init + commit
+      spawnSync("git", ["init"], { cwd: tempDir, stdio: "ignore" });
+      spawnSync("git", ["add", "."], { cwd: tempDir, stdio: "ignore" });
+      spawnSync("git", ["commit", "-m", `Export ${result.name}`], { cwd: tempDir, stdio: "ignore" });
+
+      // gh repo create
+      const visibility = isPrivate ? "--private" : "--public";
+      const ghArgs = ["repo", "create", repoName, "--source", tempDir, "--push", visibility];
+      if (description ?? result.name) ghArgs.push("--description", description ?? result.name);
+
+      const createResult = spawnSync("gh", ghArgs, { cwd: tempDir, encoding: "utf-8", stdio: "pipe" });
+      if (createResult.status !== 0) {
+        res.status(500).json({ error: `Failed to create GitHub repository: ${createResult.stderr?.trim()}` });
+        return;
+      }
+
+      // Add topic
+      spawnSync("gh", ["repo", "edit", repoName, "--add-topic", "zerohand-package"], { stdio: "ignore" });
+
+      // Parse owner/repo from repoName (may be "repo" or "owner/repo")
+      const repoFullName = repoName.includes("/") ? repoName : repoName;
+      const repoUrl = `https://github.com/${repoFullName}`;
+
+      // Create installed_packages record
+      const [pkg] = await db
+        .insert(installedPackages)
+        .values({
+          repoUrl,
+          repoFullName,
+          localPath: tempDir,
+          skills: [],
+          updateAvailable: false,
+          metadata: { origin: "authored" },
+        })
+        .returning();
+
+      res.status(201).json({
+        id: pkg.id,
+        repoUrl: pkg.repoUrl,
+        repoFullName: pkg.repoFullName,
+        metadata: pkg.metadata,
+      });
+    } catch (err) {
+      next(err);
+    } finally {
+      if (tempDir && existsSync(tempDir)) {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
     }
   });
 

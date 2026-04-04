@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ReactFlow, Background, Handle, Position, type Node, type Edge, type NodeProps } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square } from "lucide-react";
+import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square, Download, Upload, X, Trash2, AlertTriangle } from "lucide-react";
 import { api } from "../lib/api.ts";
 import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun } from "@zerohand/shared";
 
@@ -245,12 +245,124 @@ function RecentRuns({ pipelineId }: { pipelineId: string }) {
   );
 }
 
+// ── Publish modal ─────────────────────────────────────────────────────────────
+
+function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const slugName = pipeline.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const [repo, setRepo] = useState(slugName);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+
+  const publish = useMutation({
+    mutationFn: () =>
+      api.publishPackage({
+        pipelineId: pipeline.id,
+        repo,
+        private: isPrivate,
+        description: pipeline.description ?? undefined,
+      }),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      setPublishedUrl(result.repoUrl);
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-slate-900 border border-slate-700/60 rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Publish to GitHub</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors"><X size={16} /></button>
+        </div>
+
+        {publishedUrl ? (
+          <div className="space-y-4">
+            <p className="text-sm text-emerald-400">Published successfully!</p>
+            <a
+              href={publishedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-xs font-mono text-sky-400 hover:text-sky-300 bg-slate-800 rounded-xl px-4 py-3 truncate"
+            >
+              {publishedUrl}
+            </a>
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Repository name</label>
+              <input
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+                value={repo}
+                onChange={(e) => setRepo(e.target.value)}
+              />
+              <p className="text-xs text-slate-600 mt-1">Use <code>owner/repo</code> for a specific org, or just <code>repo</code> for your personal account.</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="private-toggle"
+                  checked={isPrivate}
+                  onChange={(e) => setIsPrivate(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="private-toggle" className="text-sm text-slate-400">Private repository</label>
+              </div>
+              {isPrivate && (
+                <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
+                  <p className="text-xs text-amber-300">Private repos won't be discoverable via <code>zerohand packages discover</code> and won't appear in the package registry.</p>
+                </div>
+              )}
+            </div>
+            {publish.isError && (
+              <p className="text-xs text-rose-400">{(publish.error as Error).message}</p>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Cancel</button>
+              <button
+                className="flex items-center gap-1.5 px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-bold rounded-xl disabled:opacity-50"
+                disabled={!repo || publish.isPending}
+                onClick={() => publish.mutate()}
+              >
+                <Upload size={13} />
+                {publish.isPending ? "Publishing..." : "Publish"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PipelineDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showRun, setShowRun] = useState(false);
+  const [showPublish, setShowPublish] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const deletePipeline = useMutation({
+    mutationFn: () => api.deletePipeline(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipelines"] });
+      navigate("/pipelines");
+    },
+  });
 
   const { data: pipeline, isLoading, error } = useQuery({
     queryKey: ["pipeline", id],
@@ -276,6 +388,18 @@ export default function PipelineDetail() {
     });
   }
 
+  async function handleExport() {
+    setExporting(true);
+    setExportError("");
+    try {
+      await api.exportPackage(pipeline!.id);
+    } catch (err) {
+      setExportError((err as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="p-8 max-w-4xl">
       {/* Header */}
@@ -295,6 +419,17 @@ export default function PipelineDetail() {
             )}
           </div>
           <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={() => {
+                if (!confirm(`Delete "${pipeline.name}"? This will also remove any skills used only by this pipeline.`)) return;
+                deletePipeline.mutate();
+              }}
+              disabled={deletePipeline.isPending}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-900/40 hover:text-rose-400 text-slate-500 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+              title="Delete pipeline"
+            >
+              <Trash2 size={13} />
+            </button>
             <Link
               to={`/pipelines/${id}/edit`}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
@@ -330,25 +465,43 @@ export default function PipelineDetail() {
         )}
       </div>
 
-      {/* Export snippet */}
-      {!isFromPackage && (
-        <div className="mb-8">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            Export
-          </h2>
+      {/* Export & Publish */}
+      <div className="mb-8">
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+          Export & Publish
+        </h2>
+        <div className="flex items-center gap-3 mb-3">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+          >
+            <Download size={13} />
+            {exporting ? "Exporting..." : "Export as Package"}
+          </button>
+          <button
+            onClick={() => setShowPublish(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+          >
+            <Upload size={13} />
+            Publish to GitHub
+          </button>
+        </div>
+        {exportError && <p className="text-xs text-rose-400 mb-2">{exportError}</p>}
+        {!isFromPackage && (
           <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex items-center gap-3">
-            <code className="font-mono text-xs text-sky-300 flex-1">{exportCmd}</code>
+            <code className="font-mono text-xs text-slate-500 flex-1">{exportCmd}</code>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0"
-              title="Copy to clipboard"
+              className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors flex-shrink-0"
+              title="Copy CLI command"
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Recent runs */}
       <div>
@@ -359,6 +512,7 @@ export default function PipelineDetail() {
       </div>
 
       {showRun && <RunModal pipeline={pipeline} onClose={() => setShowRun(false)} />}
+      {showPublish && <PublishModal pipeline={pipeline} onClose={() => setShowPublish(false)} />}
     </div>
   );
 }

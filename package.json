@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
     "dev": "concurrently -n server,ui -c blue,green \"pnpm --filter server dev\" \"pnpm --filter ui dev\"",
-    "build": "pnpm --filter @zerohand/db build && pnpm --filter server build && pnpm --filter ui build && pnpm --filter @i75corridor/zh-cli build",
+    "build": "pnpm --filter @zerohand/db build && pnpm --filter server build && pnpm --filter ui build && pnpm --filter @i75corridor/zh-cli build && pnpm --filter @i75corridor/zerohand-mcp build",
     "db:generate": "pnpm --filter @zerohand/db generate",
     "db:reset": "rm -rf .data/postgres && echo 'Database reset. Run pnpm dev to re-initialize.'",
     "reset": "rm -rf .data && echo 'Full reset complete. Run pnpm dev to re-initialize.'",

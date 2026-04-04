@@ -1,14 +1,14 @@
-import { writeFileSync } from "node:fs";
-import { existsSync } from "node:fs";
+import { writeFileSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { Router } from "express";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, ne, inArray } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { pipelines, pipelineSteps, installedPackages } from "@zerohand/db";
 import type { ApiPipeline, ApiPipelineStep } from "@zerohand/shared";
-import { stringify } from "yaml";
+import { pipelineToYaml } from "@zerohand/shared";
+import { skillsDir as getSkillsDir } from "../services/paths.js";
 
-function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineStep {
+export function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineStep {
   return {
     id: row.id,
     stepIndex: row.stepIndex,
@@ -22,7 +22,7 @@ function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineStep {
   };
 }
 
-async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise<ApiPipeline | null> {
+export async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise<ApiPipeline | null> {
   const pipeline = await db.query.pipelines.findFirst({ where: eq(pipelines.id, pipelineId) });
   if (!pipeline) return null;
 
@@ -45,23 +45,6 @@ async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise<ApiPip
   };
 }
 
-function pipelineToYaml(pipeline: ApiPipeline): string {
-  const doc: Record<string, unknown> = { name: pipeline.name };
-  if (pipeline.description) doc.description = pipeline.description;
-  if (pipeline.modelProvider && pipeline.modelName) doc.model = `${pipeline.modelProvider}/${pipeline.modelName}`;
-  if (pipeline.systemPrompt) doc.systemPrompt = pipeline.systemPrompt;
-  if (pipeline.inputSchema && Object.keys(pipeline.inputSchema).length > 0) doc.inputSchema = pipeline.inputSchema;
-  doc.steps = pipeline.steps.map((s) => {
-    const step: Record<string, unknown> = { name: s.name };
-    if (s.skillName) step.skill = s.skillName;
-    step.promptTemplate = s.promptTemplate;
-    if (s.timeoutSeconds && s.timeoutSeconds !== 300) step.timeoutSeconds = s.timeoutSeconds;
-    if (s.approvalRequired) step.approvalRequired = true;
-    if (s.metadata && Object.keys(s.metadata).length > 0) step.metadata = s.metadata;
-    return step;
-  });
-  return stringify(doc, { lineWidth: 100 });
-}
 
 async function syncLocalPackageToDisk(db: Db, pipelineId: string): Promise<void> {
   const pkgs = await db
@@ -159,8 +142,40 @@ export function createPipelinesRouter(db: Db): Router {
 
   router.delete("/pipelines/:id", async (req, res, next) => {
     try {
+      // Collect skill names used by this pipeline's steps
+      const steps = await db
+        .select({ skillName: pipelineSteps.skillName })
+        .from(pipelineSteps)
+        .where(eq(pipelineSteps.pipelineId, req.params.id));
+
+      const skillNames = [...new Set(
+        steps.map((s) => s.skillName).filter((n): n is string => !!n),
+      )];
+
+      // Delete the pipeline (cascade deletes steps via FK)
       const deleted = await db.delete(pipelines).where(eq(pipelines.id, req.params.id)).returning();
       if (deleted.length === 0) return res.status(404).json({ error: "Pipeline not found" });
+
+      // Remove skills from disk that are no longer referenced by any other pipeline
+      if (skillNames.length > 0) {
+        const stillUsed = await db
+          .selectDistinct({ skillName: pipelineSteps.skillName })
+          .from(pipelineSteps)
+          .where(inArray(pipelineSteps.skillName, skillNames));
+
+        const stillUsedSet = new Set(stillUsed.map((r) => r.skillName).filter(Boolean));
+        const skillsDir = getSkillsDir();
+
+        for (const name of skillNames) {
+          if (stillUsedSet.has(name)) continue;
+          const skillDir = join(skillsDir, name);
+          if (existsSync(skillDir)) {
+            rmSync(skillDir, { recursive: true, force: true });
+            console.log(`[Pipeline Delete] Removed orphaned skill: ${name}`);
+          }
+        }
+      }
+
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -196,6 +211,7 @@ export function createPipelinesRouter(db: Db): Router {
           retryConfig: body.retryConfig ?? null,
         })
         .returning();
+      await syncLocalPackageToDisk(db, req.params.id);
       res.status(201).json(toApiStep(row));
     } catch (err) {
       next(err);
@@ -225,6 +241,7 @@ export function createPipelinesRouter(db: Db): Router {
         .where(eq(pipelineSteps.id, req.params.stepId))
         .returning();
       if (deleted.length === 0) return res.status(404).json({ error: "Step not found" });
+      await syncLocalPackageToDisk(db, req.params.pipelineId);
       res.status(204).send();
     } catch (err) {
       next(err);

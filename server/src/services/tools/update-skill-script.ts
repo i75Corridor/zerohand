@@ -70,6 +70,7 @@ export function makeUpdateSkillScript(ctx: AgentToolContext): ToolDefinition {
       }
 
       writeFileSync(scriptPath, params.content, "utf-8");
+      ctx.broadcastDataChanged("skill", "updated", params.skillName);
       return { content: [{ type: "text" as const, text: `Updated script "${params.filename}" in skill "${params.skillName}".` }], details: {} };
     },
   };
