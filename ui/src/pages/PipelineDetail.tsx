@@ -8,6 +8,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { api } from "../lib/api.ts";
 import StatusBadge from "../components/StatusBadge.tsx";
 import LoadingState from "../components/LoadingState.tsx";
+import EmptyState from "../components/EmptyState.tsx";
 import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun } from "@zerohand/shared";
 
 
@@ -199,7 +200,14 @@ function RecentRuns({ pipelineId }: { pipelineId: string }) {
   }
 
   if (runs.length === 0) {
-    return <p className="text-sm text-slate-500">No runs yet.</p>;
+    return (
+      <EmptyState
+        compact
+        icon={Play}
+        title="No runs yet"
+        description="Runs will appear here once this pipeline is triggered."
+      />
+    );
   }
 
   return (
@@ -271,7 +279,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
           <div className="flex items-center justify-between mb-4">
             <Dialog.Title className="text-lg font-semibold text-white">Publish to GitHub</Dialog.Title>
             <Dialog.Close asChild>
-              <button className="text-slate-500 hover:text-slate-300 transition-colors"><X size={16} /></button>
+              <button className="text-slate-500 hover:text-slate-300 transition-colors" aria-label="Close"><X size={16} /></button>
             </Dialog.Close>
           </div>
 
@@ -443,7 +451,7 @@ export default function PipelineDetail() {
               Edit
             </Link>
             <button
-              className="flex items-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-xl transition-colors"
               onClick={() => setShowRun(true)}
             >
               <Play size={13} />
@@ -459,12 +467,15 @@ export default function PipelineDetail() {
           Steps ({pipeline.steps.length})
         </h2>
         {pipeline.steps.length === 0 ? (
-          <div className="text-slate-500 text-sm border border-dashed border-slate-800 rounded-xl p-8 text-center">
-            No steps defined.{" "}
-            <Link to={`/pipelines/${id}/edit`} className="text-sky-400 hover:text-sky-300">
-              Add steps →
-            </Link>
-          </div>
+          <EmptyState
+            compact
+            icon={GitBranch}
+            title="No steps defined"
+            description="Steps are the building blocks of a pipeline. Each step invokes a skill with a prompt template."
+            actions={[
+              { label: "Add Steps", to: `/pipelines/${id}/edit` },
+            ]}
+          />
         ) : (
           <PipelineDAG pipeline={pipeline} />
         )}

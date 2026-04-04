@@ -13,7 +13,7 @@ interface LoadingStateProps {
 
 export default function LoadingState({ message = "Loading...", className = "" }: LoadingStateProps) {
   return (
-    <div className={`p-8 text-slate-400 text-sm ${className}`} aria-live="polite">
+    <div className={`p-8 text-slate-400 text-sm ${className}`} role="status" aria-live="polite">
       {message}
     </div>
   );

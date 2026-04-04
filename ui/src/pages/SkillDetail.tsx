@@ -4,6 +4,7 @@ import { ArrowLeft, Cpu, Copy, Check, Save, Trash2, Plus, X, Pencil } from "luci
 import { useState } from "react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
+import EmptyState from "../components/EmptyState.tsx";
 import type { ApiSkillBundleScript } from "@zerohand/shared";
 
 // ── Script editor ─────────────────────────────────────────────────────────────
@@ -270,9 +271,15 @@ export default function SkillDetail() {
           ))}
 
           {skill.scripts.length === 0 && !addingScript && (
-            <div className="text-slate-600 text-sm border border-dashed border-slate-800 rounded-xl p-6 text-center">
-              No scripts yet. Add one above or ask the agent to create one.
-            </div>
+            <EmptyState
+              compact
+              icon={Cpu}
+              title="No scripts yet"
+              description="Scripts extend a skill with executable code. Add one above or ask the agent to create one."
+              actions={[
+                { label: "Add Script", onClick: () => setAddingScript(true) },
+              ]}
+            />
           )}
 
           {addingScript && (

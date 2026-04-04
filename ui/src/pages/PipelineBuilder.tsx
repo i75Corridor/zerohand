@@ -227,7 +227,7 @@ function StepList({
               <ChevronDown size={13} />
             </button>
             <button
-              className="p-1 text-slate-500 hover:text-red-400"
+              className="p-1 text-slate-500 hover:text-rose-400"
               onClick={(e) => { e.stopPropagation(); onRemove(i); }}
               aria-label="Remove step"
             >
@@ -300,7 +300,7 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
               onChange={(e) => update(i, { description: e.target.value })}
             />
           </div>
-          <button className="text-slate-600 hover:text-red-400 mt-1" onClick={() => remove(i)} aria-label="Remove field">
+          <button className="text-slate-600 hover:text-rose-400 mt-1" onClick={() => remove(i)} aria-label="Remove field">
             <Trash2 size={13} />
           </button>
         </div>
@@ -547,7 +547,7 @@ export default function PipelineBuilder() {
             <h1 className="text-2xl font-semibold font-display text-white tracking-tight">{isEdit ? "Edit Pipeline" : "New Pipeline"}</h1>
           </div>
           <div className="flex items-center gap-3">
-            {error && <span className="text-xs text-red-400">{error}</span>}
+            {error && <span className="text-xs text-rose-400">{error}</span>}
             <button
               className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
               disabled={saving || loading}
@@ -567,7 +567,7 @@ export default function PipelineBuilder() {
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
             <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pipeline</h2>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Name <span className="text-red-400">*</span></label>
+              <label className="block text-xs text-slate-400 mb-1">Name <span className="text-rose-400">*</span></label>
               <input
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                 value={name}

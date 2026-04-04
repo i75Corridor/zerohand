@@ -217,7 +217,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
             <button
               onClick={sendMessage}
               disabled={!input.trim()}
-              className="px-2.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl btn-press disabled:opacity-40"
+              className="px-2.5 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-sky-600 hover:bg-sky-500 text-white rounded-xl btn-press disabled:opacity-40"
               title="Send"
               aria-label="Send message"
             >

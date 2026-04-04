@@ -5,6 +5,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Play, GitBranch, Clock, Trash2, ToggleLeft, ToggleRight, Plus, ChevronDown, ChevronUp, MessageSquare, AlertCircle } from "lucide-react";
 import cronstrue from "cronstrue";
 import { api } from "../lib/api.ts";
+import LoadingState from "../components/LoadingState.tsx";
+import EmptyState from "../components/EmptyState.tsx";
 import type { ApiPipeline, ApiTrigger } from "@zerohand/shared";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -192,7 +194,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
             {fields.map(([key, prop]) => (
               <div key={key}>
                 <label className="block text-sm text-slate-400 mb-1">
-                  {key}{required.has(key) && <span className="text-red-400 ml-1" aria-label="required">*</span>}
+                  {key}{required.has(key) && <span className="text-rose-400 ml-1" aria-label="required">*</span>}
                 </label>
                 {prop.description && <p className="text-xs text-slate-500 mb-1">{prop.description}</p>}
                 <input
@@ -272,7 +274,7 @@ function TriggerRow({ t, onToggle, onRemove, serverBase }: {
       </div>
       <button
         onClick={() => onRemove(t.id)}
-        className="text-slate-600 hover:text-red-400 transition-colors mt-0.5"
+        className="text-slate-600 hover:text-rose-400 transition-colors mt-0.5"
         aria-label="Remove trigger"
       >
         <Trash2 size={13} />
@@ -417,7 +419,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                 <div className="flex-1 min-w-0">
                   <input
                     className={`w-full bg-slate-800 border rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 font-mono focus:outline-none focus:border-sky-500 ${
-                      cronInvalid ? "border-red-500" : "border-slate-700"
+                      cronInvalid ? "border-rose-500" : "border-slate-700"
                     }`}
                     placeholder="0 9 * * *"
                     value={cron}
@@ -426,7 +428,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                     aria-invalid={cronInvalid}
                   />
                   {cronDescription && (
-                    <p className={`text-xs mt-1 ${cronInvalid ? "text-red-400" : "text-sky-300"}`} role={cronInvalid ? "alert" : undefined}>
+                    <p className={`text-xs mt-1 ${cronInvalid ? "text-rose-400" : "text-sky-300"}`} role={cronInvalid ? "alert" : undefined}>
                       {cronDescription}
                     </p>
                   )}
@@ -479,7 +481,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Bot Token <span className="text-red-400" aria-label="required">*</span></label>
+                <label className="block text-xs text-slate-400 mb-1">Bot Token <span className="text-rose-400" aria-label="required">*</span></label>
                 <input
                   type="password"
                   className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
@@ -504,7 +506,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
 
               {channelType === "slack" && (
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">Signing Secret <span className="text-red-400" aria-label="required">*</span></label>
+                  <label className="block text-xs text-slate-400 mb-1">Signing Secret <span className="text-rose-400" aria-label="required">*</span></label>
                   <input
                     type="password"
                     className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
@@ -545,7 +547,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                 <div key={key}>
                   <label className="block text-xs text-slate-400 mb-1">
                     {key}
-                    {required.has(key) && <span className="text-red-400 ml-1" aria-label="required">*</span>}
+                    {required.has(key) && <span className="text-rose-400 ml-1" aria-label="required">*</span>}
                     {prop.description && <span className="text-slate-600 ml-1">&mdash; {prop.description}</span>}
                   </label>
                   <input
@@ -640,7 +642,7 @@ export default function Pipelines() {
     queryFn: () => api.listPipelines(),
   });
 
-  if (isLoading) return <div className="p-8 text-slate-500" role="status" aria-live="polite">Loading pipelines...</div>;
+  if (isLoading) return <LoadingState message="Loading pipelines..." />;
 
   if (error) {
     return (
@@ -669,9 +671,16 @@ export default function Pipelines() {
         </Link>
       </div>
       {pipelines.length === 0 ? (
-        <div className="text-slate-500 text-sm border border-dashed border-slate-800 rounded-xl p-8 text-center">
-          No pipelines yet. Create one to get started.
-        </div>
+        <EmptyState
+          icon={GitBranch}
+          title="No pipelines yet"
+          description="Pipelines define multi-step AI agent workflows. Each pipeline chains skills together with configurable inputs, triggers, and approval gates."
+          actions={[
+            { label: "Create Pipeline", to: "/pipelines/new" },
+            { label: "Browse Packages", to: "/packages", variant: "secondary" },
+          ]}
+          hint="Pipelines can be triggered manually, on a cron schedule, or via webhook."
+        />
       ) : (
         <div className="space-y-3">
           {pipelines.map((p) => (

@@ -60,8 +60,8 @@ function StepCard({
         <span className="text-sm font-medium text-slate-200">
           {name || `Step ${step.stepIndex + 1}`}
         </span>
-        <span className={`ml-auto text-xs font-medium ${colorClass.split(" ").slice(1).join(" ")}`}>
-          {step.status}
+        <span className={`ml-auto text-xs font-medium ${colorClass}`}>
+          {step.status.replace(/_/g, " ")}
         </span>
         {step.startedAt && step.finishedAt && (
           <span className="text-xs text-slate-500 ml-2">

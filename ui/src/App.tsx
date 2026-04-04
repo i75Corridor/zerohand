@@ -25,7 +25,7 @@ function NotFound() {
       </p>
       <Link
         to="/dashboard"
-        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors inline-block"
+        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-xl transition-colors inline-block btn-press"
       >
         Go to Dashboard
       </Link>

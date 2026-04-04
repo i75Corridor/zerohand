@@ -52,7 +52,7 @@ export default function StatusBadge({ status, className = "" }: StatusBadgeProps
       className={`inline-flex items-center gap-1.5 text-caption px-2.5 py-1 rounded-md font-semibold uppercase tracking-wide ${style.badge} ${className}`}
     >
       {style.dot && <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />}
-      {status}
+      {status.replace(/_/g, " ")}
     </span>
   );
 }

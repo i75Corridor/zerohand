@@ -70,20 +70,20 @@ function SecurityErrorPanel({
 }) {
   const parsed = parseSecurityError(error);
   if (!parsed) {
-    return <p className="mb-4 text-xs text-red-400">Install failed: {String(error)}</p>;
+    return <p className="mb-4 text-xs text-rose-400">Install failed: {String(error)}</p>;
   }
 
   const levelStyle: Record<SecurityFinding["level"], string> = {
-    HIGH: "text-red-400 bg-red-500/10 border-red-500/20",
+    HIGH: "text-rose-400 bg-rose-500/10 border-rose-500/20",
     MEDIUM: "text-amber-400 bg-amber-500/10 border-amber-500/20",
     LOW: "text-slate-400 bg-slate-500/10 border-slate-500/20",
   };
 
   return (
-    <div className="mb-4 bg-red-950/20 border border-red-500/20 rounded-xl p-4">
+    <div className="mb-4 bg-rose-950/20 border border-rose-500/20 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <ShieldAlert size={14} className="text-red-400 flex-shrink-0" />
-        <span className="text-sm font-semibold text-red-300">Security check failed</span>
+        <ShieldAlert size={14} className="text-rose-400 flex-shrink-0" />
+        <span className="text-sm font-semibold text-rose-300">Security check failed</span>
         <span className="text-xs text-slate-500">{parsed.repoName}</span>
       </div>
       <div className="flex flex-col gap-2 mb-4">
@@ -99,12 +99,12 @@ function SecurityErrorPanel({
           </div>
         ))}
       </div>
-      <div className="flex items-center justify-between pt-3 border-t border-red-500/10">
+      <div className="flex items-center justify-between pt-3 border-t border-rose-500/10">
         <p className="text-xs text-slate-500">Only install if you trust this source.</p>
         <button
           onClick={onForce}
           disabled={forcing}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
         >
           <Download size={11} />
           {forcing ? "Installing..." : "Install anyway"}
@@ -204,7 +204,7 @@ function InstalledCard({
           <button
             onClick={onUninstall}
             disabled={uninstalling}
-            className="text-slate-600 hover:text-red-400 disabled:opacity-50 transition-colors"
+            className="text-slate-600 hover:text-rose-400 disabled:opacity-50 transition-colors"
             aria-label="Uninstall package"
           >
             <Trash2 size={13} />
