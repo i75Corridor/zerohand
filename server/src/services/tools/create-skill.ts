@@ -97,6 +97,7 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
         metadata: params.metadata,
       });
       writeFileSync(join(skillDir, "SKILL.md"), content, "utf-8");
+      ctx.broadcastDataChanged("skill", "created", params.skillName);
       return { content: [{ type: "text" as const, text: `Created skill "${params.skillName}" at ${skillDir}.` }], details: {} };
     },
   };

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Cpu, Copy, Check, Save, Trash2, Plus, X } from "lucide-react";
+import { ArrowLeft, Cpu, Copy, Check, Save, Trash2, Plus, X, Pencil } from "lucide-react";
 import { useState } from "react";
 import { api } from "../lib/api.ts";
 import type { ApiSkillBundleScript } from "@zerohand/shared";
@@ -129,11 +129,23 @@ export default function SkillDetail() {
   const { name } = useParams<{ name: string }>();
   const [copiedMd, setCopiedMd] = useState(false);
   const [addingScript, setAddingScript] = useState(false);
+  const [editingMd, setEditingMd] = useState(false);
+  const [mdContent, setMdContent] = useState("");
+
+  const queryClient = useQueryClient();
 
   const { data: skill, isLoading, error } = useQuery({
     queryKey: ["skill-bundle", name],
     queryFn: () => api.getSkillBundle(name!),
     enabled: !!name,
+  });
+
+  const saveMd = useMutation({
+    mutationFn: () => api.updateSkillContent(name!, mdContent),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skill-bundle", name] });
+      setEditingMd(false);
+    },
   });
 
   if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
@@ -144,6 +156,11 @@ export default function SkillDetail() {
       setCopiedMd(true);
       setTimeout(() => setCopiedMd(false), 2000);
     });
+  }
+
+  function handleStartEdit() {
+    setMdContent(skill!.skillMd);
+    setEditingMd(true);
   }
 
   // Parse description from SKILL.md frontmatter for the header
@@ -168,20 +185,57 @@ export default function SkillDetail() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">SKILL.md</h2>
-          <button
-            onClick={handleCopyMd}
-            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            {copiedMd ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-            {copiedMd ? "Copied" : "Copy"}
-          </button>
+          <div className="flex items-center gap-3">
+            {!editingMd && (
+              <>
+                <button
+                  onClick={handleCopyMd}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  {copiedMd ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                  {copiedMd ? "Copied" : "Copy"}
+                </button>
+                <button
+                  onClick={handleStartEdit}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  <Pencil size={13} /> Edit
+                </button>
+              </>
+            )}
+            {editingMd && (
+              <>
+                <button
+                  onClick={() => setEditingMd(false)}
+                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => saveMd.mutate()}
+                  disabled={saveMd.isPending}
+                  className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <Save size={12} />
+                  {saveMd.isPending ? "Saving..." : "Save"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
-        <pre className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
-          {skill.skillMd}
-        </pre>
-        <p className="text-xs text-slate-600 mt-2">
-          To edit, ask the Agent AI: <span className="font-mono text-slate-500">update skill {skill.name}</span>
-        </p>
+        {editingMd ? (
+          <textarea
+            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs text-slate-300 font-mono leading-relaxed resize-none focus:outline-none focus:border-sky-500"
+            rows={Math.max(12, mdContent.split("\n").length + 2)}
+            value={mdContent}
+            onChange={(e) => setMdContent(e.target.value)}
+            spellCheck={false}
+          />
+        ) : (
+          <pre className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
+            {skill.skillMd}
+          </pre>
+        )}
       </div>
 
       {/* Scripts */}

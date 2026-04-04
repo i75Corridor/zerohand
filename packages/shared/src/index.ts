@@ -1,3 +1,5 @@
+import { stringify } from "yaml";
+
 // Pipeline run statuses
 export const PIPELINE_RUN_STATUS = ["queued", "running", "paused", "completed", "failed", "cancelled"] as const;
 export type PipelineRunStatus = (typeof PIPELINE_RUN_STATUS)[number];
@@ -276,7 +278,7 @@ export interface WsIncomingGlobalChat {
 
 export interface WsDataChanged {
   type: "data_changed";
-  entity: "pipeline" | "step";
+  entity: "pipeline" | "step" | "skill";
   action: "created" | "updated" | "deleted";
   id: string;
 }
@@ -289,3 +291,33 @@ export interface WsGlobalAgentEvent {
 }
 
 export type WsMessage = WsStepEvent | WsRunStatusChange | WsStepStatusChange | WsChatAck | WsGlobalAgentEvent | WsDataChanged;
+
+// ─── Pipeline → YAML ─────────────────────────────────────────────────────────
+
+export function pipelineToYaml(pipeline: ApiPipeline): string {
+  const doc: Record<string, unknown> = { name: pipeline.name };
+
+  if (pipeline.description) doc.description = pipeline.description;
+
+  if (pipeline.modelProvider && pipeline.modelName) {
+    doc.model = `${pipeline.modelProvider}/${pipeline.modelName}`;
+  }
+
+  if (pipeline.systemPrompt) doc.systemPrompt = pipeline.systemPrompt;
+
+  if (pipeline.inputSchema && Object.keys(pipeline.inputSchema).length > 0) {
+    doc.inputSchema = pipeline.inputSchema;
+  }
+
+  doc.steps = pipeline.steps.map((step) => {
+    const s: Record<string, unknown> = { name: step.name };
+    if (step.skillName) s.skill = step.skillName;
+    s.promptTemplate = step.promptTemplate;
+    if (step.timeoutSeconds && step.timeoutSeconds !== 300) s.timeoutSeconds = step.timeoutSeconds;
+    if (step.approvalRequired) s.approvalRequired = true;
+    if (step.metadata && Object.keys(step.metadata).length > 0) s.metadata = step.metadata;
+    return s;
+  });
+
+  return stringify(doc, { lineWidth: 100 });
+}

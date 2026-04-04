@@ -44,7 +44,13 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         queryClient.invalidateQueries({ queryKey: ["pipelines"] });
         queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       }
-      if (msg.entity === "step") queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      if (msg.entity === "step") {
+        queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      }
+      if (msg.entity === "skill") {
+        queryClient.invalidateQueries({ queryKey: ["skills"] });
+        queryClient.invalidateQueries({ queryKey: ["skill-bundle", msg.id] });
+      }
       return;
     }
 

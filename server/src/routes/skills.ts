@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join, basename, extname, resolve, sep } from "node:path";
-import { parse as parseYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type { ApiSkill } from "@zerohand/shared";
 import { skillsDir as getSkillsDir } from "../services/paths.js";
 
@@ -108,6 +108,58 @@ export function createSkillsRouter(): Router {
     }
 
     res.json({ name: req.params.name, skillMd, scripts });
+  });
+
+  // POST /api/skills — create a new skill
+  router.post("/skills", (req, res) => {
+    const { name, description, version, allowedTools } = req.body as {
+      name?: string;
+      description?: string;
+      version?: string;
+      allowedTools?: string[];
+    };
+
+    if (!name || typeof name !== "string" || !/^[a-z0-9_-]+$/.test(name)) {
+      return res.status(400).json({ error: "name is required and must match ^[a-z0-9_-]+$" });
+    }
+
+    const skillDir = join(skillsDir, name);
+    if (existsSync(skillDir)) {
+      return res.status(409).json({ error: `Skill "${name}" already exists` });
+    }
+
+    const fm: Record<string, unknown> = { name };
+    if (version) fm.version = version;
+    if (description) fm.description = description;
+    if (allowedTools && allowedTools.length > 0) fm["allowed-tools"] = allowedTools.join(", ");
+
+    const skillMd = `---\n${stringifyYaml(fm).trim()}\n---\n\n`;
+
+    mkdirSync(join(skillDir, "scripts"), { recursive: true });
+    writeFileSync(join(skillDir, "SKILL.md"), skillMd, "utf-8");
+
+    const skill = parseSkillFile(skillDir);
+    return res.status(201).json(skill);
+  });
+
+  // PATCH /api/skills/:name — update SKILL.md content
+  router.patch("/skills/:name", (req, res) => {
+    const { content } = req.body as { content?: string };
+    if (typeof content !== "string") {
+      return res.status(400).json({ error: "content is required" });
+    }
+
+    const skillDir = join(skillsDir, req.params.name);
+    if (!existsSync(skillDir)) {
+      return res.status(404).json({ error: "Skill not found" });
+    }
+
+    writeFileSync(join(skillDir, "SKILL.md"), content, "utf-8");
+    const skill = parseSkillFile(skillDir);
+    if (!skill) {
+      return res.status(400).json({ error: "Invalid SKILL.md content" });
+    }
+    return res.json({ ...skill, content });
   });
 
   // PUT /api/skills/:name/scripts/:filename — create or update a script file
