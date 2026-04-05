@@ -61,6 +61,9 @@ export function useWebSocket(onMessage: WsHandler) {
       handlers.delete(handler);
       refCount--;
       if (refCount === 0 && sharedSocket) {
+        // Suppress the "closed before connection established" browser warning by
+        // replacing onerror with a no-op before closing a still-connecting socket.
+        sharedSocket.onerror = () => {};
         sharedSocket.close();
         sharedSocket = null;
       }

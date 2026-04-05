@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
+import type { ApiSkill } from "@zerohand/shared";
 
 function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   const queryClient = useQueryClient();
@@ -14,17 +15,18 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   const [error, setError] = useState("");
 
   const create = useMutation({
-    mutationFn: () => api.createSkill({ name, description: description || undefined }),
+    mutationFn: () => api.createSkill({ name, namespace: "local", description: description || undefined }),
     onSuccess: (skill) => {
       queryClient.invalidateQueries({ queryKey: ["skills"] });
-      navigate(`/skills/${encodeURIComponent(skill.name)}`);
+      const ns = skill.namespace ?? "local";
+      navigate(`/skills/${encodeURIComponent(ns)}/${encodeURIComponent(skill.name)}`);
     },
     onError: (err: Error) => {
       setError(err.message);
     },
   });
 
-  const nameValid = /^[a-z0-9_-]+$/.test(name);
+  const nameValid = /^[a-z0-9][a-z0-9_-]*$/.test(name);
 
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 mb-4">
@@ -71,6 +73,11 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   );
 }
 
+function skillDetailPath(skill: ApiSkill): string {
+  const ns = skill.namespace ?? "local";
+  return `/skills/${encodeURIComponent(ns)}/${encodeURIComponent(skill.name)}`;
+}
+
 export default function Skills() {
   const { data: skills = [], isLoading, error } = useQuery({
     queryKey: ["skills"],
@@ -79,6 +86,21 @@ export default function Skills() {
   const [creating, setCreating] = useState(false);
 
   if (isLoading) return <LoadingState />;
+
+  // Group skills by namespace
+  const byNamespace = new Map<string, ApiSkill[]>();
+  for (const skill of skills) {
+    const ns = skill.namespace ?? "local";
+    if (!byNamespace.has(ns)) byNamespace.set(ns, []);
+    byNamespace.get(ns)!.push(skill);
+  }
+
+  // Sort: "local" first, then alphabetical
+  const namespaces = [...byNamespace.keys()].sort((a, b) => {
+    if (a === "local") return -1;
+    if (b === "local") return 1;
+    return a.localeCompare(b);
+  });
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
@@ -113,26 +135,36 @@ export default function Skills() {
           hint="Skills installed from packages appear here automatically."
         />
       ) : (
-        <div className="space-y-2">
-          {skills.map((skill) => (
-            <Link
-              key={skill.name}
-              to={`/skills/${encodeURIComponent(skill.name)}`}
-              className="flex items-center gap-4 px-4 py-3 bg-slate-900/50 border border-slate-800/60 rounded-xl card-hover"
-            >
-              <Cpu size={15} className="text-violet-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-white">{skill.name}</div>
-                {skill.description && (
-                  <div className="text-xs text-slate-500 mt-0.5 truncate">{skill.description}</div>
-                )}
+        <div className="space-y-6">
+          {namespaces.map((ns) => (
+            <div key={ns}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{ns}</span>
+                <div className="flex-1 h-px bg-slate-800" />
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {skill.scripts.length > 0 && (
-                  <span className="text-xs text-slate-600">{skill.scripts.length} script{skill.scripts.length !== 1 ? "s" : ""}</span>
-                )}
+              <div className="space-y-2">
+                {byNamespace.get(ns)!.map((skill) => (
+                  <Link
+                    key={`${ns}/${skill.name}`}
+                    to={skillDetailPath(skill)}
+                    className="flex items-center gap-4 px-4 py-3 bg-slate-900/50 border border-slate-800/60 rounded-xl hover:border-slate-700 transition-colors"
+                  >
+                    <Cpu size={15} className="text-violet-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-white font-mono">{ns}/{skill.name}</div>
+                      {skill.description && (
+                        <div className="text-xs text-slate-500 mt-0.5 truncate">{skill.description}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {skill.scripts.length > 0 && (
+                        <span className="text-xs text-slate-600">{skill.scripts.length} script{skill.scripts.length !== 1 ? "s" : ""}</span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

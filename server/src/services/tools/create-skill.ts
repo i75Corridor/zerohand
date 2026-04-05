@@ -3,7 +3,7 @@ import { Type } from "@mariozechner/pi-ai";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentToolContext } from "./context.js";
-import { safeSkillDir, buildSkillMd, validateSkillName, validateDescription } from "./skill-utils.js";
+import { safeSkillDir, buildSkillMd, validateSkillName, validateDescription, normalizeSkillName } from "./skill-utils.js";
 
 export function makeCreateSkill(ctx: AgentToolContext): ToolDefinition {
   return {
@@ -12,8 +12,11 @@ export function makeCreateSkill(ctx: AgentToolContext): ToolDefinition {
     description: "Create a new skill by writing a SKILL.md file to the skills directory.",
     parameters: Type.Object({
       skillName: Type.String({
-        description: "Folder name for the skill. Lowercase letters, numbers, and hyphens only; max 64 characters; must not start/end with or contain consecutive hyphens (e.g. 'web-researcher', 'pdf-extractor').",
+        description: "Folder name for the skill (unqualified — just the skill part, not the namespace). Lowercase letters, numbers, and hyphens only; max 64 characters; must not start/end with or contain consecutive hyphens (e.g. 'web-researcher', 'pdf-extractor').",
       }),
+      namespace: Type.Optional(Type.String({
+        description: "Namespace for the skill (default: 'local'). Skills created manually use 'local'. Package skills use the package name as namespace. Lowercase letters, numbers, and hyphens only.",
+      })),
       description: Type.String({
         description: "What this skill does AND when to use it — include keywords that help identify relevant tasks. Max 1024 characters. Example: 'Extracts text from PDFs and fills forms. Use when handling PDF documents or the user mentions PDFs, forms, or document extraction.'",
       }),
@@ -44,6 +47,9 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
       secrets: Type.Optional(Type.Array(Type.String(), {
         description: "Secret keys from the secrets store to inject as env vars when running scripts.",
       })),
+      mcpServers: Type.Optional(Type.Array(Type.String(), {
+        description: "Names of registered MCP servers whose tools this skill can access at runtime. Use list_mcp_servers to see available servers, then list_mcp_server_tools to get exact tool names. Tool names will be available as mcp__<serverName>__<toolName> in the skill's execution context.",
+      })),
       license: Type.Optional(Type.String({
         description: "SPDX license identifier or reference to a bundled license file, e.g. 'MIT' or 'LICENSE.txt'.",
       })),
@@ -59,11 +65,13 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
     }),
     execute: async (_id, params: {
       skillName: string;
+      namespace?: string;
       description: string;
       body: string;
       model?: string;
       network?: boolean;
       secrets?: string[];
+      mcpServers?: string[];
       license?: string;
       compatibility?: string;
       allowedTools?: string;
@@ -72,6 +80,10 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
       const nameErr = validateSkillName(params.skillName);
       if (nameErr) return { content: [{ type: "text" as const, text: `Invalid skill name: ${nameErr}` }], details: {} };
 
+      const namespace = params.namespace ?? "local";
+      const nsErr = validateSkillName(namespace);
+      if (nsErr) return { content: [{ type: "text" as const, text: `Invalid namespace: ${nsErr}` }], details: {} };
+
       const descErr = validateDescription(params.description);
       if (descErr) return { content: [{ type: "text" as const, text: `Invalid description: ${descErr}` }], details: {} };
 
@@ -79,9 +91,11 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
         return { content: [{ type: "text" as const, text: "compatibility field exceeds 500 characters" }], details: {} };
       }
 
-      const skillDir = safeSkillDir(params.skillName, ctx.skillsDir);
+      // Qualified name: "namespace/skill-name"
+      const qualifiedName = `${namespace}/${params.skillName}`;
+      const skillDir = safeSkillDir(qualifiedName, ctx.skillsDir);
       if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name — must not contain path separators." }], details: {} };
-      if (existsSync(skillDir)) return { content: [{ type: "text" as const, text: `Skill "${params.skillName}" already exists. Use update_skill to modify it.` }], details: {} };
+      if (existsSync(skillDir)) return { content: [{ type: "text" as const, text: `Skill "${qualifiedName}" already exists. Use update_skill to modify it.` }], details: {} };
 
       mkdirSync(skillDir, { recursive: true });
       const content = buildSkillMd({
@@ -91,14 +105,15 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
         model: params.model,
         network: params.network,
         secrets: params.secrets,
+        mcpServers: params.mcpServers,
         license: params.license,
         compatibility: params.compatibility,
         allowedTools: params.allowedTools,
         metadata: params.metadata,
       });
       writeFileSync(join(skillDir, "SKILL.md"), content, "utf-8");
-      ctx.broadcastDataChanged("skill", "created", params.skillName);
-      return { content: [{ type: "text" as const, text: `Created skill "${params.skillName}" at ${skillDir}.` }], details: {} };
+      ctx.broadcastDataChanged("skill", "created", qualifiedName);
+      return { content: [{ type: "text" as const, text: `Created skill "${qualifiedName}" at ${skillDir}.` }], details: {} };
     },
   };
 }

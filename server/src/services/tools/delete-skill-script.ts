@@ -3,7 +3,7 @@ import { Type } from "@mariozechner/pi-ai";
 import { existsSync, rmSync } from "node:fs";
 import { join, basename } from "node:path";
 import type { AgentToolContext } from "./context.js";
-import { safeSkillDir } from "./skill-utils.js";
+import { safeSkillDir, validateQualifiedSkillName } from "./skill-utils.js";
 
 export function makeDeleteSkillScript(ctx: AgentToolContext): ToolDefinition {
   return {
@@ -11,10 +11,12 @@ export function makeDeleteSkillScript(ctx: AgentToolContext): ToolDefinition {
     label: "Delete Skill Script",
     description: "Delete a script file from a skill's scripts/ directory.",
     parameters: Type.Object({
-      skillName: Type.String({ description: "The skill folder name" }),
+      skillName: Type.String({ description: "The fully-qualified skill name in 'namespace/skill-name' format (e.g. 'local/researcher')." }),
       filename: Type.String({ description: "Script filename to delete, e.g. web_search.py" }),
     }),
     execute: async (_id, params: { skillName: string; filename: string }) => {
+      const nameErr = validateQualifiedSkillName(params.skillName);
+      if (nameErr) return { content: [{ type: "text" as const, text: `Invalid skill name: ${nameErr}` }], details: {} };
       const skillDir = safeSkillDir(params.skillName, ctx.skillsDir);
       if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name." }], details: {} };
 

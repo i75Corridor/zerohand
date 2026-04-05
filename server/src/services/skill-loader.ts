@@ -33,6 +33,10 @@ function safeChildEnv(): NodeJS.ProcessEnv {
 
 export interface SkillDef {
   name: string;
+  /** Namespace portion of the qualified skill name (e.g. "local", "daily-absurdist") */
+  namespace: string;
+  /** Fully-qualified skill name: "<namespace>/<name>" */
+  qualifiedName: string;
   version: string;
   description: string;
   type: "pi";
@@ -45,12 +49,16 @@ export interface SkillDef {
   network?: boolean;
   /** Secret keys from the secrets store to inject as env vars when running scripts */
   secrets?: string[];
+  /** MCP server names (from the global registry) this skill wants tools from */
+  mcpServers?: string[];
 }
 
-export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | null {
-  const skillDir = join(skillsDir, skillName);
+export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef | null {
+  // qualifiedName is "namespace/skill-name" (e.g. "local/researcher")
+  // path.join handles the "/" naturally: join(skillsDir, "local/researcher") = skillsDir/local/researcher
+  const skillDir = join(skillsDir, qualifiedName);
 
-  // Guard against path traversal (e.g. skillName = "../../etc")
+  // Guard against path traversal (e.g. qualifiedName = "../../etc")
   const resolvedSkillsDir = resolve(skillsDir);
   const resolvedSkillDir = resolve(skillDir);
   if (!resolvedSkillDir.startsWith(resolvedSkillsDir + sep)) return null;
@@ -87,12 +95,20 @@ export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | n
   const skillMetadata = fm.metadata as Record<string, unknown> | undefined;
   const skillNetwork = (fm.network as boolean | undefined) ?? false;
   const skillSecrets = (fm.secrets as string[] | undefined) ?? [];
+  const skillMcpServers = (fm.mcpServers as string[] | undefined) ?? [];
 
   // version lives in metadata per spec; fall back to top-level for old skills
   const version = String(skillMetadata?.version ?? fm.version ?? "0.0.0");
 
+  // Derive namespace from the qualifiedName (e.g. "local/researcher" → namespace="local")
+  const slashIdx = qualifiedName.indexOf("/");
+  const namespace = slashIdx > -1 ? qualifiedName.slice(0, slashIdx) : "local";
+  const skillBaseName = slashIdx > -1 ? qualifiedName.slice(slashIdx + 1) : qualifiedName;
+
   return {
-    name: String(fm.name ?? skillName),
+    name: String(fm.name ?? skillBaseName),
+    namespace,
+    qualifiedName,
     version,
     description: String(fm.description ?? ""),
     type: "pi",
@@ -103,6 +119,7 @@ export function loadSkillDef(skillName: string, skillsDir: string): SkillDef | n
     metadata: skillMetadata,
     network: skillNetwork,
     secrets: skillSecrets,
+    mcpServers: skillMcpServers,
   };
 }
 

@@ -1,3 +1,4 @@
+import "./env-loader.js";
 import { createServer } from "node:http";
 import { mkdirSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -25,10 +26,12 @@ import { createFilesRouter } from "./routes/files.js";
 import { createWebhooksRouter } from "./routes/webhooks.js";
 import { createSkillsRouter } from "./routes/skills.js";
 import { createPackagesRouter } from "./routes/packages.js";
+import { makeMcpServersRouter } from "./routes/mcp-servers.js";
 import { createModelsRouter } from "./routes/models.js";
 import { createLogsRouter } from "./routes/logs.js";
 import { ChannelManager } from "./services/channel-manager.js";
 import { GlobalAgentService } from "./services/global-agent.js";
+import { migrateSkillsToNamespaces } from "./services/skill-migrator.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
@@ -109,6 +112,13 @@ async function main() {
   const { url: dbUrl, stop: stopPostgres } = await startPostgres();
 
   const db = createDb(dbUrl);
+
+  // Migrate flat skills to "local/" namespace (idempotent, runs before engine starts)
+  {
+    const { skillsDir: getSkillsDir } = await import("./services/paths.js");
+    migrateSkillsToNamespaces(getSkillsDir());
+  }
+
   const pipelinesDir = process.env.PIPELINES_DIR ?? join(process.cwd(), "..", "pipelines");
   await importAllPackages(db, pipelinesDir);
 
@@ -143,21 +153,14 @@ async function main() {
   app.use("/api", createSettingsRouter(db, () => { void globalAgentRef?.resetSession(); }));
   app.use("/api", createFilesRouter());
   app.use("/api", createSkillsRouter());
+  app.use("/api", makeMcpServersRouter(db));
   app.use("/api", createModelsRouter());
   app.use("/api", createLogsRouter());
-
-  // 404 handler
-  app.use((_req, res) => res.status(404).json({ error: "Not found" }));
-
-  // Error handler
-  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error("[Server] Error:", err);
-    res.status(500).json({ error: String(err) });
-  });
 
   const httpServer = createServer(app);
   const ws = new WsManager(httpServer);
 
+  // Approvals needs ws for re-queuing after approve/reject — registered before 404 handler
   // Routes that need ws for real-time broadcasts
   app.use("/api", createApprovalsRouter(db, ws));
   app.use("/api", createTriggersRouter(db, ws));
@@ -168,6 +171,13 @@ async function main() {
   const triggers = new TriggerManager(db, ws);
   const channels = new ChannelManager(db, ws);
   app.use("/", createWebhooksRouter(channels));
+
+  // 404 and error handlers — must come after all routes
+  app.use((_req, res) => res.status(404).json({ error: "Not found" }));
+  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error("[Server] Error:", err);
+    res.status(500).json({ error: String(err) });
+  });
 
   // Wire bidirectional WebSocket → engine chat handler
   ws.onChatMessage((msg) => engine.handleChatMessage(msg));
@@ -205,4 +215,15 @@ async function main() {
 main().catch((err) => {
   console.error("[Server] Fatal error:", err);
   process.exit(1);
+});
+
+// Prevent MCP SDK socket errors (and other stray emitter errors) from killing the process.
+// These surface as uncaughtException when an HTTP/socket 'error' event has no listener —
+// most commonly during MCP server connect/disconnect cycles.
+process.on("uncaughtException", (err) => {
+  console.error("[Server] Uncaught exception (non-fatal):", err.message);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[Server] Unhandled rejection (non-fatal):", reason);
 });

@@ -12,6 +12,11 @@ import type {
   ApiDiscoveredPackage,
   ApiModelEntry,
   ApiCostBreakdown,
+  ApiMcpServer,
+  ApiMcpTool,
+  ApiValidationResult,
+  ApiPipelineVersion,
+  ApiPackagePreview,
 } from "@zerohand/shared";
 
 const BASE = "/api";
@@ -93,46 +98,64 @@ export const api = {
     request<void>(`/pipelines/${pipelineId}/steps/${stepId}`, { method: "DELETE" }),
 
   // Skills
+  // skillName is a qualified "namespace/skill-name" string (e.g. "local/researcher")
   listSkills: () => request<ApiSkill[]>("/skills"),
-  getSkill: (name: string) => request<ApiSkill>(`/skills/${name}`),
-  getSkillBundle: (name: string) => request<ApiSkillBundle>(`/skills/${encodeURIComponent(name)}/bundle`),
-  createSkill: (body: { name: string; description?: string; version?: string; allowedTools?: string[] }) =>
+  getSkill: (qualifiedName: string) => {
+    const [ns, name] = qualifiedName.includes("/") ? qualifiedName.split("/") : ["local", qualifiedName];
+    return request<ApiSkill>(`/skills/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`);
+  },
+  getSkillBundle: (qualifiedName: string) => {
+    const [ns, name] = qualifiedName.includes("/") ? qualifiedName.split("/") : ["local", qualifiedName];
+    return request<ApiSkillBundle>(`/skills/${encodeURIComponent(ns)}/${encodeURIComponent(name)}/bundle`);
+  },
+  createSkill: (body: { name: string; namespace?: string; description?: string; version?: string; allowedTools?: string[] }) =>
     request<ApiSkill>("/skills", { method: "POST", body: JSON.stringify(body) }),
-  updateSkillContent: (name: string, content: string) =>
-    request<ApiSkill & { content: string }>(`/skills/${encodeURIComponent(name)}`, {
+  updateSkillContent: (qualifiedName: string, content: string) => {
+    const [ns, name] = qualifiedName.includes("/") ? qualifiedName.split("/") : ["local", qualifiedName];
+    return request<ApiSkill & { content: string }>(`/skills/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`, {
       method: "PATCH",
       body: JSON.stringify({ content }),
-    }),
-  saveSkillScript: (skillName: string, filename: string, content: string) =>
-    request<{ filename: string }>(`/skills/${encodeURIComponent(skillName)}/scripts/${encodeURIComponent(filename)}`, {
+    });
+  },
+  saveSkillScript: (qualifiedSkillName: string, filename: string, content: string) => {
+    const [ns, name] = qualifiedSkillName.includes("/") ? qualifiedSkillName.split("/") : ["local", qualifiedSkillName];
+    return request<{ filename: string }>(`/skills/${encodeURIComponent(ns)}/${encodeURIComponent(name)}/scripts/${encodeURIComponent(filename)}`, {
       method: "PUT",
       body: JSON.stringify({ content }),
-    }),
-  deleteSkillScript: (skillName: string, filename: string) =>
-    request<void>(`/skills/${encodeURIComponent(skillName)}/scripts/${encodeURIComponent(filename)}`, { method: "DELETE" }),
+    });
+  },
+  deleteSkillScript: (qualifiedSkillName: string, filename: string) => {
+    const [ns, name] = qualifiedSkillName.includes("/") ? qualifiedSkillName.split("/") : ["local", qualifiedSkillName];
+    return request<void>(`/skills/${encodeURIComponent(ns)}/${encodeURIComponent(name)}/scripts/${encodeURIComponent(filename)}`, { method: "DELETE" });
+  },
 
   // Pipeline runs
   listRuns: (pipelineId?: string) =>
     request<ApiPipelineRun[]>(`/runs${pipelineId ? `?pipelineId=${pipelineId}` : ""}`),
   getRun: (id: string) => request<ApiPipelineRun>(`/runs/${id}`),
-  triggerRun: (pipelineId: string, inputParams: Record<string, unknown> = {}) =>
+  triggerRun: (pipelineId: string, inputParams: Record<string, unknown> = {}, executionMode?: "step_by_step") =>
     request<ApiPipelineRun>("/runs", {
       method: "POST",
-      body: JSON.stringify({ pipelineId, inputParams }),
+      body: JSON.stringify({ pipelineId, inputParams, executionMode }),
     }),
   cancelRun: (id: string) => request<ApiPipelineRun>(`/runs/${id}/cancel`, { method: "POST" }),
+  resumeRun: (id: string) => request<ApiPipelineRun>(`/runs/${id}/resume`, { method: "POST" }),
+  rerunStep: (runId: string, stepRunId: string) =>
+    request<ApiPipelineRun>(`/runs/${runId}/steps/${stepRunId}/rerun`, { method: "POST" }),
   getRunSteps: (runId: string) => request<ApiStepRun[]>(`/runs/${runId}/steps`),
   getStepEvents: (runId: string, stepRunId: string) =>
     request<unknown[]>(`/runs/${runId}/steps/${stepRunId}/events`),
   getRunLog: async (runId: string): Promise<Record<string, unknown>[]> => {
     const res = await fetch(`${BASE}/runs/${runId}/log`);
-    if (res.status === 404) return [];
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    if (!res.ok) return []; // 404 = no log file, 500 = not yet created; both show empty
     const text = await res.text();
     return text
       .split("\n")
       .filter(Boolean)
-      .map((line) => JSON.parse(line) as Record<string, unknown>);
+      .map((line) => {
+        try { return JSON.parse(line) as Record<string, unknown>; } catch { return null; }
+      })
+      .filter((x): x is Record<string, unknown> => x !== null);
   },
 
   // Triggers
@@ -181,7 +204,20 @@ export const api = {
     return `/api/files/${encodeURIComponent(filename)}`;
   },
 
+  // Pipeline validation & versions
+  validatePipeline: (id: string) => request<ApiValidationResult>(`/pipelines/${id}/validate`, { method: "POST" }),
+  listPipelineVersions: (id: string) => request<ApiPipelineVersion[]>(`/pipelines/${id}/versions`),
+  getPipelineVersion: (id: string, version: number) =>
+    request<ApiPipelineVersion>(`/pipelines/${id}/versions/${version}`),
+  restorePipelineVersion: (id: string, version: number) =>
+    request<ApiPipeline>(`/pipelines/${id}/versions/${version}/restore`, { method: "POST" }),
+
   // Packages
+  previewPackage: (pipelineId: string) =>
+    request<ApiPackagePreview>("/packages/preview", {
+      method: "POST",
+      body: JSON.stringify({ pipelineId }),
+    }),
   exportPackage: async (pipelineId: string): Promise<void> => {
     const res = await fetch(`${BASE}/packages/export`, {
       method: "POST",
@@ -218,6 +254,18 @@ export const api = {
   updatePackage: (id: string) => request<{ pipelineName: string }>(`/packages/${id}/update`, { method: "POST" }),
   uninstallPackage: (id: string) => request<void>(`/packages/${id}`, { method: "DELETE" }),
   checkForUpdates: () => request<{ message: string }>("/packages/check-updates", { method: "POST" }),
+
+  // MCP Servers
+  listMcpServers: () => request<ApiMcpServer[]>("/mcp-servers"),
+  getMcpServer: (id: string) => request<ApiMcpServer>(`/mcp-servers/${id}`),
+  createMcpServer: (body: Omit<ApiMcpServer, "id" | "source" | "sourcePackageId">) =>
+    request<ApiMcpServer>("/mcp-servers", { method: "POST", body: JSON.stringify(body) }),
+  updateMcpServer: (id: string, body: Partial<ApiMcpServer>) =>
+    request<ApiMcpServer>(`/mcp-servers/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteMcpServer: (id: string) => request<void>(`/mcp-servers/${id}`, { method: "DELETE" }),
+  testMcpServer: (id: string) =>
+    request<{ connected: boolean; tools: ApiMcpTool[]; error?: string }>(`/mcp-servers/${id}/test`, { method: "POST" }),
+  listMcpServerTools: (id: string) => request<ApiMcpTool[]>(`/mcp-servers/${id}/tools`),
 
   // Models
   listModels: () => request<ApiModelEntry[]>("/models"),

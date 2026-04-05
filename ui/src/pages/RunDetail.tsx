@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, Square } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Square, SkipForward, RotateCcw } from "lucide-react";
 import { api } from "../lib/api.ts";
 import { statusColor as getStatusColor, STATUS_BORDER_COLORS, STATUS_TEXT_COLORS } from "../components/StatusBadge.tsx";
 import LoadingState from "../components/LoadingState.tsx";
@@ -22,10 +22,14 @@ function StepCard({
   step,
   name,
   liveData,
+  runId,
+  onRerun,
 }: {
   step: ApiStepRun;
   name?: string;
   liveData?: LiveStep;
+  runId?: string;
+  onRerun?: () => void;
 }) {
   const [expanded, setExpanded] = useState(step.status === "running" || step.status === "failed");
   const prevStatus = useRef(step.status);
@@ -52,25 +56,36 @@ function StepCard({
 
   return (
     <div className={`border border-slate-800 border-l-4 ${leftBorderColor} rounded-xl overflow-hidden`}>
-      <button
-        className="w-full flex items-center gap-3 px-4 py-3 bg-slate-900/40 hover:bg-slate-900/60 transition-colors text-left"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <span className="text-sm font-medium text-slate-200">
-          {name || `Step ${step.stepIndex + 1}`}
-        </span>
-        <span className={`ml-auto text-xs font-medium ${colorClass}`}>
-          {step.status.replace(/_/g, " ")}
-        </span>
-        {step.startedAt && step.finishedAt && (
-          <span className="text-xs text-slate-500 ml-2">
-            {Math.round(
-              (new Date(step.finishedAt).getTime() - new Date(step.startedAt).getTime()) / 1000,
-            )}s
+      <div className="flex items-center bg-slate-900/40 hover:bg-slate-900/60 transition-colors">
+        <button
+          className="flex-1 flex items-center gap-3 px-4 py-3 text-left"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <span className="text-sm font-medium text-slate-200">
+            {name || `Step ${step.stepIndex + 1}`}
           </span>
+          <span className={`ml-auto text-xs font-medium ${colorClass}`}>
+            {step.status.replace(/_/g, " ")}
+          </span>
+          {step.startedAt && step.finishedAt && (
+            <span className="text-xs text-slate-500 ml-2">
+              {Math.round(
+                (new Date(step.finishedAt).getTime() - new Date(step.startedAt).getTime()) / 1000,
+              )}s
+            </span>
+          )}
+        </button>
+        {onRerun && step.status === "completed" && (
+          <button
+            onClick={onRerun}
+            className="flex items-center gap-1 text-xs text-slate-600 hover:text-sky-400 transition-colors px-3 py-3"
+            title="Re-run this step"
+          >
+            <RotateCcw size={11} />
+          </button>
         )}
-      </button>
+      </div>
 
       {expanded && (
         <div className="bg-slate-950 p-4" ref={textRef}>
@@ -106,11 +121,42 @@ const EVENT_COLORS: Record<string, string> = {
   error: "text-rose-400",
 };
 
-function DebugLogTab({ runId }: { runId: string }) {
+function LogEntry({ entry, index }: { entry: Record<string, unknown>; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const { ts, event, ...rest } = entry;
+  const color = EVENT_COLORS[event as string] ?? "text-slate-400";
+  const tsStr = typeof ts === "string"
+    ? new Date(ts).toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    : "";
+  const hasPayload = Object.keys(rest).length > 0;
+
+  return (
+    <div key={index} className="border-b border-slate-900">
+      <button
+        className="w-full flex gap-3 py-1 text-left hover:bg-slate-900/40 transition-colors px-1 rounded"
+        onClick={() => hasPayload && setExpanded((v) => !v)}
+      >
+        <span className="text-slate-600 shrink-0 w-28">{tsStr}</span>
+        <span className={`shrink-0 w-28 ${color}`}>{String(event)}</span>
+        <span className="text-slate-400 truncate flex-1 min-w-0">{JSON.stringify(rest)}</span>
+        {hasPayload && (
+          <span className="text-slate-700 shrink-0">{expanded ? "▲" : "▼"}</span>
+        )}
+      </button>
+      {expanded && hasPayload && (
+        <pre className="text-xs text-slate-300 bg-slate-900/60 rounded p-3 mb-1 overflow-x-auto whitespace-pre-wrap break-words">
+          {JSON.stringify(rest, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+function DebugLogTab({ runId, isActive }: { runId: string; isActive: boolean }) {
   const { data: entries = [] } = useQuery({
     queryKey: ["run-log", runId],
     queryFn: () => api.getRunLog(runId),
-    refetchInterval: 5000,
+    refetchInterval: isActive ? 3000 : false,
   });
 
   if (entries.length === 0) {
@@ -122,19 +168,10 @@ function DebugLogTab({ runId }: { runId: string }) {
   }
 
   return (
-    <div className="space-y-1 font-mono text-xs overflow-x-auto">
-      {entries.map((entry, i) => {
-        const { ts, event, ...rest } = entry;
-        const color = EVENT_COLORS[event as string] ?? "text-slate-400";
-        const tsStr = typeof ts === "string" ? new Date(ts).toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
-        return (
-          <div key={i} className="flex gap-3 py-0.5 border-b border-slate-900 content-auto">
-            <span className="text-slate-600 shrink-0 w-20 sm:w-28">{tsStr}</span>
-            <span className={`shrink-0 w-24 ${color}`}>{String(event)}</span>
-            <span className="text-slate-400 truncate">{JSON.stringify(rest)}</span>
-          </div>
-        );
-      })}
+    <div className="font-mono text-xs overflow-x-auto">
+      {entries.map((entry, i) => (
+        <LogEntry key={i} entry={entry} index={i} />
+      ))}
     </div>
   );
 }
@@ -150,7 +187,7 @@ export default function RunDetail() {
     queryFn: () => api.getRun(id!),
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      return status === "running" || status === "queued" ? 3000 : false;
+      return status === "running" || status === "queued" || status === "paused" ? 3000 : false;
     },
   });
 
@@ -215,9 +252,9 @@ export default function RunDetail() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
-      <Link to="/dashboard" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
+      <Link to={`/pipelines/${run.pipelineId}`} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
         <ArrowLeft size={12} />
-        Back to Dashboard
+        Back to Pipeline
       </Link>
 
       <div className="mb-8">
@@ -264,6 +301,25 @@ export default function RunDetail() {
         </div>
       )}
 
+      {/* Step-by-step pause banner */}
+      {run.status === "paused" && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 bg-amber-900/20 border border-amber-700/40 rounded-xl">
+          <span className="text-sm text-amber-300 flex-1">Paused after step — review the output then continue.</span>
+          <button
+            onClick={() => {
+              void api.resumeRun(id!).then(() => {
+                queryClient.invalidateQueries({ queryKey: ["run", id] });
+                queryClient.invalidateQueries({ queryKey: ["run-steps", id] });
+              });
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg transition-colors"
+          >
+            <SkipForward size={12} />
+            Continue to Next Step
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-1 mb-4 border-b border-slate-800">
         <button
           className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "steps" ? "text-white border-b-2 border-sky-500" : "text-slate-500 hover:text-slate-300"}`}
@@ -290,6 +346,13 @@ export default function RunDetail() {
                   step={stepRun}
                   name={ps.name}
                   liveData={liveSteps.get(stepRun.stepIndex)}
+                  runId={id}
+                  onRerun={() => {
+                    void api.rerunStep(id!, stepRun.id).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ["run", id] });
+                      queryClient.invalidateQueries({ queryKey: ["run-steps", id] });
+                    });
+                  }}
                 />
               );
             }
@@ -312,7 +375,7 @@ export default function RunDetail() {
         </div>
       )}
 
-      {activeTab === "log" && <div className="animate-fade-in"><DebugLogTab runId={id!} /></div>}
+      {activeTab === "log" && <div className="animate-fade-in"><DebugLogTab runId={id!} isActive={run.status === "running" || run.status === "queued"} /></div>}
     </div>
   );
 }

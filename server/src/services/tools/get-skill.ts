@@ -3,7 +3,7 @@ import { Type } from "@mariozechner/pi-ai";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentToolContext } from "./context.js";
-import { safeSkillDir } from "./skill-utils.js";
+import { safeSkillDir, validateQualifiedSkillName } from "./skill-utils.js";
 
 export function makeGetSkill(ctx: AgentToolContext): ToolDefinition {
   return {
@@ -11,9 +11,11 @@ export function makeGetSkill(ctx: AgentToolContext): ToolDefinition {
     label: "Get Skill",
     description: "Read the full SKILL.md content for a skill.",
     parameters: Type.Object({
-      skillName: Type.String({ description: "The skill folder name" }),
+      skillName: Type.String({ description: "The fully-qualified skill name in 'namespace/skill-name' format (e.g. 'local/researcher', 'daily-absurdist/writer'). Use list_skills to find available skill names." }),
     }),
     execute: async (_id, params: { skillName: string }) => {
+      const err = validateQualifiedSkillName(params.skillName);
+      if (err) return { content: [{ type: "text" as const, text: `Invalid skill name: ${err}` }], details: {} };
       const skillDir = safeSkillDir(params.skillName, ctx.skillsDir);
       if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name." }], details: {} };
       const skillPath = join(skillDir, "SKILL.md");

@@ -17,7 +17,7 @@ import {
   readFileSync,
   rmSync,
 } from "node:fs";
-import { join, resolve, sep, basename } from "node:path";
+import { join, resolve, sep, basename, dirname } from "node:path";
 import { eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
@@ -88,11 +88,25 @@ interface SkillInstallResult {
   skipped: string[];
 }
 
-function installSkills(packageDir: string, skillsDir: string): SkillInstallResult {
+/**
+ * Derive a namespace slug from a repo name.
+ * "i75Corridor/daily-absurdist" → "daily-absurdist"
+ * "my-package" → "my-package"
+ */
+function repoToNamespace(repoFullName: string): string {
+  const parts = repoFullName.split("/");
+  const repoName = parts[parts.length - 1] ?? repoFullName;
+  return repoName.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-|-$/g, "") || "local";
+}
+
+function installSkills(packageDir: string, skillsDir: string, namespace: string): SkillInstallResult {
   const packageSkillsDir = join(packageDir, "skills");
   const result: SkillInstallResult = { added: [], updated: [], skipped: [] };
 
   if (!existsSync(packageSkillsDir)) return result;
+
+  const nsDir = join(skillsDir, namespace);
+  mkdirSync(nsDir, { recursive: true });
 
   const entries = readdirSync(packageSkillsDir, { withFileTypes: true });
   const skillNames = entries.filter((e) => e.isDirectory()).map((e) => e.name);
@@ -100,7 +114,7 @@ function installSkills(packageDir: string, skillsDir: string): SkillInstallResul
   for (const name of skillNames) {
     // Guard against path traversal
     const srcDir = join(packageSkillsDir, name);
-    const destDir = join(skillsDir, name);
+    const destDir = join(nsDir, name);
     const resolvedSkillsDir = resolve(skillsDir);
     const resolvedDest = resolve(destDir);
     if (!resolvedDest.startsWith(resolvedSkillsDir + sep)) continue;
@@ -108,32 +122,34 @@ function installSkills(packageDir: string, skillsDir: string): SkillInstallResul
     const srcSkillMd = join(srcDir, "SKILL.md");
     if (!existsSync(srcSkillMd)) continue;
 
+    const qualifiedName = `${namespace}/${name}`;
+
     if (existsSync(destDir)) {
       const destSkillMd = join(destDir, "SKILL.md");
       const srcContent = existsSync(srcSkillMd) ? readFileSync(srcSkillMd, "utf-8") : "";
       const destContent = existsSync(destSkillMd) ? readFileSync(destSkillMd, "utf-8") : "";
       if (srcContent === destContent) {
-        result.skipped.push(name);
+        result.skipped.push(qualifiedName);
         continue;
       }
       cpSync(srcDir, destDir, { recursive: true, force: true });
-      result.updated.push(name);
+      result.updated.push(qualifiedName);
     } else {
       mkdirSync(destDir, { recursive: true });
       cpSync(srcDir, destDir, { recursive: true, force: true });
-      result.added.push(name);
+      result.added.push(qualifiedName);
     }
   }
 
   return result;
 }
 
-function getPackageSkillNames(packageDir: string): string[] {
+function getPackageSkillNames(packageDir: string, namespace: string): string[] {
   const packageSkillsDir = join(packageDir, "skills");
   if (!existsSync(packageSkillsDir)) return [];
   return readdirSync(packageSkillsDir, { withFileTypes: true })
     .filter((e) => e.isDirectory())
-    .map((e) => e.name);
+    .map((e) => `${namespace}/${e.name}`);
 }
 
 // ── public API ─────────────────────────────────────────────────────────────────
@@ -192,13 +208,14 @@ export async function installPackage(
     );
   }
 
-  // Install skills
+  // Install skills under the package namespace
+  const namespace = repoToNamespace(repoFullName);
   mkdirSync(skillsDir, { recursive: true });
-  const skillResult = installSkills(localPath, skillsDir);
-  const skillNames = getPackageSkillNames(localPath);
+  const skillResult = installSkills(localPath, skillsDir, namespace);
+  const skillNames = getPackageSkillNames(localPath, namespace);
 
-  // Import pipeline
-  await importPipelinePackage(db, localPath);
+  // Import pipeline (skill refs get qualified with the package namespace; MCP servers declared in the manifest are auto-registered)
+  await importPipelinePackage(db, localPath, namespace, repoUrl);
 
   // Get created pipeline ID
   const installedRef = await getCurrentRef(localPath);
@@ -286,9 +303,10 @@ export async function updatePackage(
     );
   }
 
-  const skillResult = installSkills(localPath, skillsDir);
-  const skillNames = getPackageSkillNames(localPath);
-  await importPipelinePackage(db, localPath);
+  const namespace = repoToNamespace(pkg[0].repoFullName);
+  const skillResult = installSkills(localPath, skillsDir, namespace);
+  const skillNames = getPackageSkillNames(localPath, namespace);
+  await importPipelinePackage(db, localPath, namespace, repoUrl);
 
   const newRef = await getCurrentRef(localPath);
   await db
@@ -343,14 +361,23 @@ export async function uninstallPackage(
     await db.delete(pipelines).where(eq(pipelines.id, pipelineId));
   }
 
-  // Remove skills installed by this package
+  // Remove skills installed by this package (skills are stored as qualified "namespace/name")
   if (Array.isArray(pkgSkills)) {
     const { rmSync } = await import("node:fs");
     for (const skillName of pkgSkills as string[]) {
+      // skillName may be "namespace/name" (new) or bare "name" (legacy)
       const skillDir = join(skillsDir, skillName);
       if (existsSync(skillDir)) {
         rmSync(skillDir, { recursive: true, force: true });
         console.log(`[Packages] Removed skill: ${skillName}`);
+        // If namespace dir is now empty, clean it up
+        const nsDir = dirname(skillDir);
+        if (nsDir !== skillsDir && existsSync(nsDir)) {
+          try {
+            const remaining = readdirSync(nsDir);
+            if (remaining.length === 0) rmSync(nsDir, { recursive: true, force: true });
+          } catch { /* ignore */ }
+        }
       }
     }
   }
@@ -378,6 +405,7 @@ export async function checkForUpdates(db: Db): Promise<void> {
         .set({
           latestRef,
           updateAvailable,
+          repoNotFound: false,
           lastCheckedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -387,7 +415,17 @@ export async function checkForUpdates(db: Db): Promise<void> {
         console.log(`[Packages] Update available for ${pkg.repoFullName}`);
       }
     } catch (err) {
-      console.error(`[Packages] Failed to check updates for ${pkg.repoFullName}:`, err);
+      const msg = String(err);
+      const isNotFound = msg.includes("Repository not found") || msg.includes("not found");
+      await db
+        .update(installedPackages)
+        .set({ repoNotFound: isNotFound, lastCheckedAt: new Date(), updatedAt: new Date() })
+        .where(eq(installedPackages.id, pkg.id));
+      if (isNotFound) {
+        console.warn(`[Packages] ${pkg.repoFullName} — repository no longer exists or is inaccessible`);
+      } else {
+        console.warn(`[Packages] Could not check updates for ${pkg.repoFullName}: ${msg.split("\n")[0]}`);
+      }
     }
   }
 }

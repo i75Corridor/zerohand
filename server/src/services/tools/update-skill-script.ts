@@ -3,7 +3,7 @@ import { Type } from "@mariozechner/pi-ai";
 import { existsSync, writeFileSync } from "node:fs";
 import { join, basename, extname } from "node:path";
 import type { AgentToolContext } from "./context.js";
-import { safeSkillDir } from "./skill-utils.js";
+import { safeSkillDir, validateQualifiedSkillName } from "./skill-utils.js";
 
 const ALLOWED_EXTS = [".js", ".ts", ".py", ".sh"];
 
@@ -53,11 +53,13 @@ export function makeUpdateSkillScript(ctx: AgentToolContext): ToolDefinition {
     label: "Update Skill Script",
     description: "Replace the full content of an existing script in a skill's scripts/ directory. The script filename (minus extension) is the tool name the agent calls at runtime.",
     parameters: Type.Object({
-      skillName: Type.String({ description: "The skill folder name" }),
+      skillName: Type.String({ description: "The fully-qualified skill name in 'namespace/skill-name' format (e.g. 'local/researcher')." }),
       filename: Type.String({ description: "Script filename to replace, e.g. web_search.js" }),
       content: Type.String({ description: SCRIPT_CONTENT_DESCRIPTION }),
     }),
     execute: async (_id, params: { skillName: string; filename: string; content: string }) => {
+      const nameErr = validateQualifiedSkillName(params.skillName);
+      if (nameErr) return { content: [{ type: "text" as const, text: `Invalid skill name: ${nameErr}` }], details: {} };
       const skillDir = safeSkillDir(params.skillName, ctx.skillsDir);
       if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name." }], details: {} };
 

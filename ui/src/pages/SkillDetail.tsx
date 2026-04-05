@@ -129,7 +129,9 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SkillDetail() {
-  const { name } = useParams<{ name: string }>();
+  const { namespace, name } = useParams<{ namespace: string; name: string }>();
+  // Build the qualified name used for all API calls
+  const qualifiedName = namespace && name ? `${namespace}/${name}` : name ?? "";
   const [copiedMd, setCopiedMd] = useState(false);
   const [addingScript, setAddingScript] = useState(false);
   const [editingMd, setEditingMd] = useState(false);
@@ -138,15 +140,15 @@ export default function SkillDetail() {
   const queryClient = useQueryClient();
 
   const { data: skill, isLoading, error } = useQuery({
-    queryKey: ["skill-bundle", name],
-    queryFn: () => api.getSkillBundle(name!),
-    enabled: !!name,
+    queryKey: ["skill-bundle", qualifiedName],
+    queryFn: () => api.getSkillBundle(qualifiedName),
+    enabled: !!qualifiedName,
   });
 
   const saveMd = useMutation({
-    mutationFn: () => api.updateSkillContent(name!, mdContent),
+    mutationFn: () => api.updateSkillContent(qualifiedName, mdContent),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["skill-bundle", name] });
+      queryClient.invalidateQueries({ queryKey: ["skill-bundle", qualifiedName] });
       setEditingMd(false);
     },
     onError: () => {
@@ -182,7 +184,7 @@ export default function SkillDetail() {
       <div className="flex items-start gap-3 mb-10">
         <Cpu size={20} className="text-violet-400 flex-shrink-0 mt-0.5" />
         <div>
-          <h1 className="text-2xl font-semibold font-display text-white tracking-tight">{skill.name}</h1>
+          <h1 className="text-2xl font-semibold font-display text-white tracking-tight font-mono">{qualifiedName}</h1>
           {description && <p className="text-sm text-slate-500 mt-1">{description}</p>}
         </div>
       </div>
@@ -264,7 +266,7 @@ export default function SkillDetail() {
           {skill.scripts.map((script) => (
             <ScriptEditor
               key={script.filename}
-              skillName={skill.name}
+              skillName={qualifiedName}
               script={script}
               onDeleted={() => {}}
             />
@@ -284,7 +286,7 @@ export default function SkillDetail() {
 
           {addingScript && (
             <NewScriptForm
-              skillName={skill.name}
+              skillName={qualifiedName}
               onCreated={() => setAddingScript(false)}
               onCancel={() => setAddingScript(false)}
             />

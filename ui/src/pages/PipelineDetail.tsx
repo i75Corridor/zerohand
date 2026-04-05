@@ -1,15 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import React, { useState } from "react";
 import { ReactFlow, Background, Handle, Position, type Node, type Edge, type NodeProps } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square, Download, Upload, X, Trash2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square, Download, Upload, X, Trash2, AlertTriangle, ShieldCheck, History, RotateCcw, ChevronDown, ChevronRight, Loader, AlertCircle, Eye } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { api } from "../lib/api.ts";
 import StatusBadge from "../components/StatusBadge.tsx";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun } from "@zerohand/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun, ApiValidationResult, ApiPipelineVersion, ApiPackagePreview } from "@zerohand/shared";
 
 
 // ── Custom reactflow step node ────────────────────────────────────────────────
@@ -127,11 +127,12 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.map(([k]) => [k, ""])),
   );
+  const [stepByStep, setStepByStep] = useState(false);
 
   const trigger = useMutation({
     mutationFn: () => {
       const params = Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim() !== ""));
-      return api.triggerRun(pipeline.id, params);
+      return api.triggerRun(pipeline.id, params, stepByStep ? "step_by_step" : undefined);
     },
     onSuccess: (run) => {
       queryClient.invalidateQueries({ queryKey: ["runs"] });
@@ -167,6 +168,18 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
               ))}
             </div>
           )}
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="checkbox"
+              id="step-by-step"
+              checked={stepByStep}
+              onChange={(e) => setStepByStep(e.target.checked)}
+              className="rounded"
+            />
+            <label htmlFor="step-by-step" className="text-sm text-slate-400">
+              Step-by-step mode <span className="text-slate-600">(pause after each step)</span>
+            </label>
+          </div>
           <div className="flex gap-3 justify-end">
             <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Cancel</button>
             <button
@@ -352,6 +365,256 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
   );
 }
 
+// ── Package preview modal ─────────────────────────────────────────────────────
+
+function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: () => void }) {
+  const [preview, setPreview] = useState<ApiPackagePreview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [activeSkill, setActiveSkill] = useState<number>(0);
+  const [tab, setTab] = useState<"yaml" | "skills" | "validation">("yaml");
+
+  React.useEffect(() => {
+    api.previewPackage(pipelineId)
+      .then(setPreview)
+      .catch((e: Error) => setErr(e.message))
+      .finally(() => setLoading(false));
+  }, [pipelineId]);
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="bg-slate-900 border border-slate-700/60 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+          <h2 className="text-lg font-semibold text-white">Package Preview</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {loading && (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader size={20} className="animate-spin text-slate-500" />
+          </div>
+        )}
+
+        {err && (
+          <div className="flex-1 p-6 text-rose-400 text-sm">{err}</div>
+        )}
+
+        {preview && (
+          <>
+            {/* Tabs */}
+            <div className="flex gap-1 px-6 pt-3 border-b border-slate-800">
+              {(["yaml", "skills", "validation"] as const).map((t) => (
+                <button
+                  key={t}
+                  className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${tab === t ? "text-white border-b-2 border-sky-500" : "text-slate-500 hover:text-slate-300"}`}
+                  onClick={() => setTab(t)}
+                >
+                  {t === "validation"
+                    ? `Validation ${preview.validation.valid ? "✓" : `(${preview.validation.errors.length} errors)`}`
+                    : t === "skills"
+                    ? `Skills (${preview.skills.length})`
+                    : "pipeline.yaml"}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {tab === "yaml" && (
+                <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed bg-slate-950 rounded-xl p-4">
+                  {preview.pipelineYaml}
+                </pre>
+              )}
+
+              {tab === "skills" && (
+                <div className="flex gap-4 h-full">
+                  {preview.skills.length === 0 ? (
+                    <p className="text-sm text-slate-500">No skills bundled.</p>
+                  ) : (
+                    <>
+                      <div className="w-40 flex-shrink-0 space-y-1">
+                        {preview.skills.map((s, i) => (
+                          <button
+                            key={i}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${activeSkill === i ? "bg-sky-900/30 text-sky-300" : "text-slate-400 hover:bg-slate-800"}`}
+                            onClick={() => setActiveSkill(i)}
+                          >
+                            {s.name}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-3">
+                        {preview.skills[activeSkill] && (
+                          <>
+                            <div>
+                              <div className="text-xs text-slate-500 mb-1 font-mono">SKILL.md</div>
+                              <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap bg-slate-950 rounded-xl p-4 max-h-48 overflow-y-auto">
+                                {preview.skills[activeSkill].skillMd}
+                              </pre>
+                            </div>
+                            {preview.skills[activeSkill].scripts.map((sc) => (
+                              <div key={sc.filename}>
+                                <div className="text-xs text-slate-500 mb-1 font-mono">{sc.filename}</div>
+                                <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap bg-slate-950 rounded-xl p-4 max-h-48 overflow-y-auto">
+                                  {sc.content}
+                                </pre>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {tab === "validation" && (
+                <div>
+                  <div className={`flex items-center gap-2 text-sm font-medium mb-4 ${preview.validation.valid ? "text-emerald-400" : "text-rose-400"}`}>
+                    {preview.validation.valid ? <Check size={14} /> : <AlertCircle size={14} />}
+                    {preview.validation.valid ? "All checks passed" : `${preview.validation.errors.length} error${preview.validation.errors.length !== 1 ? "s" : ""}`}
+                    {preview.validation.warnings.length > 0 && (
+                      <span className="text-amber-400 text-xs ml-1">· {preview.validation.warnings.length} warning{preview.validation.warnings.length !== 1 ? "s" : ""}</span>
+                    )}
+                  </div>
+                  {[...preview.validation.errors, ...preview.validation.warnings].map((e, i) => (
+                    <div key={i} className={`flex items-start gap-2 text-xs mb-1.5 ${e.severity === "error" ? "text-rose-300" : "text-amber-300"}`}>
+                      <span className="flex-shrink-0 mt-0.5">{e.severity === "error" ? "✕" : "⚠"}</span>
+                      <span>{e.stepIndex !== undefined ? `Step ${e.stepIndex}: ` : ""}{e.message}</span>
+                    </div>
+                  ))}
+                  {[...preview.validation.errors, ...preview.validation.warnings].length === 0 && (
+                    <p className="text-sm text-slate-500">No issues found.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Validation panel ──────────────────────────────────────────────────────────
+
+function ValidationPanel({ pipelineId }: { pipelineId: string }) {
+  const [result, setResult] = useState<ApiValidationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function validate() {
+    setLoading(true);
+    try {
+      const r = await api.validatePipeline(pipelineId);
+      setResult(r);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Validation</h2>
+        <button
+          onClick={validate}
+          disabled={loading}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors disabled:opacity-50"
+        >
+          {loading ? <Loader size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+          {loading ? "Checking..." : "Validate"}
+        </button>
+      </div>
+
+      {result && (
+        <div className={`border rounded-xl p-4 ${result.valid ? "border-emerald-800/40 bg-emerald-900/10" : "border-rose-800/40 bg-rose-900/10"}`}>
+          <div className={`flex items-center gap-2 text-sm font-medium mb-3 ${result.valid ? "text-emerald-400" : "text-rose-400"}`}>
+            {result.valid ? <Check size={14} /> : <AlertCircle size={14} />}
+            {result.valid ? "All checks passed" : `${result.errors.length} error${result.errors.length !== 1 ? "s" : ""}`}
+            {result.warnings.length > 0 && (
+              <span className="text-amber-400 text-xs ml-1">· {result.warnings.length} warning{result.warnings.length !== 1 ? "s" : ""}</span>
+            )}
+          </div>
+          {[...result.errors, ...result.warnings].map((e, i) => (
+            <div key={i} className={`flex items-start gap-2 text-xs mb-1 ${e.severity === "error" ? "text-rose-300" : "text-amber-300"}`}>
+              <span className="flex-shrink-0 mt-0.5">{e.severity === "error" ? "✕" : "⚠"}</span>
+              <span>{e.stepIndex !== undefined ? `Step ${e.stepIndex}: ` : ""}{e.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Version History ───────────────────────────────────────────────────────────
+
+function VersionHistory({ pipelineId }: { pipelineId: string }) {
+  const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
+  const [restoring, setRestoring] = useState<number | null>(null);
+
+  const { data: versions = [], isLoading } = useQuery({
+    queryKey: ["pipeline-versions", pipelineId],
+    queryFn: () => api.listPipelineVersions(pipelineId),
+    enabled: expanded,
+  });
+
+  async function handleRestore(versionNumber: number) {
+    if (!confirm(`Restore pipeline to version ${versionNumber}? The current state will be saved as a new version.`)) return;
+    setRestoring(versionNumber);
+    try {
+      await api.restorePipelineVersion(pipelineId, versionNumber);
+      queryClient.invalidateQueries({ queryKey: ["pipeline", pipelineId] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-versions", pipelineId] });
+    } finally {
+      setRestoring(null);
+    }
+  }
+
+  return (
+    <div className="mb-8">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 text-sm font-semibold text-slate-500 uppercase tracking-wide hover:text-slate-300 transition-colors mb-3"
+      >
+        {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        <History size={13} />
+        Version History
+      </button>
+
+      {expanded && (
+        <div className="space-y-1.5">
+          {isLoading && <div className="text-slate-500 text-sm">Loading...</div>}
+          {!isLoading && versions.length === 0 && (
+            <div className="text-slate-600 text-sm">No versions saved yet — edit the pipeline to create one.</div>
+          )}
+          {versions.map((v) => (
+            <div key={v.id} className="flex items-center gap-3 px-3 py-2 bg-slate-900/50 border border-slate-800/60 rounded-xl">
+              <span className="text-xs font-mono text-sky-400 flex-shrink-0">v{v.versionNumber}</span>
+              <span className="text-xs text-slate-500 flex-1 truncate">{v.changeSummary ?? "Snapshot"}</span>
+              <span className="text-xs text-slate-600">{new Date(v.createdAt).toLocaleString()}</span>
+              <button
+                onClick={() => handleRestore(v.versionNumber)}
+                disabled={restoring === v.versionNumber}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-sky-400 transition-colors flex-shrink-0 disabled:opacity-50"
+                title="Restore this version"
+              >
+                <RotateCcw size={11} />
+                {restoring === v.versionNumber ? "Restoring..." : "Restore"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PipelineDetail() {
@@ -360,6 +623,7 @@ export default function PipelineDetail() {
   const queryClient = useQueryClient();
   const [showRun, setShowRun] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -488,6 +752,13 @@ export default function PipelineDetail() {
         </h2>
         <div className="flex flex-wrap items-center gap-3 mb-3">
           <button
+            onClick={() => setShowPreview(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+          >
+            <Eye size={13} />
+            Preview
+          </button>
+          <button
             onClick={handleExport}
             disabled={exporting}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
@@ -520,6 +791,12 @@ export default function PipelineDetail() {
         )}
       </div>
 
+      {/* Validation */}
+      <ValidationPanel pipelineId={pipeline.id} />
+
+      {/* Version History */}
+      <VersionHistory pipelineId={pipeline.id} />
+
       {/* Recent runs */}
       <div>
         <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
@@ -530,6 +807,7 @@ export default function PipelineDetail() {
 
       {showRun && <RunModal pipeline={pipeline} onClose={() => setShowRun(false)} />}
       {showPublish && <PublishModal pipeline={pipeline} onClose={() => setShowPublish(false)} />}
+      {showPreview && <PreviewModal pipelineId={pipeline.id} onClose={() => setShowPreview(false)} />}
     </div>
   );
 }

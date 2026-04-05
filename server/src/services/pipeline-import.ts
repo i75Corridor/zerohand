@@ -19,7 +19,7 @@ import { join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { eq, inArray } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { pipelines, pipelineSteps } from "@zerohand/db";
+import { pipelines, pipelineSteps, mcpServers, installedPackages } from "@zerohand/db";
 
 interface StepConfig {
   name: string;
@@ -28,6 +28,15 @@ interface StepConfig {
   timeoutSeconds?: number;
   approvalRequired?: boolean;
   metadata?: Record<string, unknown>;
+}
+
+interface McpServerDeclaration {
+  transport: "stdio" | "sse" | "streamable-http";
+  command?: string;
+  args?: string[];
+  url?: string;
+  headers?: Record<string, string>;
+  env?: Record<string, string>;
 }
 
 interface PipelineManifest {
@@ -40,6 +49,7 @@ interface PipelineManifest {
   inputSchema?: Record<string, unknown>;
   context?: Record<string, string>;
   steps: StepConfig[];
+  mcpServers?: Record<string, McpServerDeclaration>;
 }
 
 export function hashConfig(raw: string): string {
@@ -82,11 +92,61 @@ export function parsePipelineModel(model: string | undefined): { modelProvider?:
   };
 }
 
+/**
+ * Qualify a skill reference from a pipeline.yaml.
+ * If the ref already has a "/" it's already qualified (pass through).
+ * Otherwise prefix with the package namespace.
+ * If no namespace provided, prefix with "local".
+ */
+function qualifySkillRef(skillRef: string | undefined, namespace: string): string | null {
+  if (!skillRef) return null;
+  if (skillRef.includes("/")) return skillRef;
+  return `${namespace}/${skillRef}`;
+}
+
+/**
+ * Upsert MCP server declarations from a pipeline.yaml into the mcp_servers table.
+ * Skips servers whose name already exists (logs warning).
+ * Links newly-inserted servers to the installed package via sourcePackageId.
+ */
+async function registerMcpServers(
+  db: Db,
+  mcpServerDeclarations: Record<string, McpServerDeclaration>,
+  packageRepoUrl: string,
+): Promise<void> {
+  const pkg = await db.query.installedPackages.findFirst({
+    where: eq(installedPackages.repoUrl, packageRepoUrl),
+  });
+
+  for (const [name, decl] of Object.entries(mcpServerDeclarations)) {
+    const existing = await db.query.mcpServers.findFirst({
+      where: eq(mcpServers.name, name),
+    });
+    if (existing) {
+      console.log(`[Import] MCP server "${name}" already registered — skipping.`);
+      continue;
+    }
+    await db.insert(mcpServers).values({
+      name,
+      transport: decl.transport,
+      command: decl.command ?? null,
+      args: decl.args ?? [],
+      url: decl.url ?? null,
+      headers: decl.headers ?? {},
+      env: decl.env ?? {},
+      source: "package",
+      sourcePackageId: pkg?.id ?? null,
+    });
+    console.log(`[Import] Registered MCP server "${name}" from package.`);
+  }
+}
+
 async function createPackage(
   db: Db,
   manifest: PipelineManifest,
   configHash: string,
   packageDir: string,
+  namespace: string,
 ): Promise<void> {
   const context = loadContext(manifest, packageDir);
 
@@ -107,13 +167,13 @@ async function createPackage(
     })
     .returning();
 
-  // Create steps
+  // Create steps — qualify bare skill refs with the package namespace
   await db.insert(pipelineSteps).values(
     manifest.steps.map((step, index) => ({
       pipelineId: pipeline.id,
       stepIndex: index,
       name: step.name,
-      skillName: step.skill ?? null,
+      skillName: qualifySkillRef(step.skill, namespace),
       promptTemplate: step.promptTemplate,
       timeoutSeconds: step.timeoutSeconds ?? 300,
       approvalRequired: step.approvalRequired ?? false,
@@ -128,6 +188,7 @@ async function updatePackage(
   manifest: PipelineManifest,
   configHash: string,
   packageDir: string,
+  namespace: string,
 ): Promise<void> {
   const context = loadContext(manifest, packageDir);
 
@@ -149,7 +210,7 @@ async function updatePackage(
     })
     .where(eq(pipelines.id, existing.id));
 
-  // Upsert steps by stepIndex
+  // Upsert steps by stepIndex — qualify bare skill refs with the package namespace
   const existingSteps = await db
     .select()
     .from(pipelineSteps)
@@ -158,13 +219,14 @@ async function updatePackage(
   const yamlIndices = manifest.steps.map((_, i) => i);
 
   for (const [index, step] of manifest.steps.entries()) {
+    const qualifiedSkill = qualifySkillRef(step.skill, namespace);
     const existingStep = existingByIndex.get(index);
     if (existingStep) {
       await db
         .update(pipelineSteps)
         .set({
           name: step.name,
-          skillName: step.skill ?? null,
+          skillName: qualifiedSkill,
           promptTemplate: step.promptTemplate,
           timeoutSeconds: step.timeoutSeconds ?? 300,
           approvalRequired: step.approvalRequired ?? false,
@@ -177,7 +239,7 @@ async function updatePackage(
         pipelineId: existing.id,
         stepIndex: index,
         name: step.name,
-        skillName: step.skill ?? null,
+        skillName: qualifiedSkill,
         promptTemplate: step.promptTemplate,
         timeoutSeconds: step.timeoutSeconds ?? 300,
         approvalRequired: step.approvalRequired ?? false,
@@ -195,13 +257,23 @@ async function updatePackage(
   }
 }
 
-export async function importPipelinePackage(db: Db, packageDir: string): Promise<void> {
+export async function importPipelinePackage(
+  db: Db,
+  packageDir: string,
+  namespace = "local",
+  repoUrl?: string,
+): Promise<void> {
   const configPath = join(packageDir, "pipeline.yaml");
   if (!existsSync(configPath)) return;
 
   const raw = readFileSync(configPath, "utf-8");
   const configHash = hashConfig(raw);
   const manifest = parseYaml(raw) as PipelineManifest;
+
+  // Register any MCP server declarations from the manifest
+  if (repoUrl && manifest.mcpServers && Object.keys(manifest.mcpServers).length > 0) {
+    await registerMcpServers(db, manifest.mcpServers, repoUrl);
+  }
 
   const existing = await db
     .select()
@@ -216,11 +288,11 @@ export async function importPipelinePackage(db: Db, packageDir: string): Promise
       return;
     }
     console.log(`[Import] "${manifest.name}" config changed, updating in place...`);
-    await updatePackage(db, existing[0], manifest, configHash, packageDir);
+    await updatePackage(db, existing[0], manifest, configHash, packageDir, namespace);
     console.log(`[Import] "${manifest.name}" updated.`);
   } else {
     console.log(`[Import] Importing "${manifest.name}"...`);
-    await createPackage(db, manifest, configHash, packageDir);
+    await createPackage(db, manifest, configHash, packageDir, namespace);
     console.log(`[Import] "${manifest.name}" imported.`);
   }
 }

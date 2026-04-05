@@ -9,7 +9,10 @@ import {
   pipelineSteps,
   pipelines,
   approvals,
+  mcpServers,
 } from "@zerohand/db";
+import { McpClientPool } from "./mcp-client.js";
+import { mcpToolsToToolDefinitions } from "./mcp-tool-bridge.js";
 import type { StepRunEventType, WsIncomingChat, RetryConfig } from "@zerohand/shared";
 import type { WsManager } from "../ws/index.js";
 import { runSkillStep } from "./pi-executor.js";
@@ -167,6 +170,7 @@ export class ExecutionEngine {
   private async executeRun(runId: string, signal?: AbortSignal): Promise<void> {
     const logger = new RunLogger(runId);
     const runStartMs = Date.now();
+    const mcpPool = new McpClientPool();
 
     const run = await this.db.query.pipelineRuns.findFirst({
       where: eq(pipelineRuns.id, runId),
@@ -395,6 +399,34 @@ export class ExecutionEngine {
             secretEnv: scriptSecretEnv,
           };
 
+          // Resolve MCP tools for this skill
+          let mcpToolDefs: import("@mariozechner/pi-coding-agent").ToolDefinition[] = [];
+          if (skill.mcpServers && skill.mcpServers.length > 0) {
+            const serverRows = await this.db.query.mcpServers.findMany({
+              where: (t, { and, inArray: _inArray, eq: _eq }) =>
+                and(_inArray(t.name, skill.mcpServers!), _eq(t.enabled, true)),
+            });
+            for (const row of serverRows) {
+              try {
+                const tools = await mcpPool.connect({
+                  id: row.id,
+                  name: row.name,
+                  transport: row.transport as "stdio" | "sse" | "streamable-http",
+                  command: row.command ?? undefined,
+                  args: (row.args as string[] | null) ?? [],
+                  url: row.url ?? undefined,
+                  headers: (row.headers as Record<string, string> | null) ?? {},
+                  env: (row.env as Record<string, string> | null) ?? {},
+                });
+                mcpToolDefs.push(...mcpToolsToToolDefinitions(tools, mcpPool));
+                console.log(`[ExecutionEngine] MCP server "${row.name}" connected — ${tools.length} tool(s) available`);
+              } catch (err) {
+                console.warn(`[ExecutionEngine] MCP server "${row.name}" connection failed: ${String(err)}`);
+                logger.info("mcp_connect_error", { server: row.name, error: String(err) });
+              }
+            }
+          }
+
           const sessionDir = join(this.sessionsDir, "skills", runId, step.skillName + "-" + step.stepIndex);
           mkdirSync(sessionDir, { recursive: true });
           const result = await runSkillStep(
@@ -414,10 +446,14 @@ export class ExecutionEngine {
               });
             },
             scriptExecOpts,
+            mcpToolDefs,
           );
           this.sessionRegistry.unregister(stepRun.id);
           output = result.output;
           usage = result.usage;
+          if (!output) {
+            console.warn(`[ExecutionEngine] Step ${step.stepIndex} ("${step.name}") completed with empty output. Skill: ${step.skillName}`);
+          }
           await recordCost(this.db, stepRun.id, step.skillName, runId, pipelineModelProvider, pipelineModelName, usage);
           this.ws.broadcast({ type: "data_changed", entity: "cost", action: "created", id: stepRun.id });
 
@@ -438,6 +474,25 @@ export class ExecutionEngine {
             stepIndex: step.stepIndex,
             status: "completed",
           });
+
+          // Step-by-step mode: pause after each step so the user can inspect before continuing
+          const runMeta = (run.metadata as Record<string, unknown> | null) ?? {};
+          if (runMeta.executionMode === "step_by_step") {
+            const isLastStep = step.stepIndex === steps[steps.length - 1].stepIndex;
+            if (!isLastStep) {
+              await this.db
+                .update(pipelineRuns)
+                .set({ status: "paused", updatedAt: new Date() })
+                .where(eq(pipelineRuns.id, runId));
+              this.ws.broadcast({ type: "run_status", pipelineRunId: runId, status: "paused" });
+              logger.info("step_by_step_pause", { stepIndex: step.stepIndex });
+              this.activeRunIds.delete(runId);
+              void mcpPool.disconnectAll();
+              logger.close();
+              return;
+            }
+          }
+
           break;
         } catch (err) {
           this.sessionRegistry.unregister(stepRun.id);
@@ -488,6 +543,7 @@ export class ExecutionEngine {
           });
           logger.info("run_end", { status: "failed", durationMs: Date.now() - runStartMs });
           logger.close();
+          void mcpPool.disconnectAll();
           throw err;
         }
       }
@@ -502,5 +558,6 @@ export class ExecutionEngine {
     logger.close();
     this.ws.broadcast({ type: "run_status", pipelineRunId: runId, status: "completed" });
     this.activeRunIds.delete(runId);
+    void mcpPool.disconnectAll();
   }
 }

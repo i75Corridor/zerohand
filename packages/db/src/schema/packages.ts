@@ -9,6 +9,7 @@ export const installedPackages = pgTable("installed_packages", {
   installedRef: text("installed_ref"),
   latestRef: text("latest_ref"),
   updateAvailable: boolean("update_available").notNull().default(false),
+  repoNotFound: boolean("repo_not_found").notNull().default(false),
   localPath: text("local_path").notNull(),
   skills: jsonb("skills").$type<string[]>(),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),

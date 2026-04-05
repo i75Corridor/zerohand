@@ -13,6 +13,7 @@ export const pipelineRuns = pgTable(
     triggerType: text("trigger_type").notNull().default("manual"), // manual, cron, webhook, channel
     triggerDetail: text("trigger_detail"),
     error: text("error"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     startedAt: timestamp("started_at", { withTimezone: true }),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

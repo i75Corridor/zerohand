@@ -268,26 +268,28 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </main>
 
+        {/* Desktop: side panel with resize handle — always mounted, hidden when closed */}
+        <div className={`hidden md:flex md:flex-shrink-0 ${agentOpen ? "animate-slide-in-right" : "hidden"}`} style={agentOpen ? {} : { display: "none" }}>
+          <div
+            className="w-1 flex-shrink-0 cursor-col-resize hover:bg-sky-500/40 active:bg-sky-500/60 transition-colors"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize agent panel"
+            onMouseDown={onDragStart}
+          />
+          <div className="flex-shrink-0" style={{ width: agentWidth }}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}>
+              <GlobalChatPanel onClose={() => setAgentOpen(false)} />
+            </Suspense>
+          </div>
+        </div>
+        {/* Mobile: full-screen overlay */}
         {agentOpen && (
-          <>
-            {/* Desktop: side panel with resize handle */}
-            <div className="hidden md:flex md:flex-shrink-0 animate-slide-in-right">
-              <div
-                className="w-1 flex-shrink-0 cursor-col-resize hover:bg-slate-600/40 active:bg-slate-500/50 transition-colors"
-                role="separator"
-                aria-orientation="vertical"
-                aria-label="Resize agent panel"
-                onMouseDown={onDragStart}
-              />
-              <div className="flex-shrink-0" style={{ width: agentWidth }}>
-                <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}><GlobalChatPanel onClose={() => setAgentOpen(false)} /></Suspense>
-              </div>
-            </div>
-            {/* Mobile: full-screen overlay */}
-            <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
-              <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}><GlobalChatPanel onClose={() => setAgentOpen(false)} /></Suspense>
-            </div>
-          </>
+          <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
+            <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}>
+              <GlobalChatPanel onClose={() => setAgentOpen(false)} />
+            </Suspense>
+          </div>
         )}
       </div>
       <OnboardingModal
