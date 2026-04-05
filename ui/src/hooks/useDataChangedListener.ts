@@ -21,6 +21,9 @@ export function useDataChangedListener() {
         queryClient.invalidateQueries({ queryKey: ["skills"] });
         queryClient.invalidateQueries({ queryKey: ["skill-bundle", msg.id] });
         break;
+      case "cost":
+        queryClient.invalidateQueries({ queryKey: ["costBreakdown"] });
+        break;
     }
   });
 }

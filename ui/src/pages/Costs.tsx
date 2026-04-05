@@ -48,7 +48,7 @@ export default function Costs() {
   const { data, isLoading, error: fetchError } = useQuery({
     queryKey: ["costBreakdown", from, to],
     queryFn: () => api.getCostBreakdown(from, to),
-    refetchInterval: 60_000,
+    refetchInterval: 300_000,
   });
 
   const ranges: { label: string; value: Range }[] = [
