@@ -3,6 +3,11 @@ import { createMcpServer } from "./server.js";
 import { registerPipelineTools } from "./tools/pipeline-tools.js";
 import { registerRunTools } from "./tools/run-tools.js";
 import { registerSkillTools } from "./tools/skill-tools.js";
+import { registerTriggerTools } from "./tools/trigger-tools.js";
+import { registerApprovalTools } from "./tools/approval-tools.js";
+import { registerSettingsTools } from "./tools/settings-tools.js";
+import { registerBudgetTools } from "./tools/budget-tools.js";
+import { registerPackageTools } from "./tools/package-tools.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -24,6 +29,11 @@ function buildServer(client: ApiClient) {
   registerPipelineTools(server, client);
   registerRunTools(server, client);
   registerSkillTools(server, client);
+  registerTriggerTools(server, client);
+  registerApprovalTools(server, client);
+  registerSettingsTools(server, client);
+  registerBudgetTools(server, client);
+  registerPackageTools(server, client);
   registerResources(server, client);
   registerPrompts(server, client);
   return server;
