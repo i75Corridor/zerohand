@@ -6,16 +6,15 @@ import {
   type AgentSession,
 } from "@mariozechner/pi-coding-agent";
 import { getModel } from "@mariozechner/pi-ai";
-import { eq } from "drizzle-orm";
 import { join } from "node:path";
 import { mkdirSync, rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import type { Db } from "@zerohand/db";
-import { pipelines } from "@zerohand/db";
 import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@zerohand/shared";
 import { makeAuthStorage, makeResourceLoader } from "./pi-executor.js";
 import { readModelSetting } from "./model-utils.js";
 import { makeAllTools, type AgentToolContext } from "./tools/index.js";
 import { skillsDir as getSkillsDir } from "./paths.js";
+import { buildDashboardContext, formatDashboardContext, type DashboardContext } from "./dashboard-context.js";
 
 const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
 
@@ -53,6 +52,11 @@ When the user's message includes context about which page they are viewing, use 
 - **Approvals before deciding**: always call list_approvals to see pending items before calling approve_step or reject_step.
 - **Scan before install**: when the user wants to install a package, call scan_package first to check for security issues, then install_package.
 
+## Dashboard Context
+Each user message is prepended with a [Dashboard: ...] block containing live system state: active runs, cost this month, runs this month, pending approvals, and recent failures. A [Navigation: ...] block may follow with the current page and pipeline/run details.
+
+Use this context proactively — you already know the system state without calling get_system_stats or list_approvals for basic counts. For detailed or real-time data, use the tools. The context is a point-in-time snapshot (up to 30s old).
+
 Be concise and action-oriented. Confirm briefly what you did.`;
 
 function loadSkillSummary(skillsDir: string): string {
@@ -72,11 +76,14 @@ function loadSkillSummary(skillsDir: string): string {
   return `\n\n## Available Skills\n${entries.join("\n")}`;
 }
 
+const CONTEXT_CACHE_TTL_MS = 30_000;
+
 export class GlobalAgentService {
   private session: AgentSession | null = null;
   private sessionDir: string;
   private cancelRunFn: ((runId: string) => void) | null = null;
   private skillSummaryCache: string | null = null;
+  private contextCache: { data: DashboardContext; timestamp: number; navigationKey: string } | null = null;
 
   constructor(
     private db: Db,
@@ -113,19 +120,11 @@ export class GlobalAgentService {
       const session = await this.ensureSession();
       let fullMessage = message;
 
-      // Inject context block
-      if (context?.path) {
-        let contextLines = `[Context: viewing ${context.path}`;
-        if (context.pipelineId) {
-          try {
-            const p = await this.db.query.pipelines.findFirst({ where: eq(pipelines.id, context.pipelineId) });
-            if (p) contextLines += ` — pipeline "${p.name}" (id: ${p.id})`;
-          } catch { /* ignore */ }
-        }
-        if (context.runId) contextLines += ` — run id: ${context.runId}`;
-        contextLines += "]";
-        fullMessage = `${contextLines}\n\n${message}`;
-      }
+      // Inject dashboard context block
+      try {
+        const dashCtx = await this.getDashboardContext(context);
+        fullMessage = `${formatDashboardContext(dashCtx)}\n\n${message}`;
+      } catch { /* graceful degradation — proceed without context */ }
 
       try {
         await session.prompt(fullMessage);
@@ -139,6 +138,27 @@ export class GlobalAgentService {
         this.broadcastFn({ type: "global_agent_event", eventType: "status_change", message: "done" });
       }
     }
+  }
+
+  private async getDashboardContext(
+    navigation?: WsIncomingGlobalChat["context"],
+  ): Promise<DashboardContext> {
+    const navKey = navigation
+      ? `${navigation.path}|${navigation.pipelineId ?? ""}|${navigation.runId ?? ""}`
+      : "";
+    const now = Date.now();
+
+    if (
+      this.contextCache &&
+      now - this.contextCache.timestamp < CONTEXT_CACHE_TTL_MS &&
+      this.contextCache.navigationKey === navKey
+    ) {
+      return this.contextCache.data;
+    }
+
+    const data = await buildDashboardContext(this.db, navigation ?? undefined);
+    this.contextCache = { data, timestamp: now, navigationKey: navKey };
+    return data;
   }
 
   private broadcastDataChanged(entity: WsDataChanged["entity"], action: WsDataChanged["action"], id: string): void {
@@ -227,6 +247,7 @@ export class GlobalAgentService {
       this.session = null;
     }
     this.skillSummaryCache = null;
+    this.contextCache = null;
     if (existsSync(this.sessionDir)) {
       rmSync(this.sessionDir, { recursive: true, force: true });
       mkdirSync(this.sessionDir, { recursive: true });
