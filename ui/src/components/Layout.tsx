@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu, DollarSign, Menu } from "lucide-react";
+import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu, DollarSign, Menu, HelpCircle } from "lucide-react";
 
 function FistIcon({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
@@ -26,12 +26,13 @@ function FistIcon({ size = 24, className = "" }: { size?: number; className?: st
   );
 }
 
-import { useState, useRef, useCallback, lazy, Suspense } from "react";
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api.ts";
 const GlobalChatPanel = lazy(() => import("./GlobalChatPanel.tsx"));
 import { useDataChangedListener } from "../hooks/useDataChangedListener.ts";
+import OnboardingModal from "./OnboardingModal.tsx";
 
 function ApprovalsNavItem() {
   const { data: pending = [] } = useQuery({
@@ -109,6 +110,7 @@ const ACCENT_HOVER: Record<string, string> = {
 };
 
 const bottomNav = [
+  { to: "/help", label: "Help", icon: HelpCircle },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -116,6 +118,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   useDataChangedListener();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("zerohand_onboarded")) {
+        setShowOnboarding(true);
+      }
+    } catch { /* localStorage unavailable — skip onboarding */ }
+  }, []);
   const [agentWidth, setAgentWidth] = useState(384); // 96 * 4 = w-96 default
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -279,6 +290,13 @@ export default function Layout({ children }: { children: ReactNode }) {
           </>
         )}
       </div>
+      <OnboardingModal
+        open={showOnboarding}
+        onClose={() => {
+          setShowOnboarding(false);
+          try { localStorage.setItem("zerohand_onboarded", "true"); } catch { /* ignore */ }
+        }}
+      />
     </div>
   );
 }

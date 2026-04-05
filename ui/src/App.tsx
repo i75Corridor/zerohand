@@ -15,6 +15,7 @@ const Packages = lazy(() => import("./pages/Packages.tsx"));
 const Skills = lazy(() => import("./pages/Skills.tsx"));
 const SkillDetail = lazy(() => import("./pages/SkillDetail.tsx"));
 const Costs = lazy(() => import("./pages/Costs.tsx"));
+const Help = lazy(() => import("./pages/Help.tsx"));
 
 function NotFound() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/runs/:id" element={<RunDetail />} />
               <Route path="/costs" element={<Costs />} />
+              <Route path="/help" element={<Help />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ErrorBoundary>
