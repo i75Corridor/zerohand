@@ -130,10 +130,30 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
         {messages.length === 0 && !streamingText && !isStreaming && (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-slate-600 text-sm text-center px-4">
-              Ask me about pipelines, runs, skills, or tell me to trigger a run.
-            </p>
+          <div className="flex flex-col items-center justify-center h-full gap-4 px-2">
+            <p className="text-slate-600 text-sm text-center">What can I help you with?</p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-sm">
+              {[
+                "List all pipelines",
+                "Create a new skill for web scraping",
+                "Show me recent run failures",
+                "What packages are installed?",
+                "Trigger the Daily Absurdist pipeline",
+              ].map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => {
+                    setMessages((m) => [...m, { role: "user", content: prompt, timestamp: new Date() }]);
+                    wsSend({ type: "global_chat", action: "prompt", message: prompt, context: getContext(location.pathname) });
+                    setIsStreaming(true);
+                    setStreamingText("");
+                  }}
+                  className="px-3 py-1.5 text-xs text-slate-300 bg-slate-800/60 border border-slate-700/50 rounded-lg hover:border-sky-500/40 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
