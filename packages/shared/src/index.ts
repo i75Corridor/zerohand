@@ -225,11 +225,19 @@ export interface ApiPipelineVersion {
 }
 
 export interface ApiValidationError {
+  /** Known types: missing_skill, invalid_template, broken_step_ref, schema_mismatch, missing_mcp_server, missing_secret, missing_model */
   type: string;
   stepIndex?: number;
   field: string;
   message: string;
   severity: "error" | "warning";
+}
+
+export interface ApiModelWarning {
+  skillName: string;
+  provider: string;
+  model: string;
+  message: string;
 }
 
 export interface ApiValidationResult {

@@ -17,6 +17,7 @@ import type {
   ApiValidationResult,
   ApiPipelineVersion,
   ApiPackagePreview,
+  ApiModelWarning,
 } from "@zerohand/shared";
 
 const BASE = "/api";
@@ -247,11 +248,12 @@ export const api = {
   discoverPackages: (q?: string) =>
     request<ApiDiscoveredPackage[]>(`/packages/discover${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   installPackage: (repoUrl: string, force?: boolean) =>
-    request<{ pipelineName: string }>("/packages/install", {
+    request<{ pipelineName: string; modelWarnings?: ApiModelWarning[] }>("/packages/install", {
       method: "POST",
       body: JSON.stringify({ repoUrl, force: force ?? false }),
     }),
-  updatePackage: (id: string) => request<{ pipelineName: string }>(`/packages/${id}/update`, { method: "POST" }),
+  updatePackage: (id: string) =>
+    request<{ pipelineName: string; modelWarnings?: ApiModelWarning[] }>(`/packages/${id}/update`, { method: "POST" }),
   uninstallPackage: (id: string) => request<void>(`/packages/${id}`, { method: "DELETE" }),
   checkForUpdates: () => request<{ message: string }>("/packages/check-updates", { method: "POST" }),
 

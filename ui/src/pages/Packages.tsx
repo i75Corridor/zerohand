@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { api } from "../lib/api.ts";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiInstalledPackage, ApiDiscoveredPackage } from "@zerohand/shared";
+import type { ApiInstalledPackage, ApiDiscoveredPackage, ApiModelWarning } from "@zerohand/shared";
 
 // ── Security error parsing ─────────────────────────────────────────────────────
 
@@ -111,6 +111,41 @@ function SecurityErrorPanel({
           {forcing ? "Installing..." : "Install anyway"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Model warning panel ────────────────────────────────────────────────────────
+
+function ModelWarningPanel({
+  warnings,
+  onDismiss,
+}: {
+  warnings: ApiModelWarning[];
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="mb-4 bg-amber-950/20 border border-amber-500/20 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={14} className="text-amber-400 flex-shrink-0" />
+          <span className="text-sm font-semibold text-amber-300">Model API keys missing</span>
+        </div>
+        <button onClick={onDismiss} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+          Dismiss
+        </button>
+      </div>
+      <div className="flex flex-col gap-2 mb-3">
+        {warnings.map((w, i) => (
+          <div key={i} className="text-xs text-amber-200/80">
+            <span className="font-mono text-amber-400">{w.model}</span> — {w.message}
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-slate-500">
+        Add the required API keys in <a href="/settings" className="text-sky-400 hover:underline">Settings</a> to use these skills.
+        The pipeline was installed successfully and can run using the pipeline-level model instead.
+      </p>
     </div>
   );
 }
@@ -289,6 +324,7 @@ export default function Packages() {
   const [failedInstallUrl, setFailedInstallUrl] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [uninstallingId, setUninstallingId] = useState<string | null>(null);
+  const [modelWarnings, setModelWarnings] = useState<ApiModelWarning[] | null>(null);
 
   const { data: installed = [], isLoading: loadingInstalled } = useQuery({
     queryKey: ["packages"],
@@ -306,14 +342,26 @@ export default function Packages() {
   const install = useMutation({
     mutationFn: ({ repoUrl, force }: { repoUrl: string; force?: boolean }) =>
       api.installPackage(repoUrl, force),
-    onSuccess: () => { invalidate(); setManualUrl(""); setFailedInstallUrl(null); },
+    onSuccess: (result) => {
+      invalidate();
+      setManualUrl("");
+      setFailedInstallUrl(null);
+      if (result.modelWarnings && result.modelWarnings.length > 0) {
+        setModelWarnings(result.modelWarnings);
+      }
+    },
     onError: (_err, vars) => { setFailedInstallUrl(vars.repoUrl); },
     onSettled: () => setInstallingId(null),
   });
 
   const update = useMutation({
     mutationFn: (id: string) => api.updatePackage(id),
-    onSuccess: () => invalidate(),
+    onSuccess: (result) => {
+      invalidate();
+      if (result.modelWarnings && result.modelWarnings.length > 0) {
+        setModelWarnings(result.modelWarnings);
+      }
+    },
     onSettled: () => setUpdatingId(null),
   });
 
@@ -442,6 +490,10 @@ export default function Packages() {
               />
             ))}
           </div>
+        )}
+
+        {modelWarnings && modelWarnings.length > 0 && (
+          <ModelWarningPanel warnings={modelWarnings} onDismiss={() => setModelWarnings(null)} />
         )}
 
         {install.isError && failedInstallUrl && (
