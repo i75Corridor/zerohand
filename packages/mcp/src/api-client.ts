@@ -4,6 +4,11 @@ import type {
   ApiPipelineStep,
   ApiSkill,
   ApiStepRun,
+  ApiTrigger,
+  ApiApproval,
+  ApiBudgetPolicy,
+  ApiInstalledPackage,
+  ApiSetting,
 } from "@zerohand/shared";
 
 export class ApiError extends Error {
@@ -101,5 +106,92 @@ export class ApiClient {
 
   getSkill(name: string): Promise<ApiSkill & { content: string }> {
     return this.request("GET", `/skills/${encodeURIComponent(name)}`);
+  }
+
+  // Triggers
+  listTriggers(pipelineId: string): Promise<ApiTrigger[]> {
+    return this.request("GET", `/pipelines/${pipelineId}/triggers`);
+  }
+
+  createTrigger(pipelineId: string, data: object): Promise<ApiTrigger> {
+    return this.request("POST", `/pipelines/${pipelineId}/triggers`, data);
+  }
+
+  updateTrigger(id: string, data: object): Promise<ApiTrigger> {
+    return this.request("PATCH", `/triggers/${id}`, data);
+  }
+
+  deleteTrigger(id: string): Promise<void> {
+    return this.request("DELETE", `/triggers/${id}`);
+  }
+
+  // Approvals
+  listApprovals(status?: string): Promise<ApiApproval[]> {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+    return this.request("GET", `/approvals${qs}`);
+  }
+
+  approveStep(id: string, note?: string): Promise<ApiApproval> {
+    return this.request("POST", `/approvals/${id}/approve`, note ? { note } : {});
+  }
+
+  rejectStep(id: string, note?: string): Promise<ApiApproval> {
+    return this.request("POST", `/approvals/${id}/reject`, note ? { note } : {});
+  }
+
+  // Budgets
+  listBudgets(scopeType?: string, scopeId?: string): Promise<ApiBudgetPolicy[]> {
+    const params = new URLSearchParams();
+    if (scopeType) params.set("scopeType", scopeType);
+    if (scopeId) params.set("scopeId", scopeId);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request("GET", `/budgets${qs}`);
+  }
+
+  createBudget(data: object): Promise<ApiBudgetPolicy> {
+    return this.request("POST", "/budgets", data);
+  }
+
+  updateBudget(id: string, data: object): Promise<ApiBudgetPolicy> {
+    return this.request("PATCH", `/budgets/${id}`, data);
+  }
+
+  deleteBudget(id: string): Promise<void> {
+    return this.request("DELETE", `/budgets/${id}`);
+  }
+
+  // Packages
+  listPackages(): Promise<ApiInstalledPackage[]> {
+    return this.request("GET", "/packages");
+  }
+
+  installPackage(repoUrl: string, force?: boolean): Promise<object> {
+    return this.request("POST", "/packages/install", { repoUrl, force });
+  }
+
+  updatePackage(id: string, force?: boolean): Promise<object> {
+    return this.request("POST", `/packages/${id}/update`, { force });
+  }
+
+  uninstallPackage(id: string): Promise<void> {
+    return this.request("DELETE", `/packages/${id}`);
+  }
+
+  discoverPackages(query?: string): Promise<object[]> {
+    const qs = query ? `?q=${encodeURIComponent(query)}` : "";
+    return this.request("GET", `/packages/discover${qs}`);
+  }
+
+  scanPackage(repoUrl: string): Promise<object> {
+    return this.request("POST", "/packages/scan", { repoUrl });
+  }
+
+  // Settings
+  listSettings(): Promise<ApiSetting[]> {
+    return this.request("GET", "/settings");
+  }
+
+  updateSetting(key: string, value: unknown): Promise<ApiSetting> {
+    return this.request("PUT", `/settings/${encodeURIComponent(key)}`, { value });
   }
 }

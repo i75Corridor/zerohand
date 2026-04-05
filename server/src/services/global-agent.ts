@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { mkdirSync, rmSync, existsSync } from "node:fs";
 import type { Db } from "@zerohand/db";
 import { pipelines } from "@zerohand/db";
-import type { WsGlobalAgentEvent, WsDataChanged, WsIncomingGlobalChat } from "@zerohand/shared";
+import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@zerohand/shared";
 import { makeAuthStorage, makeResourceLoader } from "./pi-executor.js";
 import { readModelSetting } from "./model-utils.js";
 import { makeAllTools, type AgentToolContext } from "./tools/index.js";
@@ -29,6 +29,11 @@ const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copi
 - **Skills**: list, read, create, update (writes SKILL.md to disk)
 - **Scripts**: create, update, delete script files within a skill
 - **Runs**: trigger, cancel, check status and recent history
+- **Triggers**: list, create, update, delete cron/webhook/channel triggers for pipelines
+- **Approvals**: list pending approvals, approve or reject pipeline steps
+- **Budgets**: list, create, update, delete budget policies for cost control
+- **Packages**: list installed, install from repo, update, uninstall, discover on GitHub, scan for security
+- **Settings**: list all settings, update configuration values
 - **Navigation**: navigate the UI to any page
 
 When creating a skill:
@@ -44,6 +49,9 @@ When the user's message includes context about which page they are viewing, use 
 - **Create before navigating**: always complete the creation/update tool call and confirm success before calling navigate_ui. Never navigate speculatively.
 - **Navigate after**: once a resource is successfully created or updated, navigate to it automatically without asking.
 - **Skill linking**: when adding a step to a pipeline with a skillName, always call list_skills first. If the skill exists, link it directly. If it does not exist, create it with create_skill before adding the step.
+- **Triggers by pipeline**: list_triggers requires a pipelineId — there is no global trigger list.
+- **Approvals before deciding**: always call list_approvals to see pending items before calling approve_step or reject_step.
+- **Scan before install**: when the user wants to install a package, call scan_package first to check for security issues, then install_package.
 
 Be concise and action-oriented. Confirm briefly what you did.`;
 
@@ -54,7 +62,7 @@ export class GlobalAgentService {
 
   constructor(
     private db: Db,
-    private broadcastFn: (msg: WsGlobalAgentEvent | WsDataChanged) => void,
+    private broadcastFn: (msg: WsGlobalAgentEvent | WsDataChanged | WsRunStatusChange) => void,
     dataDir: string,
   ) {
     this.sessionDir = join(dataDir, "global-agent");
