@@ -1,39 +1,139 @@
-@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800&f[]=satoshi@400,500,700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: dark;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
-  font-family: 'Satoshi', sans-serif;
-  @apply bg-slate-950 text-slate-100 antialiased;
+  font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
+  font-kerning: normal;
+  @apply bg-slate-950 text-slate-100 antialiased leading-relaxed;
 }
 
 .font-display {
-  font-family: 'Cabinet Grotesk', sans-serif;
+  font-family: 'Cabinet Grotesk', system-ui, sans-serif;
+  text-wrap: balance;
 }
 
-.glass-sidebar {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(51, 65, 85, 0.5);
+/* ── Tabular figures for numeric data ─────────────────────────── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-.glass-footer {
-  background: rgba(30, 41, 59, 0.5);
-  backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(51, 65, 85, 0.5);
+.sidebar {
+  background: rgb(15, 23, 42);
+  border-right: 1px solid rgb(30, 41, 59);
+  contain: layout style;
 }
 
-.card-glow:hover {
-  box-shadow: inset 0 0 20px rgba(14, 165, 233, 0.05);
-  border-color: rgba(14, 165, 233, 0.3);
+/* GPU-promote sidebar transform for smooth mobile slide-in */
+aside {
+  will-change: transform;
 }
 
-.logo-glow {
-  filter: drop-shadow(0 0 8px rgba(14, 165, 233, 0.6));
+.footer-well {
+  background: rgb(30, 41, 59);
+}
+
+/* ── Interactive button feedback ───────────────────────────────── */
+.btn-press {
+  transition: background-color 200ms var(--ease-out-quart);
+}
+
+/* ── Card hover ──────────────────────────────────────────────── */
+.card-hover {
+  transition: border-color 200ms var(--ease-out-quart);
+}
+.card-hover:hover {
+  border-color: rgb(71 85 105 / 0.6);
+}
+
+/* ── Focus ring ──────────────────────────────────────────────── */
+.input-glow:focus {
+  box-shadow: 0 0 0 2px rgb(56 189 248 / 0.08);
+  transition: box-shadow 200ms var(--ease-out-quart), border-color 200ms var(--ease-out-quart);
+}
+
+/* ── Offscreen content rendering optimization ─────────────────── */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+}
+
+/* ── Staggered entrance delays ─────────────────────────────────── */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 160ms; }
+.stagger-4 { animation-delay: 240ms; }
+.stagger-5 { animation-delay: 320ms; }
+
+
+/* ── Touch-friendly: ensure interactive elements meet 44px minimum ──── */
+@layer utilities {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ── Mobile: prevent text size adjustment and improve tap highlight ──── */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Smooth scroll but respect preferences ────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── Improve touch scrolling on overflow containers ──────────────── */
+.overflow-x-auto,
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Mobile-safe viewport height ─────────────────────────────────── */
+@supports (height: 100dvh) {
+  .h-screen {
+    height: 100dvh;
+  }
+}
+
+/* ── Focus-visible ring for keyboard users ─────────────────────── */
+:focus-visible {
+  outline: 2px solid rgb(56 189 248 / 0.4);
+  outline-offset: 2px;
+}
+
+/* ── Text overflow safety ──────────────────────────────────────── */
+@layer utilities {
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+/* ── High contrast mode support ────────────────────────────────── */
+@media (forced-colors: active) {
+  .sidebar {
+    border-right-color: CanvasText;
+  }
+  button, [role="button"] {
+    border: 1px solid ButtonText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

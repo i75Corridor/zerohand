@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Cpu, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { api } from "../lib/api.ts";
+import LoadingState from "../components/LoadingState.tsx";
+import EmptyState from "../components/EmptyState.tsx";
 
 function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   const queryClient = useQueryClient();
@@ -59,7 +61,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
           <button
             onClick={() => create.mutate()}
             disabled={!nameValid || create.isPending}
-            className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-semibold rounded-lg transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40"
           >
             {create.isPending ? "Creating..." : "Create Skill"}
           </button>
@@ -70,19 +72,19 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
 }
 
 export default function Skills() {
-  const { data: skills = [], isLoading } = useQuery({
+  const { data: skills = [], isLoading, error } = useQuery({
     queryKey: ["skills"],
     queryFn: () => api.listSkills(),
   });
   const [creating, setCreating] = useState(false);
 
-  if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
+  if (isLoading) return <LoadingState />;
 
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="flex items-start justify-between mb-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
+      <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Skills</h1>
+          <h1 className="text-2xl font-semibold font-display text-white tracking-tight">Skills</h1>
           <p className="text-sm text-slate-500 mt-1">
             Skills are installed from packages or created in-app.
           </p>
@@ -100,18 +102,25 @@ export default function Skills() {
       {creating && <NewSkillForm onCancel={() => setCreating(false)} />}
 
       {skills.length === 0 ? (
-        <div className="text-slate-600 text-sm border border-dashed border-slate-800 rounded-xl p-8 text-center">
-          No skills yet. Create one above or install a package.
-        </div>
+        <EmptyState
+          icon={Cpu}
+          title="No skills yet"
+          description="Skills are reusable AI capabilities -- prompts, scripts, or tools that pipeline steps can invoke. Create one from scratch or install a package that includes skills."
+          actions={[
+            { label: "Create a Skill", onClick: () => setCreating(true) },
+            { label: "Browse Packages", to: "/packages", variant: "secondary" },
+          ]}
+          hint="Skills installed from packages appear here automatically."
+        />
       ) : (
         <div className="space-y-2">
           {skills.map((skill) => (
             <Link
               key={skill.name}
               to={`/skills/${encodeURIComponent(skill.name)}`}
-              className="flex items-center gap-4 px-4 py-3 bg-slate-900/50 border border-slate-800/60 rounded-xl hover:border-slate-700 transition-colors"
+              className="flex items-center gap-4 px-4 py-3 bg-slate-900/50 border border-slate-800/60 rounded-xl card-hover"
             >
-              <Cpu size={15} className="text-sky-400 flex-shrink-0" />
+              <Cpu size={15} className="text-violet-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white">{skill.name}</div>
                 {skill.description && (

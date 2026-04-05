@@ -79,10 +79,11 @@ export default function ChatPanel({ stepRunId, onSend }: ChatPanelProps) {
           onKeyDown={(e) => e.key === "Enter" && send()}
         />
         <button
-          className="px-2.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl transition-colors disabled:opacity-40"
+          className="px-2.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl transition-colors disabled:opacity-40"
           onClick={send}
           disabled={!input.trim()}
           title="Send"
+          aria-label="Send message"
         >
           <Send size={14} />
         </button>
@@ -90,6 +91,7 @@ export default function ChatPanel({ stepRunId, onSend }: ChatPanelProps) {
           className="px-2.5 py-1.5 bg-rose-900/60 hover:bg-rose-800/60 border border-rose-800/50 text-rose-400 rounded-xl transition-colors"
           onClick={abort}
           title="Abort step"
+          aria-label="Abort step"
         >
           <StopCircle size={14} />
         </button>

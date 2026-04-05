@@ -111,15 +111,17 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         <span className="text-sm font-semibold text-white flex-1">Agent AI</span>
         <button
           onClick={handleReset}
-          className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg hover:bg-slate-800/60 transition-colors mr-1"
+          className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-300 rounded-lg hover:bg-slate-800/60 active:bg-slate-700 transition-colors mr-1"
           title="Reset conversation"
+          aria-label="Reset conversation"
         >
           <RotateCcw size={14} />
         </button>
         <button
           onClick={onClose}
-          className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg hover:bg-slate-800/60 transition-colors"
-          title="Close"
+          className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-300 rounded-lg hover:bg-slate-800/60 active:bg-slate-700 transition-colors"
+          title="Close agent panel"
+          aria-label="Close agent panel"
         >
           <X size={14} />
         </button>
@@ -181,9 +183,9 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         {isStreaming && !streamingText && !activeToolCall && (
           <div className="flex justify-start">
             <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2 text-sm flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" />
-              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:150ms]" />
-              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:300ms]" />
+              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-pulse" />
+              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-pulse [animation-delay:150ms]" />
+              <span className="inline-block w-1.5 h-1.5 bg-slate-500 rounded-full animate-pulse [animation-delay:300ms]" />
             </div>
           </div>
         )}
@@ -196,7 +198,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         <div className="flex gap-2">
           <input
             ref={inputRef}
-            className="flex-1 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+            className="flex-1 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 sm:py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 input-glow"
             placeholder="Ask anything..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -205,8 +207,9 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {isStreaming ? (
             <button
               onClick={handleAbort}
-              className="px-2.5 py-2 bg-rose-900/60 hover:bg-rose-800/60 border border-rose-800/50 text-rose-400 rounded-xl transition-colors"
+              className="px-3 py-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-rose-900/60 hover:bg-rose-800/60 border border-rose-800/50 text-rose-400 rounded-xl active:bg-rose-700/60 transition-colors"
               title="Abort"
+              aria-label="Abort agent response"
             >
               <StopCircle size={14} />
             </button>
@@ -214,8 +217,9 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
             <button
               onClick={sendMessage}
               disabled={!input.trim()}
-              className="px-2.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl transition-colors disabled:opacity-40"
+              className="px-2.5 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-sky-600 hover:bg-sky-500 text-white rounded-xl btn-press disabled:opacity-40"
               title="Send"
+              aria-label="Send message"
             >
               <Send size={14} />
             </button>
