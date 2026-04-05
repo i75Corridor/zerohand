@@ -8,7 +8,7 @@ import {
 import { getModel } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
 import { join } from "node:path";
-import { mkdirSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import type { Db } from "@zerohand/db";
 import { pipelines } from "@zerohand/db";
 import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@zerohand/shared";
@@ -55,10 +55,28 @@ When the user's message includes context about which page they are viewing, use 
 
 Be concise and action-oriented. Confirm briefly what you did.`;
 
+function loadSkillSummary(skillsDir: string): string {
+  if (!existsSync(skillsDir)) return "";
+  const entries = readdirSync(skillsDir, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => {
+      const skillPath = join(skillsDir, e.name, "SKILL.md");
+      if (!existsSync(skillPath)) return null;
+      const content = readFileSync(skillPath, "utf-8");
+      const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      const desc = fm?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
+      return `- ${e.name}: ${desc}`;
+    })
+    .filter(Boolean);
+  if (entries.length === 0) return "";
+  return `\n\n## Available Skills\n${entries.join("\n")}`;
+}
+
 export class GlobalAgentService {
   private session: AgentSession | null = null;
   private sessionDir: string;
   private cancelRunFn: ((runId: string) => void) | null = null;
+  private skillSummaryCache: string | null = null;
 
   constructor(
     private db: Db,
@@ -125,6 +143,7 @@ export class GlobalAgentService {
 
   private broadcastDataChanged(entity: WsDataChanged["entity"], action: WsDataChanged["action"], id: string): void {
     this.broadcastFn({ type: "data_changed", entity, action, id });
+    if (entity === "skill") this.skillSummaryCache = null;
   }
 
   private async ensureSession(): Promise<AgentSession> {
@@ -136,7 +155,11 @@ export class GlobalAgentService {
 
     const authStorage = makeAuthStorage();
     const modelRegistry = ModelRegistry.inMemory(authStorage);
-    const resourceLoader = makeResourceLoader(SYSTEM_PROMPT, []);
+    if (this.skillSummaryCache === null) {
+      this.skillSummaryCache = loadSkillSummary(getSkillsDir());
+    }
+    const fullPrompt = SYSTEM_PROMPT + this.skillSummaryCache;
+    const resourceLoader = makeResourceLoader(fullPrompt, []);
     const sessionManager = SessionManager.create(this.sessionDir);
 
     const ctx: AgentToolContext = {
@@ -193,11 +216,17 @@ export class GlobalAgentService {
     await this.destroySession();
   }
 
+  /** Invalidate skill summary cache so the next session picks up changes */
+  invalidateSkillCache(): void {
+    this.skillSummaryCache = null;
+  }
+
   private async destroySession(): Promise<void> {
     if (this.session) {
       try { await this.session.abort(); } catch { /* ignore */ }
       this.session = null;
     }
+    this.skillSummaryCache = null;
     if (existsSync(this.sessionDir)) {
       rmSync(this.sessionDir, { recursive: true, force: true });
       mkdirSync(this.sessionDir, { recursive: true });
