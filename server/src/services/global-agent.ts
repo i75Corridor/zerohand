@@ -6,16 +6,15 @@ import {
   type AgentSession,
 } from "@mariozechner/pi-coding-agent";
 import { getModel } from "@mariozechner/pi-ai";
-import { eq } from "drizzle-orm";
 import { join } from "node:path";
-import { mkdirSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import type { Db } from "@zerohand/db";
-import { pipelines } from "@zerohand/db";
-import type { WsGlobalAgentEvent, WsDataChanged, WsIncomingGlobalChat } from "@zerohand/shared";
+import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@zerohand/shared";
 import { makeAuthStorage, makeResourceLoader, runSkillStep } from "./pi-executor.js";
 import { readModelSetting } from "./model-utils.js";
 import { makeAllTools, type AgentToolContext } from "./tools/index.js";
 import { skillsDir as getSkillsDir } from "./paths.js";
+import { buildDashboardContext, formatDashboardContext, type DashboardContext } from "./dashboard-context.js";
 
 const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
 
@@ -30,7 +29,12 @@ const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copi
 - **Skills**: list, read, create, update, clone, delete (writes SKILL.md to disk)
 - **Scripts**: create, update, delete script files within a skill
 - **Runs**: trigger, cancel, check status, retrieve step outputs, test individual steps
-- **MCP**: list registered MCP servers
+- **MCP**: list registered MCP servers, list MCP server tools, register/update/delete MCP servers
+- **Triggers**: list, create, update, delete cron/webhook/channel triggers for pipelines
+- **Approvals**: list pending approvals, approve or reject pipeline steps
+- **Budgets**: list, create, update, delete budget policies for cost control
+- **Packages**: list installed, install from repo, update, uninstall, discover on GitHub, scan for security
+- **Settings**: list all settings, update configuration values
 - **Navigation**: navigate the UI to any page
 
 ## Skill Namespacing
@@ -69,22 +73,51 @@ Scripts receive JSON on stdin, write results to stdout. Key patterns:
 - Keep scripts focused: one capability per file
 
 ## Tool sequencing rules
-- **Gather before acting**: if required info is missing, ask first.
-- **Create before navigating**: complete tool calls before navigate_ui.
-- **Navigate after**: once created/updated, navigate to it automatically.
-- **Skill linking**: always call list_skills first when adding a step. Create the skill if missing.
+- **Gather before acting**: if required information (name, description, inputs, etc.) is missing from the user's request, ask for it before calling any tools.
+- **Create before navigating**: always complete the creation/update tool call and confirm success before calling navigate_ui. Never navigate speculatively.
+- **Navigate after**: once a resource is successfully created or updated, navigate to it automatically without asking.
+- **Skill linking**: when adding a step to a pipeline with a skillName, always call list_skills first. If the skill exists, link it directly. If it does not exist, create it with create_skill before adding the step.
 - **Validate after building**: always call validate_pipeline after finishing a pipeline build.
+- **Triggers by pipeline**: list_triggers requires a pipelineId — there is no global trigger list.
+- **Approvals before deciding**: always call list_approvals to see pending items before calling approve_step or reject_step.
+- **Scan before install**: when the user wants to install a package, call scan_package first to check for security issues, then install_package.
+
+## Dashboard Context
+Each user message is prepended with a [Dashboard: ...] block containing live system state: active runs, cost this month, runs this month, pending approvals, and recent failures. A [Navigation: ...] block may follow with the current page and pipeline/run details.
+
+Use this context proactively — you already know the system state without calling get_system_stats or list_approvals for basic counts. For detailed or real-time data, use the tools. The context is a point-in-time snapshot (up to 30s old).
 
 Be concise and action-oriented. Confirm briefly what you did.`;
+
+function loadSkillSummary(skillsDir: string): string {
+  if (!existsSync(skillsDir)) return "";
+  const entries = readdirSync(skillsDir, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => {
+      const skillPath = join(skillsDir, e.name, "SKILL.md");
+      if (!existsSync(skillPath)) return null;
+      const content = readFileSync(skillPath, "utf-8");
+      const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      const desc = fm?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
+      return `- ${e.name}: ${desc}`;
+    })
+    .filter(Boolean);
+  if (entries.length === 0) return "";
+  return `\n\n## Available Skills\n${entries.join("\n")}`;
+}
+
+const CONTEXT_CACHE_TTL_MS = 30_000;
 
 export class GlobalAgentService {
   private session: AgentSession | null = null;
   private sessionDir: string;
   private cancelRunFn: ((runId: string) => void) | null = null;
+  private skillSummaryCache: string | null = null;
+  private contextCache: { data: DashboardContext; timestamp: number; navigationKey: string } | null = null;
 
   constructor(
     private db: Db,
-    private broadcastFn: (msg: WsGlobalAgentEvent | WsDataChanged) => void,
+    private broadcastFn: (msg: WsGlobalAgentEvent | WsDataChanged | WsRunStatusChange) => void,
     dataDir: string,
   ) {
     this.sessionDir = join(dataDir, "global-agent");
@@ -117,32 +150,11 @@ export class GlobalAgentService {
       const session = await this.ensureSession();
       let fullMessage = message;
 
-      // Inject context block
-      if (context?.path) {
-        let contextLines = `[Context: viewing ${context.path}`;
-        if (context.pipelineId) {
-          try {
-            const p = await this.db.query.pipelines.findFirst({ where: eq(pipelines.id, context.pipelineId) });
-            if (p) contextLines += ` — pipeline "${p.name}" (id: ${p.id})`;
-          } catch { /* ignore */ }
-        }
-        if (context.runId) {
-          contextLines += ` — run id: ${context.runId}`;
-          // Also look up the pipeline from the run so the agent knows which pipeline to re-trigger
-          if (!context.pipelineId) {
-            try {
-              const { pipelineRuns: prTable } = await import("@zerohand/db");
-              const run = await this.db.query.pipelineRuns.findFirst({ where: eq(prTable.id, context.runId) });
-              if (run) {
-                const p = await this.db.query.pipelines.findFirst({ where: eq(pipelines.id, run.pipelineId) });
-                if (p) contextLines += ` — pipeline "${p.name}" (id: ${p.id}, inputParams: ${JSON.stringify(run.inputParams)})`;
-              }
-            } catch { /* ignore */ }
-          }
-        }
-        contextLines += "]";
-        fullMessage = `${contextLines}\n\n${message}`;
-      }
+      // Inject dashboard context block (includes navigation details)
+      try {
+        const dashCtx = await this.getDashboardContext(context);
+        fullMessage = `${formatDashboardContext(dashCtx)}\n\n${message}`;
+      } catch { /* graceful degradation — proceed without context */ }
 
       try {
         await session.prompt(fullMessage);
@@ -158,8 +170,30 @@ export class GlobalAgentService {
     }
   }
 
+  private async getDashboardContext(
+    navigation?: WsIncomingGlobalChat["context"],
+  ): Promise<DashboardContext> {
+    const navKey = navigation
+      ? `${navigation.path}|${navigation.pipelineId ?? ""}|${navigation.runId ?? ""}`
+      : "";
+    const now = Date.now();
+
+    if (
+      this.contextCache &&
+      now - this.contextCache.timestamp < CONTEXT_CACHE_TTL_MS &&
+      this.contextCache.navigationKey === navKey
+    ) {
+      return this.contextCache.data;
+    }
+
+    const data = await buildDashboardContext(this.db, navigation ?? undefined);
+    this.contextCache = { data, timestamp: now, navigationKey: navKey };
+    return data;
+  }
+
   private broadcastDataChanged(entity: WsDataChanged["entity"], action: WsDataChanged["action"], id: string): void {
     this.broadcastFn({ type: "data_changed", entity, action, id });
+    if (entity === "skill") this.skillSummaryCache = null;
   }
 
   private async ensureSession(): Promise<AgentSession> {
@@ -171,7 +205,11 @@ export class GlobalAgentService {
 
     const authStorage = makeAuthStorage();
     const modelRegistry = ModelRegistry.inMemory(authStorage);
-    const resourceLoader = makeResourceLoader(SYSTEM_PROMPT, []);
+    if (this.skillSummaryCache === null) {
+      this.skillSummaryCache = loadSkillSummary(getSkillsDir());
+    }
+    const fullPrompt = SYSTEM_PROMPT + this.skillSummaryCache;
+    const resourceLoader = makeResourceLoader(fullPrompt, []);
     const sessionManager = SessionManager.create(this.sessionDir);
 
     const ctx: AgentToolContext = {
@@ -229,11 +267,18 @@ export class GlobalAgentService {
     await this.destroySession();
   }
 
+  /** Invalidate skill summary cache so the next session picks up changes */
+  invalidateSkillCache(): void {
+    this.skillSummaryCache = null;
+  }
+
   private async destroySession(): Promise<void> {
     if (this.session) {
       try { await this.session.abort(); } catch { /* ignore */ }
       this.session = null;
     }
+    this.skillSummaryCache = null;
+    this.contextCache = null;
     if (existsSync(this.sessionDir)) {
       rmSync(this.sessionDir, { recursive: true, force: true });
       mkdirSync(this.sessionDir, { recursive: true });

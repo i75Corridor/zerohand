@@ -3,43 +3,76 @@ import type { WsMessage } from "@zerohand/shared";
 
 type WsHandler = (msg: WsMessage) => void;
 
+// ── Singleton WebSocket connection shared across all hook consumers ──────────
+
+let sharedSocket: WebSocket | null = null;
+let refCount = 0;
+const handlers = new Set<WsHandler>();
+
+function getSocket(): WebSocket {
+  if (sharedSocket && sharedSocket.readyState !== WebSocket.CLOSED) {
+    return sharedSocket;
+  }
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const url = `${protocol}//${window.location.host}/ws`;
+  const socket = new WebSocket(url);
+
+  socket.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data as string) as WsMessage;
+      handlers.forEach((h) => h(msg));
+    } catch {
+      // ignore malformed messages
+    }
+  };
+
+  socket.onerror = (err) => console.error("[WS] Error:", err);
+
+  socket.onclose = () => {
+    // Auto-reconnect after a brief delay if there are still active consumers
+    if (refCount > 0) {
+      setTimeout(() => {
+        if (refCount > 0) {
+          sharedSocket = null;
+          getSocket();
+        }
+      }, 2000);
+    }
+  };
+
+  sharedSocket = socket;
+  return socket;
+}
+
 export function useWebSocket(onMessage: WsHandler) {
-  const ws = useRef<WebSocket | null>(null);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
+  // Stable wrapper that delegates to the latest callback ref
+  const stableHandler = useRef<WsHandler>((msg) => onMessageRef.current(msg));
+
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(url);
-    let cleanedUp = false;
+    const handler = stableHandler.current;
+    handlers.add(handler);
+    refCount++;
+    getSocket(); // ensure connection exists
 
-    socket.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data as string) as WsMessage;
-        onMessageRef.current(msg);
-      } catch {
-        // ignore malformed messages
-      }
-    };
-
-    socket.onerror = (err) => {
-      if (!cleanedUp) console.error("[WS] Error:", err);
-    };
-
-    ws.current = socket;
     return () => {
-      cleanedUp = true;
-      // Suppress the "closed before connection established" browser warning by
-      // replacing onerror with a no-op before closing a still-connecting socket.
-      socket.onerror = () => {};
-      socket.close();
+      handlers.delete(handler);
+      refCount--;
+      if (refCount === 0 && sharedSocket) {
+        // Suppress the "closed before connection established" browser warning by
+        // replacing onerror with a no-op before closing a still-connecting socket.
+        sharedSocket.onerror = () => {};
+        sharedSocket.close();
+        sharedSocket = null;
+      }
     };
   }, []);
 
   const send = useCallback((data: unknown) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify(data));
+    if (sharedSocket?.readyState === WebSocket.OPEN) {
+      sharedSocket.send(JSON.stringify(data));
     }
   }, []);
 

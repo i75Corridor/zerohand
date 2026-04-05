@@ -3,27 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight, Square, SkipForward, RotateCcw } from "lucide-react";
 import { api } from "../lib/api.ts";
+import { statusColor as getStatusColor, STATUS_BORDER_COLORS, STATUS_TEXT_COLORS } from "../components/StatusBadge.tsx";
+import LoadingState from "../components/LoadingState.tsx";
 import { useWebSocket } from "../lib/ws.ts";
 import OutputPreview from "../components/OutputPreview.tsx";
 import type { WsMessage, ApiStepRun } from "@zerohand/shared";
 
-const STATUS_COLORS: Record<string, string> = {
-  queued: "border-slate-700 text-slate-400",
-  running: "border-sky-500 text-sky-400",
-  awaiting_approval: "border-amber-500 text-amber-400",
-  completed: "border-emerald-500 text-emerald-400",
-  failed: "border-rose-500 text-rose-400",
-  cancelled: "border-slate-700 text-slate-400",
-};
 
-const LEFT_BORDER_COLORS: Record<string, string> = {
-  queued: "border-l-slate-700",
-  running: "border-l-sky-500",
-  awaiting_approval: "border-l-amber-500",
-  completed: "border-l-emerald-500",
-  failed: "border-l-rose-500",
-  cancelled: "border-l-slate-700",
-};
 
 interface LiveStep {
   stepIndex: number;
@@ -47,8 +33,8 @@ function StepCard({
 }) {
   const [expanded, setExpanded] = useState(step.status === "running" || step.status === "failed");
   const prevStatus = useRef(step.status);
-  const colorClass = STATUS_COLORS[step.status] ?? "border-slate-700 text-slate-400";
-  const leftBorderColor = LEFT_BORDER_COLORS[step.status] ?? "border-l-slate-700";
+  const colorClass = STATUS_TEXT_COLORS[step.status] ?? "text-slate-400";
+  const leftBorderColor = STATUS_BORDER_COLORS[step.status] ?? "border-l-slate-700";
   const textRef = useRef<HTMLDivElement>(null);
 
   const displayText = liveData?.text ?? (step.output as { text?: string })?.text ?? step.error ?? "";
@@ -79,8 +65,8 @@ function StepCard({
           <span className="text-sm font-medium text-slate-200">
             {name || `Step ${step.stepIndex + 1}`}
           </span>
-          <span className={`ml-auto text-xs font-medium ${colorClass.split(" ").slice(1).join(" ")}`}>
-            {step.status}
+          <span className={`ml-auto text-xs font-medium ${colorClass}`}>
+            {step.status.replace(/_/g, " ")}
           </span>
           {step.startedAt && step.finishedAt && (
             <span className="text-xs text-slate-500 ml-2">
@@ -182,7 +168,7 @@ function DebugLogTab({ runId, isActive }: { runId: string; isActive: boolean }) 
   }
 
   return (
-    <div className="font-mono text-xs">
+    <div className="font-mono text-xs overflow-x-auto">
       {entries.map((entry, i) => (
         <LogEntry key={i} entry={entry} index={i} />
       ))}
@@ -196,7 +182,7 @@ export default function RunDetail() {
   const [liveSteps, setLiveSteps] = useState<Map<number, LiveStep>>(new Map());
   const [activeTab, setActiveTab] = useState<"steps" | "log">("steps");
 
-  const { data: run } = useQuery({
+  const { data: run, error: runError } = useQuery({
     queryKey: ["run", id],
     queryFn: () => api.getRun(id!),
     refetchInterval: (query) => {
@@ -260,33 +246,27 @@ export default function RunDetail() {
     }
   });
 
-  if (!run) return <div className="p-8 text-slate-500">Loading...</div>;
+  if (!run) return <LoadingState />;
 
-  const statusColor =
-    run.status === "completed"
-      ? "text-emerald-400"
-      : run.status === "failed"
-      ? "text-rose-400"
-      : run.status === "running"
-      ? "text-sky-400"
-      : "text-slate-400";
+  const statusColor = getStatusColor(run.status);
 
   return (
-    <div className="p-8 max-w-4xl">
-      <Link to={`/pipelines/${run.pipelineId}`} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-300 mb-6">
-        <ArrowLeft size={14} />
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
+      <Link to={`/pipelines/${run.pipelineId}`} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
+        <ArrowLeft size={12} />
         Back to Pipeline
       </Link>
 
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-xl font-bold font-display text-white">
+          <h1 className="text-xl font-semibold font-display text-white tracking-tight">
             {run.pipelineName ?? run.pipelineId}
           </h1>
           <span className={`text-sm font-medium ${statusColor}`}>{run.status}</span>
           {(run.status === "running" || run.status === "queued") && (
             <button
               className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-400 border border-rose-800/60 rounded-lg hover:bg-rose-950/40 transition-colors"
+              aria-label="Stop run"
               onClick={() => {
                 void api.cancelRun(id!).then(() => {
                   queryClient.invalidateQueries({ queryKey: ["run", id] });
@@ -299,7 +279,7 @@ export default function RunDetail() {
             </button>
           )}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-500 tabular-nums">
           {run.triggerType} · {new Date(run.createdAt).toLocaleString()}
           {run.finishedAt && (
             <> · {Math.round((new Date(run.finishedAt).getTime() - new Date(run.startedAt ?? run.createdAt).getTime()) / 1000)}s total</>
@@ -356,7 +336,7 @@ export default function RunDetail() {
       </div>
 
       {activeTab === "steps" && (
-        <div className="space-y-3">
+        <div className="space-y-3 animate-fade-in">
           {pipelineSteps.map((ps) => {
             const stepRun = steps.find((s) => s.stepIndex === ps.stepIndex);
             if (stepRun) {
@@ -395,7 +375,7 @@ export default function RunDetail() {
         </div>
       )}
 
-      {activeTab === "log" && <DebugLogTab runId={id!} isActive={run.status === "running" || run.status === "queued"} />}
+      {activeTab === "log" && <div className="animate-fade-in"><DebugLogTab runId={id!} isActive={run.status === "running" || run.status === "queued"} /></div>}
     </div>
   );
 }

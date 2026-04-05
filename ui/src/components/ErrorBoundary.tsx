@@ -1,0 +1,62 @@
+import { Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
+
+interface Props {
+  children: ReactNode;
+  /** Optional fallback to render instead of the default error UI */
+  fallback?: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export default class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[ErrorBoundary]", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) return this.props.fallback;
+
+      return (
+        <div
+          role="alert"
+          className="m-8 p-6 bg-rose-950/30 border border-rose-900/50 rounded-xl max-w-lg"
+        >
+          <h2 className="text-lg font-semibold text-rose-300 mb-2">
+            Something went wrong
+          </h2>
+          <p className="text-sm text-slate-400 mb-4">
+            An unexpected error occurred while rendering this section. Try
+            refreshing the page.
+          </p>
+          {this.state.error && (
+            <pre className="text-xs text-rose-400/80 font-mono bg-slate-950 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words mb-4">
+              {this.state.error.message}
+            </pre>
+          )}
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-sm font-medium rounded-xl border border-rose-500/30 transition-colors"
+          >
+            Reload page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}

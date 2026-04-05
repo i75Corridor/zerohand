@@ -1,12 +1,16 @@
 import type {
+  ApiApproval,
+  ApiBudgetPolicy,
   ApiDiscoveredPackage,
   ApiInstalledPackage,
   ApiPipeline,
   ApiPipelineRun,
   ApiPipelineStep,
   ApiSecurityReport,
+  ApiSetting,
   ApiSkillBundle,
   ApiStepRun,
+  ApiTrigger,
 } from "@zerohand/shared";
 
 export class ApiError extends Error {
@@ -133,6 +137,70 @@ export class ApiClient {
 
   uninstallPackage(id: string): Promise<void> {
     return this.request("DELETE", `/packages/${id}`);
+  }
+
+  // Triggers
+  listTriggers(pipelineId: string): Promise<ApiTrigger[]> {
+    return this.request("GET", `/pipelines/${pipelineId}/triggers`);
+  }
+
+  createTrigger(pipelineId: string, data: object): Promise<ApiTrigger> {
+    return this.request("POST", `/pipelines/${pipelineId}/triggers`, data);
+  }
+
+  updateTrigger(id: string, data: object): Promise<ApiTrigger> {
+    return this.request("PATCH", `/triggers/${id}`, data);
+  }
+
+  deleteTrigger(id: string): Promise<void> {
+    return this.request("DELETE", `/triggers/${id}`);
+  }
+
+  async listAllTriggers(): Promise<(ApiTrigger & { pipelineName?: string })[]> {
+    const pipelines = await this.listPipelines();
+    const nested = await Promise.all(
+      pipelines.map(async (p) => {
+        const triggers = await this.listTriggers(p.id);
+        return triggers.map((t) => ({ ...t, pipelineName: p.name }));
+      }),
+    );
+    return nested.flat();
+  }
+
+  // Approvals
+  listApprovals(status?: string): Promise<ApiApproval[]> {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+    return this.request("GET", `/approvals${qs}`);
+  }
+
+  approveStep(id: string, note?: string): Promise<ApiApproval> {
+    return this.request("POST", `/approvals/${id}/approve`, { note });
+  }
+
+  rejectStep(id: string, note?: string): Promise<ApiApproval> {
+    return this.request("POST", `/approvals/${id}/reject`, { note });
+  }
+
+  // Budgets
+  listBudgets(): Promise<ApiBudgetPolicy[]> {
+    return this.request("GET", "/budgets");
+  }
+
+  createBudget(data: object): Promise<ApiBudgetPolicy> {
+    return this.request("POST", "/budgets", data);
+  }
+
+  deleteBudget(id: string): Promise<void> {
+    return this.request("DELETE", `/budgets/${id}`);
+  }
+
+  // Settings
+  listSettings(): Promise<ApiSetting[]> {
+    return this.request("GET", "/settings");
+  }
+
+  updateSetting(key: string, value: unknown): Promise<ApiSetting> {
+    return this.request("PUT", `/settings/${encodeURIComponent(key)}`, { value });
   }
 
   // Helpers

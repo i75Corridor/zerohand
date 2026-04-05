@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Cpu, Copy, Check, Save, Trash2, Plus, X, Pencil } from "lucide-react";
 import { useState } from "react";
 import { api } from "../lib/api.ts";
+import LoadingState from "../components/LoadingState.tsx";
+import EmptyState from "../components/EmptyState.tsx";
 import type { ApiSkillBundleScript } from "@zerohand/shared";
 
 // ── Script editor ─────────────────────────────────────────────────────────────
@@ -42,13 +44,13 @@ function ScriptEditor({
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
-        <span className="font-mono text-xs text-sky-300">{script.filename}</span>
+        <span className="font-mono text-xs text-violet-300">{script.filename}</span>
         <div className="flex items-center gap-2">
           {dirty && (
             <button
               onClick={() => save.mutate()}
               disabled={save.isPending}
-              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               {saved ? <Check size={12} /> : <Save size={12} />}
               {save.isPending ? "Saving..." : saved ? "Saved" : "Save"}
@@ -59,6 +61,7 @@ function ScriptEditor({
             disabled={del.isPending}
             className="flex items-center gap-1 text-xs text-slate-600 hover:text-rose-400 transition-colors"
             title="Delete script"
+            aria-label="Delete script"
           >
             <Trash2 size={13} />
           </button>
@@ -103,7 +106,7 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
         <button
           onClick={() => create.mutate()}
           disabled={!filename || !content || create.isPending}
-          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold rounded-lg transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-40"
         >
           <Save size={12} /> Create
         </button>
@@ -148,10 +151,13 @@ export default function SkillDetail() {
       queryClient.invalidateQueries({ queryKey: ["skill-bundle", qualifiedName] });
       setEditingMd(false);
     },
+    onError: () => {
+      // Error rendered via saveMd.isError below
+    },
   });
 
-  if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (error || !skill) return <div className="p-8 text-rose-400">Skill not found.</div>;
+  if (isLoading) return <LoadingState />;
+  if (error || !skill) return <div className="p-8 text-rose-400" role="alert">Skill not found.</div>;
 
   function handleCopyMd() {
     navigator.clipboard.writeText(skill!.skillMd).then(() => {
@@ -170,23 +176,23 @@ export default function SkillDetail() {
   const description = descMatch?.[1] ?? "";
 
   return (
-    <div className="p-8 max-w-4xl">
-      <Link to="/skills" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-4 transition-colors">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
+      <Link to="/skills" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
         <ArrowLeft size={12} /> Skills
       </Link>
 
-      <div className="flex items-start gap-3 mb-8">
-        <Cpu size={20} className="text-sky-400 flex-shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 mb-10">
+        <Cpu size={20} className="text-violet-400 flex-shrink-0 mt-0.5" />
         <div>
-          <h1 className="text-2xl font-bold text-white font-mono">{qualifiedName}</h1>
+          <h1 className="text-2xl font-semibold font-display text-white tracking-tight font-mono">{qualifiedName}</h1>
           {description && <p className="text-sm text-slate-500 mt-1">{description}</p>}
         </div>
       </div>
 
       {/* SKILL.md */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">SKILL.md</h2>
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">SKILL.md</h2>
           <div className="flex items-center gap-3">
             {!editingMd && (
               <>
@@ -216,7 +222,7 @@ export default function SkillDetail() {
                 <button
                   onClick={() => saveMd.mutate()}
                   disabled={saveMd.isPending}
-                  className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Save size={12} />
                   {saveMd.isPending ? "Saving..." : "Save"}
@@ -242,8 +248,8 @@ export default function SkillDetail() {
 
       {/* Scripts */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Scripts ({skill.scripts.length})
           </h2>
           {!addingScript && (
@@ -267,9 +273,15 @@ export default function SkillDetail() {
           ))}
 
           {skill.scripts.length === 0 && !addingScript && (
-            <div className="text-slate-600 text-sm border border-dashed border-slate-800 rounded-xl p-6 text-center">
-              No scripts yet. Add one above or ask the agent to create one.
-            </div>
+            <EmptyState
+              compact
+              icon={Cpu}
+              title="No scripts yet"
+              description="Scripts extend a skill with executable code. Add one above or ask the agent to create one."
+              actions={[
+                { label: "Add Script", onClick: () => setAddingScript(true) },
+              ]}
+            />
           )}
 
           {addingScript && (

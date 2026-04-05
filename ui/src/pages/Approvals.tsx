@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
 import { api } from "../lib/api.ts";
+import LoadingState from "../components/LoadingState.tsx";
+import EmptyState from "../components/EmptyState.tsx";
 import type { ApiApproval } from "@zerohand/shared";
 
 function ApprovalCard({ approval }: { approval: ApiApproval }) {
@@ -18,10 +20,13 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
       queryClient.invalidateQueries({ queryKey: ["approvals"] });
       setNote("");
     },
+    onError: () => {
+      // Error is displayed via decide.isError below
+    },
   });
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-glow">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
       <div className="flex items-start gap-3 mb-3">
         <Clock size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
@@ -30,7 +35,7 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
               <span className="text-sm font-medium text-slate-100">{approval.pipelineName}</span>
             )}
             {approval.stepName && (
-              <span className="bg-slate-800 text-slate-400 text-[10px] font-mono px-2 py-0.5 rounded-md">
+              <span className="bg-slate-800 text-slate-400 text-caption font-mono px-2 py-0.5 rounded-md">
                 {approval.stepName}
               </span>
             )}
@@ -55,7 +60,7 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
 
       <div className="mb-3">
         <input
-          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40 transition-all"
+          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-sky-500/40 input-glow"
           placeholder="Add a note (optional)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -64,7 +69,7 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
 
       <div className="flex items-center gap-3">
         <button
-          className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+          className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-medium rounded-md btn-press disabled:opacity-50"
           disabled={decide.isPending}
           onClick={() => decide.mutate({ decision: "approve", n: note })}
         >
@@ -72,7 +77,7 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
           Approve
         </button>
         <button
-          className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 bg-rose-800 hover:bg-rose-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+          className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 bg-rose-800 hover:bg-rose-700 text-white text-xs font-medium rounded-md btn-press disabled:opacity-50"
           disabled={decide.isPending}
           onClick={() => decide.mutate({ decision: "reject", n: note })}
         >
@@ -91,21 +96,29 @@ export default function Approvals() {
     refetchInterval: 10_000,
   });
 
-  if (isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
+  if (isLoading) return <LoadingState />;
 
   return (
-    <div className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-bold font-display text-white mb-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl pt-14 lg:pt-8">
+      <h1 className="text-2xl font-semibold font-display text-white tracking-tight mb-8">
         Approvals
         {pending.length > 0 && (
-          <span className="ml-3 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-md px-2.5 py-1 text-xs font-bold">
+          <span className="ml-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-md px-2.5 py-1 text-xs font-semibold">
             {pending.length} pending
           </span>
         )}
       </h1>
 
       {pending.length === 0 ? (
-        <div className="text-slate-500 text-sm">No pending approvals.</div>
+        <EmptyState
+          icon={CheckCircle}
+          title="No pending approvals"
+          description="When a pipeline step requires human review, it will pause and appear here. You can approve or reject with an optional note."
+          actions={[
+            { label: "View Pipelines", to: "/pipelines", variant: "secondary" },
+          ]}
+          hint="Add an approval gate to any pipeline step to require human review before proceeding."
+        />
       ) : (
         <div className="space-y-4">
           {pending.map((a) => (

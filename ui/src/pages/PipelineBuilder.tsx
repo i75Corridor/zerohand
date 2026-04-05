@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import React, { useState, useCallback } from "react";
 import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, GitBranch, CheckSquare } from "lucide-react";
 import { api } from "../lib/api.ts";
+import LoadingState from "../components/LoadingState.tsx";
 import type { ApiPipeline, ApiPipelineStep, ApiSkill, ApiValidationResult, WsMessage } from "@zerohand/shared";
 import ModelSelector from "../components/ModelSelector.tsx";
 import { useWebSocket } from "../lib/ws.ts";
@@ -238,19 +239,19 @@ function StepList({
           <button
             className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
               selectedIndex === i
-                ? "bg-sky-900/20 border-sky-500/40"
+                ? "bg-indigo-900/20 border-indigo-500/40"
                 : "bg-slate-800 border-slate-700 hover:border-slate-600"
             }`}
             onClick={() => onSelect(i)}
           >
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-xs font-bold text-slate-950">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/80 flex items-center justify-center text-xs font-semibold text-white">
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white truncate">{step.name || "Unnamed step"}</div>
                 {step.skillName && (
-                  <div className="text-xs text-sky-400 mt-0.5 truncate">
+                  <div className="text-xs text-violet-400 mt-0.5 truncate">
                     skill: {step.skillName}
                   </div>
                 )}
@@ -260,11 +261,12 @@ function StepList({
           </button>
 
           {/* Reorder / delete controls */}
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button
               className="p-1 text-slate-500 hover:text-slate-200 disabled:opacity-30"
               disabled={i === 0}
               onClick={(e) => { e.stopPropagation(); onMove(i, i - 1); }}
+              aria-label="Move step up"
             >
               <ChevronUp size={13} />
             </button>
@@ -272,12 +274,14 @@ function StepList({
               className="p-1 text-slate-500 hover:text-slate-200 disabled:opacity-30"
               disabled={i === steps.length - 1}
               onClick={(e) => { e.stopPropagation(); onMove(i, i + 1); }}
+              aria-label="Move step down"
             >
               <ChevronDown size={13} />
             </button>
             <button
-              className="p-1 text-slate-500 hover:text-red-400"
+              className="p-1 text-slate-500 hover:text-rose-400"
               onClick={(e) => { e.stopPropagation(); onRemove(i); }}
+              aria-label="Remove step"
             >
               <Trash2 size={13} />
             </button>
@@ -286,14 +290,14 @@ function StepList({
           {/* Connector line */}
           {i < steps.length - 1 && (
             <div className="flex justify-center my-1">
-              <div className="w-0.5 h-3 bg-sky-800" />
+              <div className="w-0.5 h-3 bg-indigo-800" />
             </div>
           )}
         </div>
       ))}
 
       <button
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-slate-800 hover:border-sky-500/40 text-slate-500 hover:text-sky-400 hover:bg-sky-500/5 rounded-lg transition-colors text-sm"
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-slate-800 hover:border-indigo-500/40 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors text-sm"
         onClick={onAdd}
       >
         <Plus size={14} /> Add step
@@ -348,7 +352,7 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
               onChange={(e) => update(i, { description: e.target.value })}
             />
           </div>
-          <button className="text-slate-600 hover:text-red-400 mt-1" onClick={() => remove(i)}>
+          <button className="text-slate-600 hover:text-rose-400 mt-1" onClick={() => remove(i)} aria-label="Remove field">
             <Trash2 size={13} />
           </button>
         </div>
@@ -594,28 +598,28 @@ export default function PipelineBuilder() {
     }
   };
 
-  if (isEdit && loadingPipeline) return <div className="p-8 text-slate-500">Loading...</div>;
+  if (isEdit && loadingPipeline) return <LoadingState />;
   const loading = loadingSkills;
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl pt-14 lg:pt-8">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-8">
         <Link
           to={isEdit ? `/pipelines/${id}` : "/pipelines"}
-          className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-4"
+          className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors"
         >
           <ArrowLeft size={12} /> {isEdit ? "Back to pipeline" : "Pipelines"}
         </Link>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <GitBranch size={20} className="text-sky-400" />
-            <h1 className="text-2xl font-bold font-display text-white">{isEdit ? "Edit Pipeline" : "New Pipeline"}</h1>
+            <GitBranch size={20} className="text-indigo-400" />
+            <h1 className="text-2xl font-semibold font-display text-white tracking-tight">{isEdit ? "Edit Pipeline" : "New Pipeline"}</h1>
           </div>
           <div className="flex items-center gap-3">
-            {error && <span className="text-xs text-red-400">{error}</span>}
+            {error && <span className="text-xs text-rose-400">{error}</span>}
             <button
-              className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-medium rounded-md disabled:opacity-50"
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
               disabled={saving || loading}
               onClick={save}
             >
@@ -626,14 +630,14 @@ export default function PipelineBuilder() {
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
         {/* Left: step list + metadata */}
         <div className="col-span-2 space-y-6">
           {/* Metadata */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Pipeline</h2>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pipeline</h2>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Name <span className="text-red-400">*</span></label>
+              <label className="block text-xs text-slate-400 mb-1">Name <span className="text-rose-400">*</span></label>
               <input
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                 value={name}
@@ -667,8 +671,8 @@ export default function PipelineBuilder() {
           </div>
 
           {/* Steps */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
               Steps ({steps.length})
             </h2>
             <StepList
@@ -685,10 +689,10 @@ export default function PipelineBuilder() {
 
         {/* Right: step editor */}
         <div className="col-span-3">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sticky top-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 sticky top-6">
             {selectedStep !== null && steps[selectedStep] ? (
               <>
-                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">
+                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
                   Edit Step {selectedStep + 1}
                 </h2>
                 <StepForm

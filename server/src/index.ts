@@ -144,18 +144,15 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
-  // Routes (approvals needs ws for re-queuing after approve/reject)
+  // Routes
   app.use("/api", createHealthRouter());
   app.use("/api", createPipelinesRouter(db));
   app.use("/api", createPipelineRunsRouter(db));
-  app.use("/api", createTriggersRouter(db));
-  app.use("/api", createBudgetsRouter(db));
   app.use("/api", createStatsRouter(db));
   let globalAgentRef: import("./services/global-agent.js").GlobalAgentService | null = null;
   app.use("/api", createSettingsRouter(db, () => { void globalAgentRef?.resetSession(); }));
   app.use("/api", createFilesRouter());
   app.use("/api", createSkillsRouter());
-  app.use("/api", createPackagesRouter(db));
   app.use("/api", makeMcpServersRouter(db));
   app.use("/api", createModelsRouter());
   app.use("/api", createLogsRouter());
@@ -164,7 +161,11 @@ async function main() {
   const ws = new WsManager(httpServer);
 
   // Approvals needs ws for re-queuing after approve/reject — registered before 404 handler
+  // Routes that need ws for real-time broadcasts
   app.use("/api", createApprovalsRouter(db, ws));
+  app.use("/api", createTriggersRouter(db, ws));
+  app.use("/api", createBudgetsRouter(db, ws));
+  app.use("/api", createPackagesRouter(db, ws));
 
   const engine = new ExecutionEngine(db, ws);
   const triggers = new TriggerManager(db, ws);

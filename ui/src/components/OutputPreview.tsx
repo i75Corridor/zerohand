@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 
@@ -25,6 +25,7 @@ const markdownComponents: Components = {
       <img
         src={resolved}
         alt={alt ?? ""}
+        loading="lazy"
         className="rounded-xl max-w-full border border-slate-700/60 my-4"
       />
     );
@@ -36,10 +37,12 @@ function MarkdownOutput({ serverPath }: { serverPath: string }) {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(fileUrl(serverPath))
-      .then((r) => (r.ok ? r.text() : Promise.reject()))
-      .then(setContent)
-      .catch(() => setError(true));
+    const controller = new AbortController();
+    fetch(fileUrl(serverPath), { signal: controller.signal })
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error("Not found"))))
+      .then((text) => { if (!controller.signal.aborted) setContent(text); })
+      .catch((err) => { if (!controller.signal.aborted && err?.name !== "AbortError") setError(true); });
+    return () => controller.abort();
   }, [serverPath]);
 
   if (error) return <p className="text-xs text-rose-400 italic">Could not load file.</p>;
@@ -59,7 +62,7 @@ interface OutputPreviewProps {
   compact?: boolean;
 }
 
-export default function OutputPreview({ text, compact = false }: OutputPreviewProps) {
+export default memo(function OutputPreview({ text, compact = false }: OutputPreviewProps) {
   const type = getOutputType(text.trim());
 
   if (type === "image") {
@@ -67,8 +70,17 @@ export default function OutputPreview({ text, compact = false }: OutputPreviewPr
       <img
         src={fileUrl(text.trim())}
         alt="Pipeline output"
+        loading="lazy"
         className="rounded-xl max-w-full border border-slate-700/60"
         style={compact ? { maxHeight: "300px", objectFit: "contain" } : undefined}
+        onError={(e) => {
+          const img = e.currentTarget;
+          img.style.display = "none";
+          const fallback = document.createElement("p");
+          fallback.className = "text-xs text-rose-400 italic";
+          fallback.textContent = "Image failed to load.";
+          img.parentNode?.appendChild(fallback);
+        }}
       />
     );
   }
@@ -91,4 +103,4 @@ export default function OutputPreview({ text, compact = false }: OutputPreviewPr
       {text}
     </pre>
   );
-}
+});

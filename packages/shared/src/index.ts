@@ -338,7 +338,7 @@ export interface WsIncomingGlobalChat {
 
 export interface WsDataChanged {
   type: "data_changed";
-  entity: "pipeline" | "step" | "skill";
+  entity: "pipeline" | "step" | "skill" | "trigger" | "approval" | "budget" | "package" | "setting" | "cost";
   action: "created" | "updated" | "deleted";
   id: string;
 }

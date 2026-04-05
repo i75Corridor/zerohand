@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { budgetPolicies } from "@zerohand/db";
 import type { ApiBudgetPolicy } from "@zerohand/shared";
+import type { WsManager } from "../ws/index.js";
 
 function toApi(row: typeof budgetPolicies.$inferSelect): ApiBudgetPolicy {
   return {
@@ -17,7 +18,7 @@ function toApi(row: typeof budgetPolicies.$inferSelect): ApiBudgetPolicy {
   };
 }
 
-export function createBudgetsRouter(db: Db): Router {
+export function createBudgetsRouter(db: Db, ws: WsManager): Router {
   const router = Router();
 
   router.get("/budgets", async (req, res, next) => {
@@ -47,6 +48,7 @@ export function createBudgetsRouter(db: Db): Router {
         })
         .returning();
       res.status(201).json(toApi(row));
+      ws.broadcast({ type: "data_changed", entity: "budget", action: "created", id: row.id });
     } catch (err) {
       next(err);
     }
@@ -62,6 +64,7 @@ export function createBudgetsRouter(db: Db): Router {
         .returning();
       if (!row) return res.status(404).json({ error: "Budget policy not found" });
       res.json(toApi(row));
+      ws.broadcast({ type: "data_changed", entity: "budget", action: "updated", id: row.id });
     } catch (err) {
       next(err);
     }
@@ -75,6 +78,7 @@ export function createBudgetsRouter(db: Db): Router {
         .returning();
       if (deleted.length === 0) return res.status(404).json({ error: "Budget policy not found" });
       res.status(204).send();
+      ws.broadcast({ type: "data_changed", entity: "budget", action: "deleted", id: req.params.id });
     } catch (err) {
       next(err);
     }
