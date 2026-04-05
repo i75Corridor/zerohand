@@ -129,6 +129,14 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
   );
   const [stepByStep, setStepByStep] = useState(false);
 
+  const { data: validation } = useQuery({
+    queryKey: ["validate-for-run", pipeline.id],
+    queryFn: () => api.validatePipeline(pipeline.id),
+    staleTime: 30_000,
+  });
+
+  const hasValidationItems = validation && (validation.errors.length > 0 || validation.warnings.length > 0);
+
   const trigger = useMutation({
     mutationFn: () => {
       const params = Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim() !== ""));
@@ -180,6 +188,21 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
               Step-by-step mode <span className="text-slate-600">(pause after each step)</span>
             </label>
           </div>
+          {hasValidationItems && (
+            <div className="mb-4 border border-amber-800/40 bg-amber-900/10 rounded-xl p-3">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-amber-400 mb-2">
+                <AlertTriangle size={12} />
+                {validation.errors.length > 0
+                  ? `${validation.errors.length} error(s), ${validation.warnings.length} warning(s)`
+                  : `${validation.warnings.length} warning(s)`}
+              </div>
+              {[...validation.errors, ...validation.warnings].map((e, i) => (
+                <div key={i} className={`text-xs mb-1 ${e.severity === "error" ? "text-rose-300" : "text-amber-300"}`}>
+                  {e.severity === "error" ? "✕" : "⚠"}{e.stepIndex !== undefined ? ` Step ${e.stepIndex}:` : ""} {e.message}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex gap-3 justify-end">
             <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Cancel</button>
             <button

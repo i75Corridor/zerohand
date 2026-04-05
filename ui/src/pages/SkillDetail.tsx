@@ -1,11 +1,110 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Cpu, Copy, Check, Save, Trash2, Plus, X, Pencil } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Cpu, Copy, Check, Save, Trash2, Plus, X, Pencil, Key, Server, Globe, type LucideIcon } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
+import ModelSelector from "../components/ModelSelector.tsx";
 import type { ApiSkillBundleScript } from "@zerohand/shared";
+
+// ── Front matter parsing / serialization ──────────────────────────────────────
+
+interface SkillFm {
+  name: string;
+  description: string;
+  model: string | null;
+  network: boolean;
+  secrets: string[];
+  mcpServers: string[];
+  /** raw lines for keys we don't surface in the form (e.g. version, type, metadata) */
+  _preserved: string[];
+}
+
+function parseFrontMatter(content: string): { fm: SkillFm; body: string } {
+  const fm: SkillFm = { name: "", description: "", model: null, network: false, secrets: [], mcpServers: [], _preserved: [] };
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)/);
+  if (!match) return { fm, body: content };
+
+  const body = match[2].trim();
+  const lines = match[1].split("\n");
+  const HANDLED = new Set(["name", "description", "model", "network", "secrets", "mcpServers"]);
+
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i++; continue; }
+
+    const keyMatch = line.match(/^([a-zA-Z_]\w*):\s*(.*)$/);
+    if (!keyMatch) { fm._preserved.push(line); i++; continue; }
+
+    const key = keyMatch[1];
+    const val = keyMatch[2].trim();
+
+    if (!HANDLED.has(key)) {
+      // Preserve this key + any following indented lines
+      const block = [line];
+      i++;
+      while (i < lines.length && (lines[i].startsWith("  ") || lines[i].startsWith("\t"))) {
+        block.push(lines[i]);
+        i++;
+      }
+      fm._preserved.push(...block);
+      continue;
+    }
+
+    if (val === "" || val === "[]") {
+      // Block array
+      const arr: string[] = [];
+      i++;
+      while (i < lines.length && /^\s*-\s+/.test(lines[i])) {
+        arr.push(lines[i].trim().replace(/^-\s+/, "").replace(/^['"]|['"]$/g, ""));
+        i++;
+      }
+      if (key === "secrets") fm.secrets = arr;
+      if (key === "mcpServers") fm.mcpServers = arr;
+      continue;
+    }
+
+    if (val.startsWith("[")) {
+      // Inline array
+      const inner = val.slice(1, val.lastIndexOf("]"));
+      const items = inner.split(",").map((s) => s.trim().replace(/^['"]|['"]$/g, "")).filter(Boolean);
+      if (key === "secrets") fm.secrets = items;
+      if (key === "mcpServers") fm.mcpServers = items;
+    } else {
+      const strVal = val.replace(/^['"]|['"]$/g, "");
+      if (key === "name") fm.name = strVal;
+      if (key === "description") fm.description = strVal;
+      if (key === "model") fm.model = strVal || null;
+      if (key === "network") fm.network = val === "true";
+    }
+    i++;
+  }
+
+  return { fm, body };
+}
+
+function serializeFrontMatter(fm: SkillFm, body: string): string {
+  const lines: string[] = ["---"];
+  if (fm._preserved.length > 0) lines.push(...fm._preserved);
+  if (fm.name) lines.push(`name: ${fm.name}`);
+  if (fm.description) lines.push(`description: "${fm.description.replace(/"/g, '\\"')}"`);
+  if (fm.model) lines.push(`model: ${fm.model}`);
+  if (fm.network) lines.push("network: true");
+  if (fm.secrets.length > 0) {
+    lines.push("secrets:");
+    fm.secrets.forEach((s) => lines.push(`  - ${s}`));
+  }
+  if (fm.mcpServers.length > 0) {
+    lines.push("mcpServers:");
+    fm.mcpServers.forEach((s) => lines.push(`  - ${s}`));
+  }
+  lines.push("---");
+  lines.push("");
+  lines.push(body);
+  return lines.join("\n");
+}
 
 // ── Script editor ─────────────────────────────────────────────────────────────
 
@@ -126,16 +225,346 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
   );
 }
 
+// ── Tag input (secrets / mcpServers) ─────────────────────────────────────────
+
+function TagInput({
+  label,
+  icon: Icon,
+  tags,
+  onChange,
+  addLabel,
+  addOptions,
+  placeholder,
+}: {
+  label: string;
+  icon: LucideIcon;
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  addLabel: string;
+  addOptions?: string[];
+  placeholder?: string;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [inputVal, setInputVal] = useState("");
+
+  function commit(val: string) {
+    const trimmed = val.trim();
+    if (trimmed && !tags.includes(trimmed)) onChange([...tags, trimmed]);
+    setInputVal("");
+    setAdding(false);
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</label>
+        {!adding && (
+          <button
+            onClick={() => setAdding(true)}
+            className="text-[10px] text-sky-400 hover:text-sky-300 font-medium transition-colors"
+          >
+            {addLabel}
+          </button>
+        )}
+      </div>
+
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 font-mono"
+            >
+              <Icon size={10} className="text-slate-500 flex-shrink-0" />
+              {tag}
+              <button
+                onClick={() => onChange(tags.filter((t) => t !== tag))}
+                className="text-slate-600 hover:text-rose-400 transition-colors ml-0.5"
+                aria-label={`Remove ${tag}`}
+              >
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {adding && (
+        <div className="flex gap-2">
+          {addOptions ? (
+            <select
+              autoFocus
+              className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+            >
+              <option value="">Select a server…</option>
+              {addOptions.filter((o) => !tags.includes(o)).map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              autoFocus
+              className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 font-mono placeholder-slate-600 focus:outline-none focus:border-sky-500"
+              placeholder={placeholder ?? "Enter value…"}
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit(inputVal);
+                if (e.key === "Escape") setAdding(false);
+              }}
+            />
+          )}
+          <button
+            onClick={() => commit(inputVal)}
+            disabled={!inputVal.trim()}
+            className="text-xs px-2.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg disabled:opacity-40 transition-colors"
+          >
+            Add
+          </button>
+          <button onClick={() => setAdding(false)} className="text-slate-500 hover:text-slate-300 transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {tags.length === 0 && !adding && (
+        <p className="text-xs text-slate-600 italic">None configured</p>
+      )}
+    </div>
+  );
+}
+
+// ── Split skill editor ────────────────────────────────────────────────────────
+
+function SplitSkillEditor({
+  qualifiedName,
+  initialContent,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  qualifiedName: string;
+  initialContent: string;
+  onSave: (content: string) => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
+  const { fm: initialFm, body: initialBody } = parseFrontMatter(initialContent);
+  const [fm, setFm] = useState<SkillFm>(initialFm);
+  const [body, setBody] = useState(initialBody);
+
+  const { data: mcpServers = [] } = useQuery({
+    queryKey: ["mcp-servers"],
+    queryFn: () => api.listMcpServers(),
+  });
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumsRef = useRef<HTMLDivElement>(null);
+
+  const lineCount = body.split("\n").length;
+
+  const syncScroll = useCallback(() => {
+    if (textareaRef.current && lineNumsRef.current) {
+      lineNumsRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  }, []);
+
+  function handleSave() {
+    onSave(serializeFrontMatter(fm, body));
+  }
+
+  const update = (patch: Partial<SkillFm>) => setFm((f) => ({ ...f, ...patch }));
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header bar */}
+      <header className="flex-shrink-0 h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-950/80 backdrop-blur-sm z-10">
+        <div className="flex items-center gap-4 min-w-0">
+          <button
+            onClick={onCancel}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0"
+          >
+            <ArrowLeft size={13} /> Skills
+          </button>
+          <div className="h-4 w-px bg-slate-800 flex-shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
+            <Cpu size={15} className="text-violet-400 flex-shrink-0" />
+            <h1 className="text-sm font-mono font-medium text-white tracking-tight truncate">{qualifiedName}</h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={onCancel}
+            className="text-xs text-slate-400 hover:text-slate-200 px-3 py-1.5 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 text-xs px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+          >
+            <Save size={13} />
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </header>
+
+      {/* Split body */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Left panel — Skill Config */}
+        <aside className="w-[360px] flex-shrink-0 border-r border-slate-800 flex flex-col bg-slate-900/20">
+          <div className="px-6 py-3.5 border-b border-slate-800/60">
+            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Skill Config</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-7">
+
+            {/* Qualified name — readonly */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Qualified Name</label>
+              <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-800/40 border border-slate-700/40 rounded-lg">
+                <span className="text-xs font-mono text-slate-400 flex-1 truncate">{qualifiedName}</span>
+                <span className="text-slate-600 flex-shrink-0">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
+              <textarea
+                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-all resize-none"
+                rows={3}
+                placeholder="What does this skill do?"
+                value={fm.description}
+                onChange={(e) => update({ description: e.target.value })}
+              />
+            </div>
+
+            {/* Model */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Model Override</label>
+              <ModelSelector
+                value={fm.model}
+                onChange={(v) => update({ model: v })}
+                allowNull
+                defaultLabel="Use pipeline default"
+              />
+            </div>
+
+            {/* Network toggle */}
+            <div className="flex items-center justify-between py-1">
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Network Access</p>
+                <p className="text-[11px] text-slate-600 mt-0.5">Allow scripts to reach external APIs</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={fm.network}
+                onClick={() => update({ network: !fm.network })}
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
+                  fm.network ? "bg-sky-600" : "bg-slate-700"
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                    fm.network ? "translate-x-4" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Secrets */}
+            <TagInput
+              label="Secrets"
+              icon={Key}
+              tags={fm.secrets}
+              onChange={(secrets) => update({ secrets })}
+              addLabel="+ Add"
+              placeholder="ENV_VAR_NAME"
+            />
+
+            {/* MCP Servers */}
+            <TagInput
+              label="MCP Servers"
+              icon={Server}
+              tags={fm.mcpServers}
+              onChange={(mcpServers) => update({ mcpServers })}
+              addLabel="+ Attach"
+              addOptions={mcpServers.map((s) => s.name)}
+            />
+
+          </div>
+        </aside>
+
+        {/* Right panel — System Prompt */}
+        <section className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+          <div className="flex-shrink-0 px-6 py-3.5 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">System Prompt</h2>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-600 font-mono">
+              <Globe size={10} />
+              <span>{lineCount} lines</span>
+              <span className="mx-1 text-slate-700">·</span>
+              <span>{body.length} chars</span>
+            </div>
+          </div>
+
+          {/* Editor area with gutter */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Line numbers */}
+            <div
+              ref={lineNumsRef}
+              className="flex-shrink-0 w-12 overflow-hidden bg-slate-900/30 border-r border-slate-800/50 py-4 select-none"
+              aria-hidden
+            >
+              {Array.from({ length: lineCount }, (_, i) => (
+                <div key={i} className="text-right pr-3 text-[10px] font-mono text-slate-700 leading-relaxed h-[22px] flex items-center justify-end">
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+
+            {/* Textarea */}
+            <textarea
+              ref={textareaRef}
+              spellCheck={false}
+              className="flex-1 bg-transparent px-5 py-4 text-sm text-slate-300 font-mono leading-relaxed resize-none focus:outline-none"
+              style={{ lineHeight: "22px" }}
+              placeholder="Enter the core instructions for the AI agent…"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              onScroll={syncScroll}
+            />
+          </div>
+
+          {/* Footer bar */}
+          <div className="flex-shrink-0 h-7 border-t border-slate-800 flex items-center px-4 bg-slate-900/20 text-[10px] text-slate-600 font-mono gap-4">
+            <span>UTF-8</span>
+            <span className="text-slate-700">·</span>
+            <span>Markdown</span>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SkillDetail() {
   const { namespace, name } = useParams<{ namespace: string; name: string }>();
-  // Build the qualified name used for all API calls
   const qualifiedName = namespace && name ? `${namespace}/${name}` : name ?? "";
   const [copiedMd, setCopiedMd] = useState(false);
   const [addingScript, setAddingScript] = useState(false);
   const [editingMd, setEditingMd] = useState(false);
-  const [mdContent, setMdContent] = useState("");
+  const [editContent, setEditContent] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -146,18 +575,20 @@ export default function SkillDetail() {
   });
 
   const saveMd = useMutation({
-    mutationFn: () => api.updateSkillContent(qualifiedName, mdContent),
+    mutationFn: (content: string) => api.updateSkillContent(qualifiedName, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["skill-bundle", qualifiedName] });
       setEditingMd(false);
-    },
-    onError: () => {
-      // Error rendered via saveMd.isError below
     },
   });
 
   if (isLoading) return <LoadingState />;
   if (error || !skill) return <div className="p-8 text-rose-400" role="alert">Skill not found.</div>;
+
+  function handleStartEdit() {
+    setEditContent(skill!.skillMd);
+    setEditingMd(true);
+  }
 
   function handleCopyMd() {
     navigator.clipboard.writeText(skill!.skillMd).then(() => {
@@ -166,15 +597,24 @@ export default function SkillDetail() {
     });
   }
 
-  function handleStartEdit() {
-    setMdContent(skill!.skillMd);
-    setEditingMd(true);
+  // Editing mode — full-height split editor replaces normal page content
+  if (editingMd) {
+    return (
+      <SplitSkillEditor
+        qualifiedName={qualifiedName}
+        initialContent={editContent}
+        onSave={(content) => saveMd.mutate(content)}
+        onCancel={() => setEditingMd(false)}
+        saving={saveMd.isPending}
+      />
+    );
   }
 
   // Parse description from SKILL.md frontmatter for the header
   const descMatch = skill.skillMd.match(/^description:\s*["']?(.+?)["']?\s*$/m);
   const description = descMatch?.[1] ?? "";
 
+  // View mode
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
       <Link to="/skills" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
@@ -194,56 +634,24 @@ export default function SkillDetail() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">SKILL.md</h2>
           <div className="flex items-center gap-3">
-            {!editingMd && (
-              <>
-                <button
-                  onClick={handleCopyMd}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {copiedMd ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                  {copiedMd ? "Copied" : "Copy"}
-                </button>
-                <button
-                  onClick={handleStartEdit}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  <Pencil size={13} /> Edit
-                </button>
-              </>
-            )}
-            {editingMd && (
-              <>
-                <button
-                  onClick={() => setEditingMd(false)}
-                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => saveMd.mutate()}
-                  disabled={saveMd.isPending}
-                  className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
-                >
-                  <Save size={12} />
-                  {saveMd.isPending ? "Saving..." : "Save"}
-                </button>
-              </>
-            )}
+            <button
+              onClick={handleCopyMd}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              {copiedMd ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+              {copiedMd ? "Copied" : "Copy"}
+            </button>
+            <button
+              onClick={handleStartEdit}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              <Pencil size={13} /> Edit
+            </button>
           </div>
         </div>
-        {editingMd ? (
-          <textarea
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs text-slate-300 font-mono leading-relaxed resize-none focus:outline-none focus:border-sky-500"
-            rows={Math.max(12, mdContent.split("\n").length + 2)}
-            value={mdContent}
-            onChange={(e) => setMdContent(e.target.value)}
-            spellCheck={false}
-          />
-        ) : (
-          <pre className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
-            {skill.skillMd}
-          </pre>
-        )}
+        <pre className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
+          {skill.skillMd}
+        </pre>
       </div>
 
       {/* Scripts */}

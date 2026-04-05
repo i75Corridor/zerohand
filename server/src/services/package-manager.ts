@@ -23,6 +23,8 @@ import type { Db } from "@zerohand/db";
 import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
 import { importPipelinePackage } from "./pipeline-import.js";
 import { scanPackage, type SecurityReport } from "./security-scanner.js";
+import { loadSkillDef } from "./skill-loader.js";
+import { getEnvApiKey } from "@mariozechner/pi-ai";
 
 // ── git helpers ────────────────────────────────────────────────────────────────
 
@@ -154,10 +156,34 @@ function getPackageSkillNames(packageDir: string, namespace: string): string[] {
 
 // ── public API ─────────────────────────────────────────────────────────────────
 
+export interface ModelWarning {
+  skillName: string;
+  provider: string;
+  model: string;
+  message: string;
+}
+
+export function checkModelAvailability(skillNames: string[], skillsDir: string): ModelWarning[] {
+  const warnings: ModelWarning[] = [];
+  for (const qualifiedName of skillNames) {
+    const skill = loadSkillDef(qualifiedName, skillsDir);
+    if (skill?.modelProvider && !getEnvApiKey(skill.modelProvider)) {
+      warnings.push({
+        skillName: qualifiedName,
+        provider: skill.modelProvider,
+        model: `${skill.modelProvider}/${skill.modelName ?? ""}`,
+        message: `Skill "${qualifiedName}" requires provider "${skill.modelProvider}" but no API key is set.`,
+      });
+    }
+  }
+  return warnings;
+}
+
 export interface PackageInstallResult {
   pipelineName: string;
   skills: SkillInstallResult;
   security: SecurityReport;
+  modelWarnings: ModelWarning[];
 }
 
 export async function installPackage(
@@ -257,8 +283,9 @@ export async function installPackage(
     scannedAt: new Date(security.scannedAt),
   });
 
+  const modelWarnings = checkModelAvailability(skillNames, skillsDir);
   console.log(`[Packages] Installed ${repoFullName}: ${pipelineManifestName} (security: ${security.level})`);
-  return { pipelineName: pipelineManifestName, skills: skillResult, security };
+  return { pipelineName: pipelineManifestName, skills: skillResult, security, modelWarnings };
 }
 
 export async function updatePackage(
@@ -338,8 +365,9 @@ export async function updatePackage(
     } catch { return basename(localPath); }
   })();
 
+  const modelWarnings = checkModelAvailability(skillNames, skillsDir);
   console.log(`[Packages] Updated ${pkg[0].repoFullName} (security: ${security.level})`);
-  return { pipelineName, skills: skillResult, security };
+  return { pipelineName, skills: skillResult, security, modelWarnings };
 }
 
 export async function uninstallPackage(
