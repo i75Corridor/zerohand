@@ -419,6 +419,7 @@ export class ExecutionEngine {
           output = result.output;
           usage = result.usage;
           await recordCost(this.db, stepRun.id, step.skillName, runId, pipelineModelProvider, pipelineModelName, usage);
+          this.ws.broadcast({ type: "data_changed", entity: "cost", action: "created", id: stepRun.id });
 
           stepOutputs.set(step.stepIndex, output);
 
