@@ -1,7 +1,7 @@
 ---
 title: "feat: Replace Costs page polling with WebSocket cost events"
 type: feat
-status: active
+status: completed
 date: 2026-04-05
 ---
 
