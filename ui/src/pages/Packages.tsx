@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Link,
   ShieldAlert,
+  AlertTriangle,
 } from "lucide-react";
 import { api } from "../lib/api.ts";
 import type { ApiInstalledPackage, ApiDiscoveredPackage } from "@zerohand/shared";
@@ -152,7 +153,12 @@ function InstalledCard({
                 local
               </span>
             )}
-            {pkg.updateAvailable ? (
+            {pkg.repoNotFound ? (
+              <span className="flex items-center gap-1 text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-md" title="The GitHub repository could not be found. It may have been deleted, renamed, or made private.">
+                <AlertTriangle size={10} />
+                Repo not found
+              </span>
+            ) : pkg.updateAvailable ? (
               <span className="flex items-center gap-1 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
                 <ArrowUpCircle size={10} />
                 Update available
@@ -190,7 +196,7 @@ function InstalledCard({
             : ""}
         </p>
         <div className="flex gap-2">
-          {pkg.updateAvailable && (
+          {pkg.updateAvailable && !pkg.repoNotFound && (
             <button
               onClick={onUpdate}
               disabled={updating}

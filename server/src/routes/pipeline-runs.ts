@@ -74,21 +74,66 @@ export function createPipelineRunsRouter(db: Db): Router {
 
   router.post("/runs", async (req, res, next) => {
     try {
-      const { pipelineId, inputParams = {}, triggerType = "manual" } = req.body as {
+      const { pipelineId, inputParams = {}, triggerType = "manual", executionMode } = req.body as {
         pipelineId: string;
         inputParams?: Record<string, unknown>;
         triggerType?: string;
+        executionMode?: "step_by_step";
       };
 
       const pipeline = await db.query.pipelines.findFirst({ where: eq(pipelines.id, pipelineId) });
       if (!pipeline) return res.status(404).json({ error: "Pipeline not found" });
 
+      const metadata = executionMode ? { executionMode } : undefined;
       const [run] = await db
         .insert(pipelineRuns)
-        .values({ pipelineId, inputParams, triggerType })
+        .values({ pipelineId, inputParams, triggerType, metadata })
         .returning();
 
       res.status(201).json(toApiRun(run, pipeline.name));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Resume a paused run (step-by-step or approval)
+  router.post("/runs/:id/resume", async (req, res, next) => {
+    try {
+      const [row] = await db
+        .update(pipelineRuns)
+        .set({ status: "queued", updatedAt: new Date() })
+        .where(eq(pipelineRuns.id, req.params.id))
+        .returning();
+      if (!row) return res.status(404).json({ error: "Run not found" });
+      res.json(toApiRun(row));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Re-run a specific step: reset it to queued and re-queue the whole run
+  router.post("/runs/:id/steps/:stepRunId/rerun", async (req, res, next) => {
+    try {
+      const stepRun = await db.query.stepRuns.findFirst({ where: eq(stepRuns.id, req.params.stepRunId) });
+      if (!stepRun) return res.status(404).json({ error: "Step run not found" });
+
+      await db.update(stepRuns).set({
+        status: "queued",
+        output: null,
+        error: null,
+        startedAt: null,
+        finishedAt: null,
+        updatedAt: new Date(),
+      }).where(eq(stepRuns.id, req.params.stepRunId));
+
+      const [run] = await db
+        .update(pipelineRuns)
+        .set({ status: "queued", error: null, finishedAt: null, updatedAt: new Date() })
+        .where(eq(pipelineRuns.id, req.params.id))
+        .returning();
+      if (!run) return res.status(404).json({ error: "Run not found" });
+
+      res.json(toApiRun(run));
     } catch (err) {
       next(err);
     }

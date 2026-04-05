@@ -4,7 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import type { AgentToolContext } from "./context.js";
-import { safeSkillDir, buildSkillMd, validateDescription } from "./skill-utils.js";
+import { safeSkillDir, buildSkillMd, validateDescription, validateQualifiedSkillName } from "./skill-utils.js";
 
 export function makeUpdateSkill(ctx: AgentToolContext): ToolDefinition {
   return {
@@ -12,7 +12,7 @@ export function makeUpdateSkill(ctx: AgentToolContext): ToolDefinition {
     label: "Update Skill",
     description: "Update the SKILL.md for an existing skill. Only the fields you provide are changed — all others are preserved from the existing file.",
     parameters: Type.Object({
-      skillName: Type.String({ description: "The skill folder name to update." }),
+      skillName: Type.String({ description: "The fully-qualified skill name in 'namespace/skill-name' format (e.g. 'local/researcher'). Use list_skills to find available skills." }),
       description: Type.Optional(Type.String({
         description: "Updated description: what the skill does AND when to use it. Max 1024 characters.",
       })),
@@ -34,6 +34,9 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       secrets: Type.Optional(Type.Array(Type.String(), {
         description: "Updated list of secret keys to inject. Replaces the existing secrets list.",
       })),
+      mcpServers: Type.Optional(Type.Array(Type.String(), {
+        description: "Updated list of registered MCP server names this skill can access at runtime. Replaces the existing mcpServers list. Pass an empty array to remove all MCP server references.",
+      })),
       license: Type.Optional(Type.String({
         description: "Updated license identifier or reference, e.g. 'MIT'.",
       })),
@@ -54,11 +57,15 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       model?: string;
       network?: boolean;
       secrets?: string[];
+      mcpServers?: string[];
       license?: string;
       compatibility?: string;
       allowedTools?: string;
       metadata?: Record<string, string>;
     }) => {
+      const nameErr = validateQualifiedSkillName(params.skillName);
+      if (nameErr) return { content: [{ type: "text" as const, text: `Invalid skill name: ${nameErr}` }], details: {} };
+
       const skillDir = safeSkillDir(params.skillName, ctx.skillsDir);
       if (!skillDir) return { content: [{ type: "text" as const, text: "Invalid skill name." }], details: {} };
 
@@ -95,6 +102,7 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       const model = params.model !== undefined ? (params.model || undefined) : (existingFm.model as string | undefined);
       const network = params.network !== undefined ? params.network : (existingFm.network as boolean | undefined);
       const secrets = params.secrets !== undefined ? params.secrets : (existingFm.secrets as string[] | undefined);
+      const mcpServers = params.mcpServers !== undefined ? params.mcpServers : (existingFm.mcpServers as string[] | undefined);
       const license = params.license !== undefined ? params.license : (existingFm.license as string | undefined);
       const compatibility = params.compatibility !== undefined ? params.compatibility : (existingFm.compatibility as string | undefined);
       const allowedTools = params.allowedTools !== undefined ? params.allowedTools : (existingFm["allowed-tools"] as string | undefined);
@@ -110,6 +118,7 @@ Replaces the existing body entirely. Keep under 500 lines.`,
         model,
         network,
         secrets,
+        mcpServers,
         license,
         compatibility,
         allowedTools,

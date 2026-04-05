@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, GitBranch, CheckSquare } from "lucide-react";
 import { api } from "../lib/api.ts";
-import type { ApiPipeline, ApiPipelineStep, ApiSkill, WsMessage } from "@zerohand/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiSkill, ApiValidationResult, WsMessage } from "@zerohand/shared";
 import ModelSelector from "../components/ModelSelector.tsx";
 import { useWebSocket } from "../lib/ws.ts";
 
@@ -100,9 +100,25 @@ function StepForm({
           onChange={(e) => onChange({ ...step, skillName: e.target.value })}
         >
           <option value="">— select skill —</option>
-          {skills.map((s) => (
-            <option key={s.name} value={s.name}>{s.name}</option>
-          ))}
+          {/* Group skills by namespace */}
+          {Array.from(
+            skills.reduce((groups, s) => {
+              const ns = s.namespace ?? "local";
+              if (!groups.has(ns)) groups.set(ns, []);
+              groups.get(ns)!.push(s);
+              return groups;
+            }, new Map<string, ApiSkill[]>()).entries()
+          )
+            .sort(([a], [b]) => (a === "local" ? -1 : b === "local" ? 1 : a.localeCompare(b)))
+            .map(([ns, nsSkills]) => (
+              <optgroup key={ns} label={ns}>
+                {nsSkills.map((s) => {
+                  const qn = `${ns}/${s.name}`;
+                  return <option key={qn} value={qn}>{s.name}</option>;
+                })}
+              </optgroup>
+            ))
+          }
         </select>
       </div>
 
@@ -129,6 +145,30 @@ function StepForm({
           onChange={(e) => onChange({ ...step, promptTemplate: e.target.value })}
           placeholder="Write a satirical article about {{input.topic}}"
         />
+        {/* Highlight unresolvable tokens */}
+        {(() => {
+          const allTokens = [...step.promptTemplate.matchAll(/\{\{([^}]+)\}\}/g)].map((m) => m[1].trim());
+          const invalid = [...new Set(allTokens)].filter((token) => {
+            if (token.startsWith("input.")) {
+              return !inputKeys.includes(token.slice(6));
+            }
+            if (token.startsWith("steps.")) {
+              const n = parseInt(token.split(".")[1], 10);
+              return isNaN(n) || n >= stepIndex;
+            }
+            return false; // context/secret tokens — no red highlight
+          });
+          if (invalid.length === 0) return null;
+          return (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {invalid.map((t) => (
+                <span key={t} className="text-xs px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded font-mono">
+                  {`{{${t}}}`} unresolvable
+                </span>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="flex gap-4">
@@ -168,6 +208,7 @@ function StepForm({
 function StepList({
   steps,
   selectedIndex,
+  validationResult,
   onSelect,
   onAdd,
   onRemove,
@@ -175,11 +216,21 @@ function StepList({
 }: {
   steps: DraftStep[];
   selectedIndex: number | null;
+  validationResult?: ApiValidationResult | null;
   onSelect: (i: number) => void;
   onAdd: () => void;
   onRemove: (i: number) => void;
   onMove: (from: number, to: number) => void;
 }) {
+  function stepDot(i: number): React.ReactNode {
+    if (!validationResult) return null;
+    const hasError = validationResult.errors.some((e) => e.stepIndex === i);
+    const hasWarning = validationResult.warnings.some((e) => e.stepIndex === i);
+    if (hasError) return <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" title="Step has errors" />;
+    if (hasWarning) return <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Step has warnings" />;
+    return <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" title="Step is valid" />;
+  }
+
   return (
     <div className="space-y-2">
       {steps.map((step, i) => (
@@ -204,6 +255,7 @@ function StepList({
                   </div>
                 )}
               </div>
+              {stepDot(i)}
             </div>
           </button>
 
@@ -406,6 +458,7 @@ export default function PipelineBuilder() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationResult, setValidationResult] = useState<ApiValidationResult | null>(null);
 
   const inputKeys = schemaFields.map((f) => f.key).filter(Boolean);
 
@@ -443,6 +496,7 @@ export default function PipelineBuilder() {
 
   const updateStep = useCallback((i: number, updated: DraftStep) => {
     setSteps((prev) => prev.map((s, j) => (j === i ? updated : s)));
+    setValidationResult(null);
   }, []);
 
   const save = async () => {
@@ -516,6 +570,22 @@ export default function PipelineBuilder() {
 
       queryClient.invalidateQueries({ queryKey: ["pipelines"] });
       queryClient.invalidateQueries({ queryKey: ["pipeline", id] });
+
+      // Run validation and show results before navigating in edit mode
+      if (isEdit && existing) {
+        try {
+          const vr = await api.validatePipeline(existing.id);
+          setValidationResult(vr);
+          if (!vr.valid || vr.warnings.length > 0) {
+            // Stay on page briefly so user sees the dots
+            setSaving(false);
+            return;
+          }
+        } catch {
+          // Ignore validation errors — still navigate
+        }
+      }
+
       navigate(`/pipelines/${pipeline.id}`);
     } catch (err) {
       setError(String(err));
@@ -604,6 +674,7 @@ export default function PipelineBuilder() {
             <StepList
               steps={steps}
               selectedIndex={selectedStep}
+              validationResult={validationResult}
               onSelect={setSelectedStep}
               onAdd={addStep}
               onRemove={removeStep}

@@ -138,11 +138,49 @@ Add a step to a pipeline.
 
 #### `PATCH /api/pipelines/:pipelineId/steps/:stepId`
 
-Update a step.
+Update a step. A version snapshot of the pipeline is saved before the update is applied (see [Version History](./version-history.md)).
 
 #### `DELETE /api/pipelines/:pipelineId/steps/:stepId`
 
-Delete a step.
+Delete a step. A version snapshot is saved before deletion.
+
+#### `POST /api/pipelines/:id/validate`
+
+Run a static validation pass on the pipeline. Returns a `ValidationResult` without executing anything (see [Validation](./validation.md)).
+
+```json
+{
+  "valid": false,
+  "errors": [
+    {
+      "type": "missing_skill",
+      "stepIndex": 0,
+      "field": "skillName",
+      "message": "Skill 'local/researcher' not found on disk",
+      "severity": "error"
+    }
+  ],
+  "warnings": []
+}
+```
+
+#### `GET /api/pipelines/:id/versions`
+
+List the most recent 50 version snapshots for a pipeline, in descending order.
+
+```json
+[
+  { "id": "uuid", "versionNumber": 3, "changeSummary": "Before patch", "createdAt": "..." }
+]
+```
+
+#### `GET /api/pipelines/:id/versions/:version`
+
+Get a single snapshot. The `snapshot` field contains the full serialized `ApiPipeline` (including steps) at that point in time.
+
+#### `POST /api/pipelines/:id/versions/:version/restore`
+
+Restore the pipeline to a previous version. The current state is snapshotted first. Returns the restored `ApiPipeline`.
 
 ---
 
@@ -175,9 +213,12 @@ Trigger a pipeline run.
 ```json
 {
   "pipelineId": "uuid",
-  "inputParams": { "topic": "AI replacing middle managers" }
+  "inputParams": { "topic": "AI replacing middle managers" },
+  "executionMode": "step_by_step"
 }
 ```
+
+- `executionMode`: omit for normal execution. Set to `"step_by_step"` to pause the run after each step completes (see [Step-by-Step Execution](#step-by-step-execution)).
 
 Returns the created run object.
 
@@ -188,6 +229,14 @@ Get a single run.
 #### `POST /api/runs/:id/cancel`
 
 Cancel a queued or running run.
+
+#### `POST /api/runs/:id/resume`
+
+Resume a run that is paused in step-by-step mode. Sets the run status back to `"queued"` so the engine picks it up on the next tick and executes the next step.
+
+#### `POST /api/runs/:id/steps/:stepRunId/rerun`
+
+Reset a completed step back to `"queued"` and re-queue the pipeline run for re-execution of that step. Useful for retrying a step with different prompt edits without re-running the whole pipeline.
 
 #### `GET /api/runs/:id/steps`
 
@@ -217,6 +266,78 @@ Get all recorded events for a step run (for replay).
   { "seq": 0, "eventType": "text_delta", "message": "Searching...", "payload": null },
   { "seq": 1, "eventType": "tool_call_start", "message": "web_search", "payload": { "input": { "query": "..." } } }
 ]
+```
+
+---
+
+### MCP Servers
+
+MCP servers provide external tools that pipeline skills can call during execution. See [MCP Servers](./mcp-servers.md) for the full guide.
+
+#### `GET /api/mcp-servers`
+
+List all registered MCP servers.
+
+#### `POST /api/mcp-servers`
+
+Register a new MCP server.
+
+```json
+{
+  "name": "brave-search",
+  "transport": "stdio",
+  "command": "npx",
+  "args": ["-y", "@anthropic/brave-search-mcp"],
+  "env": { "BRAVE_API_KEY": "key" },
+  "enabled": true
+}
+```
+
+#### `PATCH /api/mcp-servers/:id`
+
+Update a server (e.g. toggle `enabled`, change `url`).
+
+#### `DELETE /api/mcp-servers/:id`
+
+Remove a server.
+
+#### `POST /api/mcp-servers/:id/test`
+
+Test the connection. Connects, lists tools, disconnects.
+
+```json
+{ "connected": true, "tools": [{ "serverName": "brave-search", "name": "search", ... }] }
+```
+
+#### `GET /api/mcp-servers/:id/tools`
+
+Live tool list for a server.
+
+---
+
+### Packages
+
+#### `POST /api/packages/preview`
+
+Preview a pipeline as a package without writing any files. Returns the pipeline YAML, bundled skill contents, and a validation result — useful for inspecting what an export would produce.
+
+```json
+{ "pipelineId": "uuid" }
+```
+
+```json
+{
+  "pipelineYaml": "name: My Pipeline\n...",
+  "skills": [
+    {
+      "name": "researcher",
+      "qualifiedName": "local/researcher",
+      "skillMd": "---\nname: researcher\n---\n...",
+      "scripts": [{ "filename": "web_search.js", "content": "..." }]
+    }
+  ],
+  "validation": { "valid": true, "errors": [], "warnings": [] }
+}
 ```
 
 ---
@@ -433,3 +554,39 @@ Emitted when the trigger manager fires a cron trigger.
   pipelineRunId: string
 }
 ```
+
+### `data_changed`
+
+Emitted when the agent or any server-side process modifies a pipeline, step, or skill. The UI uses this to invalidate its React Query cache and re-fetch.
+
+```ts
+{
+  type: "data_changed"
+  entity: "pipeline" | "step" | "skill"
+  id?: string
+}
+```
+
+---
+
+## Step-by-Step Execution
+
+When a run is triggered with `executionMode: "step_by_step"`, the engine pauses the run after each step completes (unless it is the last step). The run status becomes `"paused"`.
+
+Typical flow:
+
+```
+POST /api/runs { executionMode: "step_by_step" }   → run created (queued)
+  Engine runs step 0
+  → run status: "paused" (broadcast via run_status)
+
+POST /api/runs/:id/resume                           → run re-queued
+  Engine runs step 1
+  → run status: "paused"
+
+POST /api/runs/:id/resume                           → run re-queued
+  Engine runs step 2 (last)
+  → run status: "completed"
+```
+
+The **Run Detail** UI shows a "Continue to Next Step" banner when a run is paused. Completed steps show a re-run button (↺) to re-execute individual steps.

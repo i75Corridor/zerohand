@@ -55,6 +55,10 @@ export interface ApiStepRun {
 
 export interface ApiSkill {
   name: string;
+  /** Namespace this skill belongs to (e.g. "local", "daily-absurdist") */
+  namespace: string;
+  /** Fully-qualified name: "<namespace>/<name>" */
+  qualifiedName?: string;
   version: string;
   description: string;
   allowedTools: string[];
@@ -169,6 +173,7 @@ export interface ApiInstalledPackage {
   pipelineName: string | null;
   skills: string[];
   updateAvailable: boolean;
+  repoNotFound: boolean;
   installedRef: string | null;
   latestRef: string | null;
   metadata: Record<string, unknown> | null;
@@ -208,6 +213,61 @@ export interface ApiCostBreakdown {
     topSkill: string | null;
     topPipeline: string | null;
   };
+}
+
+export interface ApiPipelineVersion {
+  id: string;
+  pipelineId: string;
+  versionNumber: number;
+  snapshot?: ApiPipeline;
+  changeSummary: string | null;
+  createdAt: string;
+}
+
+export interface ApiValidationError {
+  type: string;
+  stepIndex?: number;
+  field: string;
+  message: string;
+  severity: "error" | "warning";
+}
+
+export interface ApiValidationResult {
+  valid: boolean;
+  errors: ApiValidationError[];
+  warnings: ApiValidationError[];
+}
+
+export interface ApiPackagePreview {
+  pipelineYaml: string;
+  skills: Array<{
+    name: string;
+    qualifiedName: string;
+    skillMd: string;
+    scripts: Array<{ filename: string; content: string }>;
+  }>;
+  validation: ApiValidationResult;
+}
+
+export interface ApiMcpServer {
+  id: string;
+  name: string;
+  transport: "stdio" | "sse" | "streamable-http";
+  command?: string;
+  args?: string[];
+  url?: string;
+  headers?: Record<string, string>;
+  env?: Record<string, string>;
+  enabled: boolean;
+  source: "manual" | "package";
+  sourcePackageId?: string;
+}
+
+export interface ApiMcpTool {
+  serverName: string;
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
 }
 
 export interface ApiModelEntry {

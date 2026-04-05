@@ -13,6 +13,35 @@ export function validateSkillName(name: string): string | null {
   return null;
 }
 
+/**
+ * Validate a qualified skill name "namespace/skill-name".
+ * Each segment must be a valid skill name.
+ * A bare name without "/" is also accepted and treated as "local/<name>".
+ */
+export function validateQualifiedSkillName(qualifiedName: string): string | null {
+  if (!qualifiedName) return "skill name is required";
+  const parts = qualifiedName.split("/");
+  if (parts.length === 1) {
+    return validateSkillName(parts[0]);
+  }
+  if (parts.length === 2) {
+    const nsErr = validateSkillName(parts[0]);
+    if (nsErr) return `invalid namespace: ${nsErr}`;
+    const nameErr = validateSkillName(parts[1]);
+    if (nameErr) return `invalid skill name: ${nameErr}`;
+    return null;
+  }
+  return "skill name must be in 'namespace/skill-name' format (e.g. 'local/my-skill')";
+}
+
+/**
+ * Normalize a skill name: if it doesn't contain "/", prefix with "local/".
+ */
+export function normalizeSkillName(skillName: string): string {
+  if (skillName.includes("/")) return skillName;
+  return `local/${skillName}`;
+}
+
 export function validateDescription(description: string): string | null {
   if (!description || description.trim() === "") return "description is required";
   if (description.length > 1024) return `description exceeds 1024 characters (got ${description.length})`;
@@ -21,8 +50,15 @@ export function validateDescription(description: string): string | null {
 
 // ── Path guard ─────────────────────────────────────────────────────────────────
 
+/**
+ * Returns the full filesystem path for a skill, or null if the name is unsafe.
+ * Accepts both qualified "namespace/skill-name" and bare "skill-name" (→ local/).
+ * The "/" in the qualified name is handled correctly by path.join().
+ */
 export function safeSkillDir(skillName: string, skillsDir: string): string | null {
-  const skillDir = join(skillsDir, skillName);
+  const normalized = normalizeSkillName(skillName);
+  // path.join handles "local/researcher" as a sub-path correctly
+  const skillDir = join(skillsDir, normalized);
   const resolvedBase = resolve(skillsDir);
   const resolvedTarget = resolve(skillDir);
   if (!resolvedTarget.startsWith(resolvedBase + sep)) return null;
@@ -40,6 +76,8 @@ export interface SkillMdParams {
   network?: boolean;
   /** Secret keys to inject as env vars (zerohand extension) */
   secrets?: string[];
+  /** Names of registered MCP servers whose tools this skill can access at runtime */
+  mcpServers?: string[];
   /** SPDX license identifier or reference to bundled license file */
   license?: string;
   /** Environment requirements per spec — auto-includes network note when network: true */
@@ -84,6 +122,10 @@ export function buildSkillMd(params: SkillMdParams): string {
   if (params.secrets && params.secrets.length > 0) {
     lines.push(`secrets:`);
     for (const s of params.secrets) lines.push(`  - ${s}`);
+  }
+  if (params.mcpServers && params.mcpServers.length > 0) {
+    lines.push(`mcpServers:`);
+    for (const s of params.mcpServers) lines.push(`  - ${s}`);
   }
 
   // metadata block — version lives here per spec (no top-level version field)

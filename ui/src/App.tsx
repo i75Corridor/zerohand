@@ -27,7 +27,7 @@ export default function App() {
         <Route path="/canvas" element={<Canvas />} />
         <Route path="/packages" element={<Packages />} />
         <Route path="/skills" element={<Skills />} />
-        <Route path="/skills/:name" element={<SkillDetail />} />
+        <Route path="/skills/:namespace/:name" element={<SkillDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/runs/:id" element={<RunDetail />} />
         <Route path="/costs" element={<Costs />} />

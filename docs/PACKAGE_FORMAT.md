@@ -144,21 +144,42 @@ steps:
 
 ## Skill Directory Format
 
-Skills live in `SKILLS_DIR` (default: `../skills`). Each skill is a folder:
+Skills live in `SKILLS_DIR` (default: `../skills`) and are organized into namespaces.
+
+### Namespacing
+
+Skills use a two-level `<namespace>/<skill-name>` path:
 
 ```
 skills/
-  researcher/
-    SKILL.md           # frontmatter + system prompt body
-    scripts/
-      web_search.js    # executable tool (read JSON from stdin, write result to stdout)
-  writer/
-    SKILL.md
-  imagen/
-    SKILL.md
-  publisher/
-    SKILL.md
+  local/                      # skills created in-app or via the agent
+    researcher/
+      SKILL.md
+      scripts/
+        web_search.js
+    writer/
+      SKILL.md
+  daily-absurdist/            # namespace = package slug on import
+    researcher/
+      SKILL.md
+    writer/
+      SKILL.md
 ```
+
+| Namespace | Source |
+|-----------|--------|
+| `local` | Skills created via the in-app builder or the global agent |
+| `<package-slug>` | Skills imported from a package (namespace = slug derived from package name) |
+
+When referencing a skill in `pipeline.yaml` or via the API, use the fully qualified name:
+
+```yaml
+steps:
+  - name: Research
+    skill: local/researcher    # or daily-absurdist/researcher
+```
+
+**Export behavior:** When exporting a pipeline as a package, the namespace prefix is stripped from skill paths (the package itself is the namespace context on import).
 
 ### SKILL.md format
 
@@ -169,6 +190,9 @@ version: "1.0.0"
 description: "Research Director"
 type: pi                        # pi | imagen | publish
 model: google/gemini-2.5-flash  # optional model override
+mcpServers:                     # optional: MCP servers whose tools are available to this skill
+  - brave-search
+  - filesystem
 metadata:                       # optional, used by imagen type
   aspectRatio: "16:9"
   personGeneration: allow_all
@@ -178,6 +202,8 @@ You are the Research Director. {{context.company}}
 
 [System prompt body — appended to the pipeline system prompt]
 ```
+
+The `mcpServers` field references server names registered in the global MCP server registry (see [MCP Servers](./mcp-servers.md)). The execution engine connects to these servers before running the step and makes their tools available to the LLM.
 
 ### Script tools
 

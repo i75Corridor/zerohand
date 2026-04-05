@@ -7,45 +7,61 @@ Zerohand is a monorepo agentic workflow orchestrator. Pipelines are defined as Y
 The control plane adds scheduling (cron triggers), human approval gates, and budget enforcement on top of the core execution loop.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                         Web UI (React)                        │
-│   Dashboard  │  Pipelines  │  Approvals  │  Run Detail       │
-└──────────────────────┬───────────────────────────────────────┘
-                       │ REST + WebSocket (port 3009)
-┌──────────────────────┴───────────────────────────────────────┐
-│                       Server (Express)                        │
-│                                                               │
-│  ┌─────────────────────┐   ┌──────────────────────────────┐  │
-│  │   Execution Engine  │   │         REST API             │  │
-│  │  polls every 2s     │   │  /api/workers                │  │
-│  │  runs steps in seq  │   │  /api/pipelines              │  │
-│  │  budget check       │   │  /api/runs                   │  │
-│  │  approval gates     │   │  /api/triggers               │  │
-│  │  session persist    │   │  /api/approvals              │  │
-│  └────────┬────────────┘   │  /api/budgets                │  │
-│           │                └──────────────────────────────┘  │
-│  ┌────────┴────────────┐   ┌──────────────────────────────┐  │
-│  │  Trigger Manager    │   │       WebSocket Manager      │  │
-│  │  polls every 30s    │   │  broadcasts to all clients   │  │
-│  │  fires cron runs    │   └──────────────────────────────┘  │
-│  └─────────────────────┘                                      │
-└───────────────────────┬──────────────────────────────────────┘
-                        │
-   ┌────────────────────┴─────────────────────────────┐
-   │                                                   │
-┌──┴──────────────┐   ┌─────────────────────────────┐ │
-│   PostgreSQL    │   │   Pi.dev SDK                │ │
-│   (embedded     │   │   createAgentSession()      │ │
-│    or external) │   │   loadSkillsFromDir()       │ │
-└─────────────────┘   │   ToolDefinition (tools)    │ │
-                      └─────────────────────────────┘ │
-                                                       │
-              ┌────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│                           Web UI (React)                            │
+│  Dashboard │ Pipelines │ Builder │ Approvals │ Run Detail │ Settings│
+└──────────────────────────┬─────────────────────────────────────────┘
+                           │ REST + WebSocket (port 3009)
+┌──────────────────────────┴─────────────────────────────────────────┐
+│                         Server (Express)                            │
+│                                                                     │
+│  ┌──────────────────────────┐   ┌──────────────────────────────┐   │
+│  │     Execution Engine     │   │          REST API            │   │
+│  │  polls every 2s          │   │  /api/pipelines (+validate,  │   │
+│  │  runs steps in sequence  │   │    versions, restore)        │   │
+│  │  budget check            │   │  /api/runs (+resume, rerun)  │   │
+│  │  approval gates          │   │  /api/mcp-servers            │   │
+│  │  session persistence     │   │  /api/packages (+preview)    │   │
+│  │  MCP client pool         │   │  /api/triggers               │   │
+│  │  step-by-step mode       │   │  /api/approvals              │   │
+│  └──────────┬───────────────┘   │  /api/budgets                │   │
+│             │                   └──────────────────────────────┘   │
+│  ┌──────────┴──────────────┐   ┌──────────────────────────────┐   │
+│  │    Trigger Manager      │   │      WebSocket Manager       │   │
+│  │  polls every 30s        │   │  broadcasts to all clients   │   │
+│  │  fires cron runs        │   └──────────────────────────────┘   │
+│  └─────────────────────────┘                                       │
+│                                                                     │
+│  ┌─────────────────────────┐   ┌──────────────────────────────┐   │
+│  │    Global Agent         │   │    Validation Engine         │   │
+│  │  pipeline authoring     │   │  validate_pipeline tool +    │   │
+│  │  skill/script CRUD      │   │  POST /api/pipelines/:id/    │   │
+│  │  MCP server queries     │   │  validate                    │   │
+│  └─────────────────────────┘   └──────────────────────────────┘   │
+└───────────────────────────┬────────────────────────────────────────┘
+                            │
+   ┌────────────────────────┴────────────────────────────┐
+   │                                                      │
+┌──┴──────────────┐   ┌──────────────────────────────┐   │
+│   PostgreSQL    │   │   Pi.dev SDK                 │   │
+│   (embedded     │   │   createAgentSession()        │   │
+│    or external) │   │   loadSkillsFromDir()         │   │
+└─────────────────┘   │   ToolDefinition (tools)      │   │
+                      └──────────────────────────────┘   │
+                                                          │
+              ┌───────────────────────────────────────────┘
               │
-   ┌──────────┴──────────────────────────────────────┐
-   │              File System                         │
-   │   pipelines/   skills/   output/   sessions/    │
-   └─────────────────────────────────────────────────┘
+   ┌──────────┴───────────────────────────────────────────┐
+   │                    File System                        │
+   │   pipelines/   skills/<ns>/<name>/   output/         │
+   │   sessions/    packages/                              │
+   └───────────────────────────────────────────────────────┘
+
+              ┌───────────────────────────────────────────┐
+              │         External MCP Servers              │
+              │   (stdio / SSE / Streamable HTTP)         │
+              │   connected per-run via McpClientPool     │
+              └───────────────────────────────────────────┘
 ```
 
 ---
@@ -65,9 +81,10 @@ Drizzle ORM schema and migration client. Exports:
 
 TypeScript interfaces shared between server and UI:
 
-- API response types (`ApiPipeline`, `ApiPipelineRun`, `ApiStepRun`, `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, etc.)
+- API response types (`ApiPipeline`, `ApiPipelineRun`, `ApiStepRun`, `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, `ApiMcpServer`, `ApiMcpTool`, `ApiValidationResult`, `ApiPipelineVersion`, `ApiPackagePreview`, etc.)
 - WebSocket message types (`WsMessage`, `WsStepEvent`, etc.)
 - Status enums (`PipelineRunStatus`, `StepRunStatus`)
+- YAML serialization: `pipelineToYaml()` (converts `ApiPipeline` → YAML string for export)
 
 ### `server`
 
@@ -77,7 +94,15 @@ Express application. Responsibilities:
 - Applies migrations and seeds pipeline packages on startup
 - Starts the execution engine (polls every 2s for queued runs)
 - Starts the trigger manager (polls every 30s for due cron triggers)
+- Starts the global agent (LLM with pipeline-authoring tools)
 - Serves REST API and WebSocket
+
+Key services:
+- `execution-engine.ts` — run lifecycle, MCP pool, step-by-step mode
+- `mcp-client.ts` — `McpClientPool` for stdio/SSE/HTTP connections
+- `mcp-tool-bridge.ts` — converts MCP tools to pi `ToolDefinition` objects
+- `tools/validate-pipeline.ts` — static validation engine (used by API + agent)
+- `global-agent.ts` — global LLM agent with pipeline/skill/run authoring tools
 
 ### `ui`
 
@@ -85,8 +110,11 @@ React + Vite + TailwindCSS single-page app. Talks to the server via REST (React 
 
 - **Dashboard** — recent runs, overall status
 - **Pipelines** — list pipelines, trigger manual runs, manage cron triggers
+- **PipelineDetail** — DAG view, validation panel, version history, export/preview/publish
+- **PipelineBuilder** — drag-and-drop step editor with inline validation dots and token highlighting
 - **Approvals** — pending approval queue with live badge in sidebar nav
-- **Run Detail** — step-by-step progress with real-time event streaming
+- **Run Detail** — step-by-step progress with real-time streaming, step-by-step mode controls, re-run buttons
+- **Settings** — MCP server registry management (add, test, enable/disable)
 
 ---
 
@@ -204,3 +232,13 @@ Steps reference a worker DB record. Workers have their own model, system prompt,
 **WebSocket broadcast to all clients** — No per-connection subscriptions. All connected clients receive all events; the UI filters by `pipelineRunId`.
 
 **Cost recording after every pi step** — `cost_events` are inserted with real token counts from the pi session's usage object. Budget checks query this table before each step.
+
+**Skill namespacing** — Skills are stored in `SKILLS_DIR/<namespace>/<skill-name>/`. The `local` namespace is for in-app skills; imported packages use the package slug as namespace. This prevents naming collisions across packages.
+
+**MCP server pool per run** — A `McpClientPool` is created at the start of each pipeline run and torn down (success or failure) in the `finally` block. Connections are established lazily (only for skills that declare them in `mcpServers` frontmatter) and reused across steps.
+
+**Auto-snapshot before destructive edits** — Any `PATCH` or `DELETE` on a pipeline or its steps saves a full JSON snapshot to `pipeline_versions` before applying the change. This gives every pipeline a browsable, restorable history with no extra user action.
+
+**Static validation separate from execution** — The `validate_pipeline` logic is a pure function with no LLM calls. It can be called from the REST API, the agent tool, or the PipelineBuilder after save — all sharing the same implementation.
+
+**Package preview without side effects** — `POST /api/packages/preview` serializes the pipeline to YAML and reads skill files from disk but writes nothing. This lets the UI show exactly what an export would produce before committing.

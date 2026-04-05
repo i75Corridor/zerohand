@@ -21,6 +21,18 @@ import { makeUpdateSkill } from "./update-skill.js";
 import { makeCreateSkillScript } from "./create-skill-script.js";
 import { makeUpdateSkillScript } from "./update-skill-script.js";
 import { makeDeleteSkillScript } from "./delete-skill-script.js";
+import { makeValidatePipeline } from "./validate-pipeline.js";
+import { makeGetPipelineYaml } from "./get-pipeline-yaml.js";
+import { makeExportPackage } from "./export-package.js";
+import { makeListMcpServers } from "./list-mcp-servers.js";
+import { makeListMcpServerTools } from "./list-mcp-server-tools.js";
+import { makeRegisterMcpServer } from "./register-mcp-server.js";
+import { makeUpdateMcpServer } from "./update-mcp-server.js";
+import { makeDeleteMcpServer } from "./delete-mcp-server.js";
+import { makeCloneSkill } from "./clone-skill.js";
+import { makeDeleteSkill } from "./delete-skill.js";
+import { makeGetStepRunOutput } from "./get-step-run-output.js";
+import { makeTestStep } from "./test-step.js";
 
 export type { AgentToolContext } from "./context.js";
 
@@ -47,5 +59,17 @@ export function makeAllTools(ctx: AgentToolContext): ToolDefinition[] {
     makeCreateSkillScript(ctx),
     makeUpdateSkillScript(ctx),
     makeDeleteSkillScript(ctx),
+    makeValidatePipeline(ctx),
+    makeGetPipelineYaml(ctx),
+    makeExportPackage(ctx),
+    makeListMcpServers(ctx),
+    makeListMcpServerTools(ctx),
+    makeRegisterMcpServer(ctx),
+    makeUpdateMcpServer(ctx),
+    makeDeleteMcpServer(ctx),
+    makeCloneSkill(ctx),
+    makeDeleteSkill(ctx),
+    makeGetStepRunOutput(ctx),
+    makeTestStep(ctx),
   ];
 }

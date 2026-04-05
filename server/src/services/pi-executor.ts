@@ -70,6 +70,7 @@ export async function runSkillStep(
   signal?: AbortSignal,
   onSessionCreated?: (session: AgentSession) => void,
   scriptExecOpts?: { networkEnabled?: boolean; secretEnv?: Record<string, string> },
+  mcpTools?: ToolDefinition[],
 ): Promise<PiRunResult> {
   const provider = skill.modelProvider ?? modelProvider;
   const name = skill.modelName ?? modelName;
@@ -85,7 +86,8 @@ export async function runSkillStep(
   const modelRegistry = ModelRegistry.inMemory(authStorage);
   const resourceLoader = makeResourceLoader(fullSystemPrompt, []);
 
-  const customTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths, scriptExecOpts ?? {});
+  const scriptTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths, scriptExecOpts ?? {});
+  const customTools: ToolDefinition[] = [...scriptTools, ...(mcpTools ?? [])];
 
   const sessionManager = sessionDir
     ? SessionManager.create(sessionDir)
@@ -128,8 +130,26 @@ export async function runSkillStep(
     signal?.removeEventListener("abort", abortHandler);
   }
 
+  // Check if the last assistant message ended with an error (e.g. UNEXPECTED_TOOL_CALL,
+  // MALFORMED_FUNCTION_CALL, SAFETY) — these map to stopReason:"error" in pi-ai/google.js
+  const lastAssistant = [...session.messages].reverse().find((m: any) => m.role === "assistant") as any | undefined;
+  if (lastAssistant?.stopReason === "error") {
+    const errMsg = lastAssistant.errorMessage as string | undefined;
+    throw new Error(errMsg ?? "Model returned an error stop reason (UNEXPECTED_TOOL_CALL / SAFETY / MALFORMED_FUNCTION_CALL). Check that all tools referenced in the skill system prompt are registered and available.");
+  }
+
   const output = getLastAssistantText(session.messages);
   const usage = extractUsage(session.messages);
+
+  if (!output) {
+    const msgSummary = session.messages.map((m: any) => ({
+      role: m.role,
+      stopReason: m.stopReason,
+      types: (m.content as any[])?.map((c: any) => c.type),
+    }));
+    console.warn("[pi-executor] LLM produced no text output. Messages:", JSON.stringify(msgSummary, null, 2));
+  }
+
   return { output, usage };
 }
 

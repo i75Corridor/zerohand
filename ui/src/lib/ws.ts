@@ -12,6 +12,7 @@ export function useWebSocket(onMessage: WsHandler) {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const url = `${protocol}//${window.location.host}/ws`;
     const socket = new WebSocket(url);
+    let cleanedUp = false;
 
     socket.onmessage = (event) => {
       try {
@@ -22,10 +23,16 @@ export function useWebSocket(onMessage: WsHandler) {
       }
     };
 
-    socket.onerror = (err) => console.error("[WS] Error:", err);
+    socket.onerror = (err) => {
+      if (!cleanedUp) console.error("[WS] Error:", err);
+    };
 
     ws.current = socket;
     return () => {
+      cleanedUp = true;
+      // Suppress the "closed before connection established" browser warning by
+      // replacing onerror with a no-op before closing a still-connecting socket.
+      socket.onerror = () => {};
       socket.close();
     };
   }, []);

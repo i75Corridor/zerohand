@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { logsDir } from "../services/paths.js";
 
@@ -20,10 +20,13 @@ export function createLogsRouter(): Router {
       return;
     }
 
-    res.setHeader("Content-Type", "application/x-ndjson");
-    res.sendFile(logPath, { root: "/" }, (err) => {
-      if (err && !res.headersSent) res.status(500).json({ error: String(err) });
-    });
+    try {
+      const content = readFileSync(logPath, "utf-8");
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.send(content);
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
   });
 
   return router;

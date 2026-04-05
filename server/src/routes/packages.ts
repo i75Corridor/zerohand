@@ -44,15 +44,20 @@ async function buildPackageDir(
   // pipeline.yaml
   writeFileSync(join(outDir, "pipeline.yaml"), pipelineToYaml(pipeline), "utf-8");
 
-  // skills
+  // skills — strip namespace prefix in the exported directory structure
+  // e.g. "daily-absurdist/researcher" exports as "skills/researcher/"
   const skillNames = [...new Set(pipeline.steps.map((s) => s.skillName).filter((n): n is string => !!n))];
-  for (const skillName of skillNames) {
-    const skillDir = join(skillsDir, skillName);
+  for (const qualifiedSkillName of skillNames) {
+    const skillDir = join(skillsDir, qualifiedSkillName);
     if (!existsSync(skillDir)) continue;
     const skillMdPath = join(skillDir, "SKILL.md");
     if (!existsSync(skillMdPath)) continue;
 
-    const outSkillDir = join(outDir, "skills", skillName);
+    // Strip namespace: "local/researcher" → "researcher", "daily-absurdist/writer" → "writer"
+    const slashIdx = qualifiedSkillName.indexOf("/");
+    const bareSkillName = slashIdx > -1 ? qualifiedSkillName.slice(slashIdx + 1) : qualifiedSkillName;
+
+    const outSkillDir = join(outDir, "skills", bareSkillName);
     const outScriptsDir = join(outSkillDir, "scripts");
     mkdirSync(outScriptsDir, { recursive: true });
     writeFileSync(join(outSkillDir, "SKILL.md"), readFileSync(skillMdPath, "utf-8"), "utf-8");
@@ -125,6 +130,7 @@ export function createPackagesRouter(db: Db): Router {
             pipelineName,
             skills: (pkg.skills as string[]) ?? [],
             updateAvailable: pkg.updateAvailable,
+            repoNotFound: pkg.repoNotFound,
             installedRef: pkg.installedRef,
             latestRef: pkg.latestRef,
             metadata: pkg.metadata,
@@ -334,6 +340,60 @@ export function createPackagesRouter(db: Db): Router {
   });
 
   // POST /api/packages/export — bundle pipeline + skills as tar.gz download
+  // POST /api/packages/preview — return package contents as JSON without writing to disk
+  router.post("/packages/preview", async (req, res, next) => {
+    try {
+      const { pipelineId } = req.body as { pipelineId?: string };
+      if (!pipelineId || typeof pipelineId !== "string") {
+        res.status(400).json({ error: "pipelineId is required" });
+        return;
+      }
+
+      const pipeline = await loadPipelineWithSteps(db, pipelineId);
+      if (!pipeline) {
+        res.status(404).json({ error: "Pipeline not found" });
+        return;
+      }
+
+      const skillsDir = getSkillsDir();
+      const pipelineYaml = pipelineToYaml(pipeline);
+      const skillNames = [...new Set(pipeline.steps.map((s) => s.skillName).filter((n): n is string => !!n))];
+
+      const skills = skillNames.map((qualifiedSkillName) => {
+        const skillDir = join(skillsDir, qualifiedSkillName);
+        if (!existsSync(skillDir)) return null;
+        const skillMdPath = join(skillDir, "SKILL.md");
+        if (!existsSync(skillMdPath)) return null;
+
+        const slashIdx = qualifiedSkillName.indexOf("/");
+        const bareName = slashIdx > -1 ? qualifiedSkillName.slice(slashIdx + 1) : qualifiedSkillName;
+
+        const scripts: Array<{ filename: string; content: string }> = [];
+        const scriptsDir = join(skillDir, "scripts");
+        if (existsSync(scriptsDir)) {
+          for (const f of readdirSync(scriptsDir).filter((fn) => /\.(js|cjs|ts|py|sh)$/.test(fn))) {
+            scripts.push({ filename: f, content: readFileSync(join(scriptsDir, f), "utf-8") });
+          }
+        }
+
+        return {
+          name: bareName,
+          qualifiedName: qualifiedSkillName,
+          skillMd: readFileSync(skillMdPath, "utf-8"),
+          scripts,
+        };
+      }).filter(Boolean);
+
+      // Run validation inline
+      const { validatePipeline } = await import("../services/tools/validate-pipeline.js");
+      const validation = await validatePipeline(pipelineId, { db, skillsDir } as any);
+
+      res.json({ pipelineYaml, skills, validation });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.post("/packages/export", async (req, res, next) => {
     let tempDir: string | null = null;
     try {

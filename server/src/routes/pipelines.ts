@@ -1,12 +1,13 @@
 import { writeFileSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { Router } from "express";
-import { eq, asc, ne, inArray } from "drizzle-orm";
+import { eq, asc, ne, inArray, desc, max, sql } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { pipelines, pipelineSteps, installedPackages } from "@zerohand/db";
+import { pipelines, pipelineSteps, installedPackages, pipelineVersions } from "@zerohand/db";
 import type { ApiPipeline, ApiPipelineStep } from "@zerohand/shared";
 import { pipelineToYaml } from "@zerohand/shared";
 import { skillsDir as getSkillsDir } from "../services/paths.js";
+import { validatePipeline } from "../services/tools/validate-pipeline.js";
 
 export function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineStep {
   return {
@@ -45,6 +46,25 @@ export async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise
   };
 }
 
+
+/** Save a version snapshot before a destructive edit. Idempotent — safe to call on every patch. */
+async function snapshotPipeline(db: Db, pipelineId: string, summary?: string): Promise<void> {
+  const pipeline = await loadPipelineWithSteps(db, pipelineId);
+  if (!pipeline) return;
+
+  const [row] = await db
+    .select({ maxVer: max(pipelineVersions.versionNumber) })
+    .from(pipelineVersions)
+    .where(eq(pipelineVersions.pipelineId, pipelineId));
+  const nextVersion = (row?.maxVer ?? 0) + 1;
+
+  await db.insert(pipelineVersions).values({
+    pipelineId,
+    versionNumber: nextVersion,
+    snapshot: pipeline as unknown as Record<string, unknown>,
+    changeSummary: summary ?? null,
+  });
+}
 
 async function syncLocalPackageToDisk(db: Db, pipelineId: string): Promise<void> {
   const pkgs = await db
@@ -125,6 +145,7 @@ export function createPipelinesRouter(db: Db): Router {
 
   router.patch("/pipelines/:id", async (req, res, next) => {
     try {
+      await snapshotPipeline(db, req.params.id, "Before patch");
       const body = req.body as Partial<typeof pipelines.$inferInsert>;
       const [row] = await db
         .update(pipelines)
@@ -220,6 +241,7 @@ export function createPipelinesRouter(db: Db): Router {
 
   router.patch("/pipelines/:pipelineId/steps/:stepId", async (req, res, next) => {
     try {
+      await snapshotPipeline(db, req.params.pipelineId, "Before step patch");
       const body = req.body as Partial<typeof pipelineSteps.$inferInsert>;
       const [row] = await db
         .update(pipelineSteps)
@@ -236,6 +258,7 @@ export function createPipelinesRouter(db: Db): Router {
 
   router.delete("/pipelines/:pipelineId/steps/:stepId", async (req, res, next) => {
     try {
+      await snapshotPipeline(db, req.params.pipelineId, "Before step delete");
       const deleted = await db
         .delete(pipelineSteps)
         .where(eq(pipelineSteps.id, req.params.stepId))
@@ -243,6 +266,101 @@ export function createPipelinesRouter(db: Db): Router {
       if (deleted.length === 0) return res.status(404).json({ error: "Step not found" });
       await syncLocalPackageToDisk(db, req.params.pipelineId);
       res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ── Validation ────────────────────────────────────────────────────────────────
+
+  router.post("/pipelines/:id/validate", async (req, res, next) => {
+    try {
+      const ctx = { db, skillsDir: getSkillsDir() } as any;
+      const result = await validatePipeline(req.params.id, ctx);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ── Version history ───────────────────────────────────────────────────────────
+
+  router.get("/pipelines/:id/versions", async (req, res, next) => {
+    try {
+      const versions = await db
+        .select({
+          id: pipelineVersions.id,
+          versionNumber: pipelineVersions.versionNumber,
+          changeSummary: pipelineVersions.changeSummary,
+          createdAt: pipelineVersions.createdAt,
+        })
+        .from(pipelineVersions)
+        .where(eq(pipelineVersions.pipelineId, req.params.id))
+        .orderBy(desc(pipelineVersions.versionNumber))
+        .limit(50);
+      res.json(versions.map((v) => ({ ...v, createdAt: v.createdAt.toISOString() })));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get("/pipelines/:id/versions/:version", async (req, res, next) => {
+    try {
+      const version = await db.query.pipelineVersions.findFirst({
+        where: (t, { and, eq: _eq }) =>
+          and(_eq(t.pipelineId, req.params.id), _eq(t.versionNumber, parseInt(req.params.version, 10))),
+      });
+      if (!version) return res.status(404).json({ error: "Version not found" });
+      res.json({ ...version, createdAt: version.createdAt.toISOString() });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post("/pipelines/:id/versions/:version/restore", async (req, res, next) => {
+    try {
+      const version = await db.query.pipelineVersions.findFirst({
+        where: (t, { and, eq: _eq }) =>
+          and(_eq(t.pipelineId, req.params.id), _eq(t.versionNumber, parseInt(req.params.version, 10))),
+      });
+      if (!version) return res.status(404).json({ error: "Version not found" });
+
+      const snap = version.snapshot as unknown as ApiPipeline;
+
+      // Snapshot current state before restoring
+      await snapshotPipeline(db, req.params.id, `Before restore to v${req.params.version}`);
+
+      // Restore pipeline fields
+      await db.update(pipelines).set({
+        name: snap.name,
+        description: snap.description,
+        status: snap.status,
+        inputSchema: snap.inputSchema,
+        systemPrompt: snap.systemPrompt,
+        modelProvider: snap.modelProvider,
+        modelName: snap.modelName,
+        updatedAt: new Date(),
+      }).where(eq(pipelines.id, req.params.id));
+
+      // Replace steps
+      await db.delete(pipelineSteps).where(eq(pipelineSteps.pipelineId, req.params.id));
+      if (snap.steps?.length > 0) {
+        await db.insert(pipelineSteps).values(snap.steps.map((s) => ({
+          pipelineId: req.params.id,
+          stepIndex: s.stepIndex,
+          name: s.name,
+          skillName: s.skillName,
+          promptTemplate: s.promptTemplate,
+          timeoutSeconds: s.timeoutSeconds,
+          approvalRequired: s.approvalRequired,
+          retryConfig: s.retryConfig,
+          metadata: s.metadata,
+        })));
+      }
+
+      const result = await loadPipelineWithSteps(db, req.params.id);
+      await syncLocalPackageToDisk(db, req.params.id);
+      res.json(result);
     } catch (err) {
       next(err);
     }

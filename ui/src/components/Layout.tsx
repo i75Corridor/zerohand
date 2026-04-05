@@ -204,17 +204,15 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </main>
 
-        {agentOpen && (
-          <>
-            <div
-              className="w-1 flex-shrink-0 cursor-col-resize hover:bg-sky-500/40 active:bg-sky-500/60 transition-colors"
-              onMouseDown={onDragStart}
-            />
-            <div className="flex-shrink-0" style={{ width: agentWidth }}>
-              <GlobalChatPanel onClose={() => setAgentOpen(false)} />
-            </div>
-          </>
-        )}
+        <div className={agentOpen ? "contents" : "hidden"}>
+          <div
+            className="w-1 flex-shrink-0 cursor-col-resize hover:bg-sky-500/40 active:bg-sky-500/60 transition-colors"
+            onMouseDown={onDragStart}
+          />
+          <div className="flex-shrink-0" style={{ width: agentWidth }}>
+            <GlobalChatPanel onClose={() => setAgentOpen(false)} />
+          </div>
+        </div>
       </div>
     </div>
   );

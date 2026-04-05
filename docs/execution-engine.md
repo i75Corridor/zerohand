@@ -98,6 +98,34 @@ JSON dot-paths work on any depth: `{{steps.1.output.nested.field}}` will parse s
 
 ---
 
+## Step-by-Step Execution Mode
+
+When a run is triggered with `metadata.executionMode === "step_by_step"`, the engine pauses the run after each step completes (except the final step). Pause happens by:
+
+1. Setting the run status to `"paused"`.
+2. Broadcasting `run_status` to connected WebSocket clients.
+3. Disconnecting the MCP pool and returning early from `executeRun()`.
+
+The run is resumed via `POST /api/runs/:id/resume`, which sets the status back to `"queued"`. On the next engine tick, the run is picked up, existing step outputs are restored from the database, completed steps are skipped, and the next pending step executes.
+
+---
+
+## MCP Client Pool
+
+At the start of each `executeRun()`, the engine creates a `McpClientPool` instance. Before executing a skill step:
+
+1. The skill's `SKILL.md` is loaded — the `mcpServers: [...]` frontmatter field is read.
+2. For each named server, the engine queries the `mcp_servers` table to get connection config.
+3. Only enabled servers are connected; disabled servers are silently skipped.
+4. Connected servers' tools are fetched and converted to `ToolDefinition` objects via `mcp-tool-bridge.ts`.
+5. MCP tools are merged with script tools and passed to `runSkillStep()`.
+
+Tool naming: `mcp__<serverName>__<toolName>` (dashes in names replaced with underscores).
+
+The pool is torn down in the `finally` block of `executeRun()` regardless of success or failure. Steps that pause the run (step-by-step mode) also disconnect the pool before returning.
+
+---
+
 ## Worker Dispatch
 
 After resolving the prompt, the engine checks `worker.worker_type`:
@@ -202,9 +230,11 @@ Subsequent steps in the run are not executed.
 
 | Table | Role |
 |-------|------|
-| `pipeline_runs` | One row per triggered run. Holds `status`, `input_params`, `output`, `error`. |
+| `pipeline_runs` | One row per triggered run. Holds `status`, `input_params`, `output`, `error`, `metadata` (includes `executionMode`). |
 | `step_runs` | One row per step per run. Holds per-step `status`, `output`, `usage_json`, `error`. |
 | `step_run_events` | Append-only event log. Enables UI replay of any past run. |
 | `approvals` | One row per approval gate hit. Holds `status`, `payload`, `decision_note`. |
 | `cost_events` | One row per completed pi step. Holds token counts and `cost_cents`. |
 | `worker_sessions` | Maps (workerId, runId) → session directory path for pi session persistence. |
+| `pipeline_versions` | Auto-snapshot before each destructive edit. Stores full `ApiPipeline` JSON. |
+| `mcp_servers` | Registry of external MCP servers with connection config and enabled flag. |
