@@ -18,7 +18,7 @@ export function makeUpdateMcpServer(ctx: AgentToolContext): ToolDefinition {
       headers: Type.Optional(Type.Record(Type.String(), Type.String(), { description: "HTTP: new headers" })),
       env: Type.Optional(Type.Record(Type.String(), Type.String(), { description: "stdio: new env vars" })),
     }),
-    execute: async (_id, params) => {
+    execute: async (_id, params: { name: string; enabled?: boolean; command?: string; args?: string[]; url?: string; headers?: Record<string, string>; env?: Record<string, string> }) => {
       const { name, ...patch } = params;
       const updates: Record<string, unknown> = { updatedAt: new Date() };
       if (patch.enabled !== undefined) updates.enabled = patch.enabled;

@@ -22,7 +22,7 @@ export function makeRegisterMcpServer(ctx: AgentToolContext): ToolDefinition {
       env: Type.Optional(Type.Record(Type.String(), Type.String(), { description: "stdio only: extra environment variables for the server process" })),
       enabled: Type.Optional(Type.Boolean({ description: "Whether to enable immediately (default true)" })),
     }),
-    execute: async (_id, params) => {
+    execute: async (_id, params: { name: string; transport: "stdio" | "sse" | "streamable-http"; command?: string; args?: string[]; url?: string; headers?: Record<string, string>; env?: Record<string, string>; enabled?: boolean }) => {
       const [row] = await ctx.db
         .insert(mcpServers)
         .values({

@@ -12,7 +12,7 @@ export function makeDeleteMcpServer(ctx: AgentToolContext): ToolDefinition {
     parameters: Type.Object({
       name: Type.String({ description: "Name of the server to remove" }),
     }),
-    execute: async (_id, params) => {
+    execute: async (_id, params: { name: string }) => {
       const deleted = await ctx.db
         .delete(mcpServers)
         .where(eq(mcpServers.name, params.name))

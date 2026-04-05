@@ -14,7 +14,7 @@ export function makeListMcpServerTools(ctx: AgentToolContext): ToolDefinition {
     parameters: Type.Object({
       serverName: Type.String({ description: "Name of the registered MCP server (as shown by list_mcp_servers)" }),
     }),
-    execute: async (_id, params) => {
+    execute: async (_id, params: { serverName: string }) => {
       const [server] = await ctx.db
         .select()
         .from(mcpServers)
