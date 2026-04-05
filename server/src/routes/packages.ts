@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { desc, eq } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
+import type { WsManager } from "../ws/index.js";
 import {
   installPackage,
   updatePackage,
@@ -97,7 +98,7 @@ async function buildPackageDir(
   return { name: pipeline.name, slugName };
 }
 
-export function createPackagesRouter(db: Db): Router {
+export function createPackagesRouter(db: Db, ws: WsManager): Router {
   const router = Router();
 
   // GET /api/packages — list installed packages
@@ -162,6 +163,7 @@ export function createPackagesRouter(db: Db): Router {
       }
       const result = await installPackage(db, repoUrl, getPackagesDir(), getSkillsDir(), { force: force === true });
       res.status(201).json(result);
+      ws.broadcast({ type: "data_changed", entity: "package", action: "created", id: repoUrl });
     } catch (err) {
       next(err);
     }
@@ -208,6 +210,7 @@ export function createPackagesRouter(db: Db): Router {
       const { force } = req.body as { force?: boolean };
       const result = await updatePackage(db, req.params.id, getSkillsDir(), { force: force === true });
       res.json(result);
+      ws.broadcast({ type: "data_changed", entity: "package", action: "updated", id: req.params.id });
     } catch (err) {
       next(err);
     }
@@ -245,6 +248,7 @@ export function createPackagesRouter(db: Db): Router {
     try {
       await uninstallPackage(db, req.params.id, getSkillsDir());
       res.status(204).end();
+      ws.broadcast({ type: "data_changed", entity: "package", action: "deleted", id: req.params.id });
     } catch (err) {
       next(err);
     }
@@ -328,6 +332,7 @@ export function createPackagesRouter(db: Db): Router {
         metadata: pkg.metadata,
         installedAt: pkg.installedAt?.toISOString() ?? null,
       });
+      ws.broadcast({ type: "data_changed", entity: "package", action: "created", id: pkg.id });
     } catch (err) {
       next(err);
     }
@@ -450,6 +455,7 @@ export function createPackagesRouter(db: Db): Router {
         repoFullName: pkg.repoFullName,
         metadata: pkg.metadata,
       });
+      ws.broadcast({ type: "data_changed", entity: "package", action: "created", id: pkg.id });
     } catch (err) {
       next(err);
     } finally {

@@ -4,6 +4,7 @@ import type { Db } from "@zerohand/db";
 import { triggers } from "@zerohand/db";
 import type { ApiTrigger } from "@zerohand/shared";
 import { computeNextRun } from "../services/trigger-manager.js";
+import type { WsManager } from "../ws/index.js";
 
 function toApi(row: typeof triggers.$inferSelect): ApiTrigger {
   return {
@@ -22,7 +23,7 @@ function toApi(row: typeof triggers.$inferSelect): ApiTrigger {
   };
 }
 
-export function createTriggersRouter(db: Db): Router {
+export function createTriggersRouter(db: Db, ws: WsManager): Router {
   const router = Router();
 
   router.get("/pipelines/:pipelineId/triggers", async (req, res, next) => {
@@ -61,6 +62,7 @@ export function createTriggersRouter(db: Db): Router {
           })
           .returning();
         res.status(201).json(toApi(row));
+        ws.broadcast({ type: "data_changed", entity: "trigger", action: "created", id: row.id });
         return;
       }
 
@@ -78,6 +80,7 @@ export function createTriggersRouter(db: Db): Router {
         })
         .returning();
       res.status(201).json(toApi(row));
+      ws.broadcast({ type: "data_changed", entity: "trigger", action: "created", id: row.id });
     } catch (err) {
       next(err);
     }
@@ -97,6 +100,7 @@ export function createTriggersRouter(db: Db): Router {
         .returning();
       if (!row) return res.status(404).json({ error: "Trigger not found" });
       res.json(toApi(row));
+      ws.broadcast({ type: "data_changed", entity: "trigger", action: "updated", id: row.id });
     } catch (err) {
       next(err);
     }
@@ -110,6 +114,7 @@ export function createTriggersRouter(db: Db): Router {
         .returning();
       if (deleted.length === 0) return res.status(404).json({ error: "Trigger not found" });
       res.status(204).send();
+      ws.broadcast({ type: "data_changed", entity: "trigger", action: "deleted", id: req.params.id });
     } catch (err) {
       next(err);
     }
