@@ -1,7 +1,7 @@
 ---
 title: "feat: Add Ollama and custom OpenAI-compatible model support"
 type: feat
-status: active
+status: completed
 date: 2026-04-06
 ---
 
