@@ -4,13 +4,23 @@ import type { Db } from "@zerohand/db";
 import { settings } from "@zerohand/db";
 import type { ApiSetting } from "@zerohand/shared";
 import { invalidateModelCostsCache } from "../services/budget-guard.js";
+import { validateDatabaseConfig, maskDatabaseConfig } from "../services/database-config.js";
+import type { DatabaseConfig } from "../services/database-config.js";
 
-function toApi(row: typeof settings.$inferSelect): ApiSetting {
-  return {
+function maskSensitiveSetting(row: typeof settings.$inferSelect): ApiSetting {
+  const base: ApiSetting = {
     key: row.key,
     value: row.value,
     updatedAt: row.updatedAt.toISOString(),
   };
+  if (row.key === "database_config" && row.value && typeof row.value === "object") {
+    base.value = maskDatabaseConfig(row.value as DatabaseConfig);
+  }
+  return base;
+}
+
+function toApi(row: typeof settings.$inferSelect): ApiSetting {
+  return maskSensitiveSetting(row);
 }
 
 const MODEL_KEYS = new Set(["agent_model", "default_pipeline_model"]);
@@ -60,6 +70,24 @@ export function createSettingsRouter(db: Db, onModelChange?: () => void): Router
       }
 
       res.json(toApi(row));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post("/settings/validate", async (req, res, next) => {
+    try {
+      const { key, value } = req.body as { key: string; value: unknown };
+      if (key === "database_config") {
+        const result = validateDatabaseConfig(value);
+        if (result.valid) {
+          res.json({ valid: true });
+        } else {
+          res.json({ valid: false, errors: result.errors });
+        }
+      } else {
+        res.json({ valid: true });
+      }
     } catch (err) {
       next(err);
     }
