@@ -1,7 +1,7 @@
 ---
 title: "feat: Remote database configuration override"
 type: feat
-status: active
+status: completed
 date: 2026-04-06
 origin: GitHub issue #60
 ---
@@ -76,7 +76,7 @@ The chicken-and-egg problem (settings live in the DB, so we cannot read settings
 
 ## Implementation Units
 
-- [ ] **Unit 1: Define `DatabaseConfig` schema and interpolation utility**
+- [x] **Unit 1: Define `DatabaseConfig` schema and interpolation utility**
 
 **Goal:** Create a type-safe config schema and env-var interpolation function used at startup.
 
@@ -129,7 +129,7 @@ function buildDatabaseUrl(config: DatabaseConfig): string {
 
 ---
 
-- [ ] **Unit 2: Update `startPostgres()` to read `database.json`**
+- [x] **Unit 2: Update `startPostgres()` to read `database.json`**
 
 **Goal:** Check for `database.json` in `DATA_DIR` as the second priority after `DATABASE_URL`.
 
@@ -165,7 +165,7 @@ In `startPostgres()`, between the `DATABASE_URL` check and the embedded Postgres
 
 ---
 
-- [ ] **Unit 3: Add `database_config` validation endpoint and mask passwords in settings API**
+- [x] **Unit 3: Add `database_config` validation endpoint and mask passwords in settings API**
 
 **Goal:** Allow config validation without persisting, and prevent password exposure in API responses.
 
@@ -198,7 +198,7 @@ Modify `toApi()` (or add a `maskSensitiveSetting()` helper) so that when `key ==
 
 ---
 
-- [ ] **Unit 4: Add restart warning to CLI settings command**
+- [x] **Unit 4: Add restart warning to CLI settings command**
 
 **Goal:** Warn users that changing `database_config` requires a server restart.
 
@@ -224,7 +224,7 @@ In the `settings set` action, after a successful upsert, check if `key === "data
 
 ---
 
-- [ ] **Unit 5: Add restart warning to MCP settings tools**
+- [x] **Unit 5: Add restart warning to MCP settings tools**
 
 **Goal:** Include restart warning in MCP tool response when updating `database_config`.
 
@@ -250,7 +250,7 @@ In `registerSettingsTools`, after the `update_setting` tool calls `client.update
 
 ---
 
-- [ ] **Unit 6: Add `DatabaseConfig` to shared types**
+- [x] **Unit 6: Add `DatabaseConfig` to shared types**
 
 **Goal:** Export the config type so server and other packages can reference it without duplication.
 
@@ -275,7 +275,7 @@ Add `DatabaseConfig` interface (matching the Zod schema from Unit 1) and `Databa
 
 ---
 
-- [ ] **Unit 7: Document `database.json` in `docs/env.md`**
+- [x] **Unit 7: Document `database.json` in `docs/env.md`**
 
 **Goal:** Add `DATABASE_CONFIG_FILE` (or the file location) to the environment documentation.
 
