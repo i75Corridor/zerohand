@@ -272,6 +272,11 @@ export const api = {
   // Models
   listModels: () => request<ApiModelEntry[]>("/models"),
 
+  // Custom Providers
+  getCustomProviders: () => request<{ providers: Record<string, { baseUrl: string; apiKey?: string; models: Array<{ id: string; name?: string; contextWindow?: number; maxTokens?: number }> }> }>("/custom-providers"),
+  updateCustomProviders: (config: { providers: Record<string, { baseUrl: string; apiKey?: string; models: Array<{ id: string; name?: string; contextWindow?: number; maxTokens?: number }> }> }) =>
+    request<typeof config>("/custom-providers", { method: "PUT", body: JSON.stringify(config) }),
+
   // Budgets
   listBudgets: (scopeType?: string, scopeId?: string) => {
     const params = new URLSearchParams();

@@ -32,6 +32,9 @@ import { createLogsRouter } from "./routes/logs.js";
 import { ChannelManager } from "./services/channel-manager.js";
 import { GlobalAgentService } from "./services/global-agent.js";
 import { migrateSkillsToNamespaces } from "./services/skill-migrator.js";
+import { startOllamaPolling, stopOllamaPolling } from "./services/ollama-provider.js";
+import { createCustomProvidersRouter } from "./routes/custom-providers.js";
+import { loadCustomProviders } from "./services/custom-providers.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
@@ -160,8 +163,8 @@ async function main() {
   const httpServer = createServer(app);
   const ws = new WsManager(httpServer);
 
-  // Approvals needs ws for re-queuing after approve/reject — registered before 404 handler
   // Routes that need ws for real-time broadcasts
+  app.use("/api", createCustomProvidersRouter((msg) => ws.broadcast(msg as any)));
   app.use("/api", createApprovalsRouter(db, ws));
   app.use("/api", createTriggersRouter(db, ws));
   app.use("/api", createBudgetsRouter(db, ws));
@@ -194,6 +197,15 @@ async function main() {
   void channels.start();
   console.log("[Engine] Execution engine started.");
 
+  // Load custom provider config from providers.json
+  loadCustomProviders();
+
+  // Start Ollama model discovery polling
+  if (process.env.OLLAMA_HOST) {
+    console.log(`Ollama provider enabled: ${process.env.OLLAMA_HOST}`);
+    void startOllamaPolling();
+  }
+
   httpServer.listen(PORT, () => {
     console.log(`[Server] Listening on http://localhost:${PORT}`);
     console.log(`[Server] WebSocket on ws://localhost:${PORT}`);
@@ -203,6 +215,7 @@ async function main() {
     console.log("[Server] Shutting down...");
     engine.stop();
     triggers.stop();
+    stopOllamaPolling();
     httpServer.close();
     await stopPostgres();
     process.exit(0);
