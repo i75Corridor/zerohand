@@ -19,6 +19,7 @@ function rowToApi(row: typeof mcpServers.$inferSelect): ApiMcpServer {
     enabled: row.enabled,
     source: row.source as ApiMcpServer["source"],
     sourcePackageId: row.sourcePackageId ?? undefined,
+    metadata: (row.metadata as ApiMcpServer["metadata"]) ?? undefined,
   };
 }
 
@@ -33,11 +34,10 @@ export function makeMcpServersRouter(db: Db): Router {
 
   // POST /api/mcp-servers/detect-env
   router.post("/mcp-servers/detect-env", async (req, res) => {
-    const { transport, command, args, url, name } = req.body as {
+    const { transport, command, args, name } = req.body as {
       transport?: string;
       command?: string;
       args?: string[];
-      url?: string;
       name?: string;
     };
 
@@ -51,7 +51,7 @@ export function makeMcpServersRouter(db: Db): Router {
       return;
     }
 
-    const result = await detectEnvVars({ transport, command, args, url, name });
+    const result = await detectEnvVars({ transport, command, args, name });
 
     if (result.error === "detection busy") {
       res.status(429).json({ error: "Detection is busy, try again in a moment" });

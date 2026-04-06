@@ -78,6 +78,11 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
   const [testError, setTestError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
 
+  // Compute missing required env vars from metadata
+  const missingEnvVars = (server.metadata?.envRequirements ?? [])
+    .filter(r => r.required && !(server.env && r.name in server.env))
+    .map(r => r.name);
+
   const toggleEnabled = useMutation({
     mutationFn: () => api.updateMcpServer(server.id, { enabled: !server.enabled }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mcp-servers"] }),
@@ -130,6 +135,15 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
             </span>
             {server.source === "package" && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">package</span>
+            )}
+            {missingEnvVars.length > 0 && (
+              <span
+                className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400"
+                title={`Missing: ${missingEnvVars.join(", ")}`}
+              >
+                <AlertCircle size={10} />
+                {missingEnvVars.length} env var{missingEnvVars.length > 1 ? "s" : ""} missing
+              </span>
             )}
           </div>
           {server.transport === "stdio" && server.command && (

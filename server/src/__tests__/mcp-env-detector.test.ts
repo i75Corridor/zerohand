@@ -31,9 +31,9 @@ function makeMockChild(
   stderrChunks: string[],
   opts?: { exitCode?: number; emitError?: NodeJS.ErrnoException; hang?: boolean },
 ): ChildProcess {
-  const child = new EventEmitter() as ChildProcess & { pid: number; stderr: EventEmitter };
+  const child = new EventEmitter() as unknown as ChildProcess & { pid: number; stderr: EventEmitter };
   child.pid = 12345;
-  child.stderr = new EventEmitter();
+  (child as any).stderr = new EventEmitter();
 
   // Schedule stderr data + close on next tick (unless hang mode)
   if (!opts?.hang) {

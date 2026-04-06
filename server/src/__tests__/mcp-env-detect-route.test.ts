@@ -97,7 +97,6 @@ describe("POST /mcp-servers/detect-env", () => {
       transport: "stdio",
       command: "npx",
       args: ["-y", "mcp-server"],
-      url: undefined,
       name: "test",
     });
     expect(res.json).toHaveBeenCalledWith({ detected, error: undefined });
@@ -140,7 +139,6 @@ describe("POST /mcp-servers/detect-env", () => {
       transport: "sse",
       command: undefined,
       args: undefined,
-      url: "http://localhost:3000/sse",
       name: undefined,
     });
     expect(res.json).toHaveBeenCalledWith({ detected, error: undefined });

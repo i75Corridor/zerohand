@@ -257,6 +257,14 @@ export interface ApiPackagePreview {
   validation: ApiValidationResult;
 }
 
+export interface McpEnvRequirement {
+  name: string;
+  required: boolean;
+  description?: string;
+  docsUrl?: string;
+  detectedFrom?: string;
+}
+
 export interface ApiMcpServer {
   id: string;
   name: string;
@@ -269,6 +277,9 @@ export interface ApiMcpServer {
   enabled: boolean;
   source: "manual" | "package";
   sourcePackageId?: string;
+  metadata?: {
+    envRequirements?: McpEnvRequirement[];
+  };
 }
 
 export interface ApiMcpTool {

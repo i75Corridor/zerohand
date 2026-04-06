@@ -15,6 +15,13 @@ import type { DetectionResult } from "../services/mcp-env-detector.js";
 
 const stubCtx = {} as unknown as AgentToolContext;
 
+/** Helper to call execute with only the params we care about in tests. */
+function callTool(tool: ReturnType<typeof makeDetectMcpEnv>, id: string, params: Record<string, unknown>) {
+  // The real signature has 5 args (id, params, signal, onUpdate, ctx).
+  // In tests we only need the first two.
+  return (tool.execute as (id: string, params: unknown) => Promise<unknown>)(id, params);
+}
+
 beforeEach(() => {
   vi.mocked(detectEnvVars).mockReset();
 });
@@ -40,7 +47,7 @@ describe("detect_mcp_env tool", () => {
     vi.mocked(detectEnvVars).mockResolvedValue(mockResult);
 
     const tool = makeDetectMcpEnv(stubCtx);
-    const result = await tool.execute("call-1", {
+    const result = await callTool(tool, "call-1", {
       transport: "stdio",
       command: "npx",
       args: ["-y", "@anthropic/brave-search-mcp"],
@@ -74,7 +81,7 @@ describe("detect_mcp_env tool", () => {
     vi.mocked(detectEnvVars).mockResolvedValue({ detected: [] });
 
     const tool = makeDetectMcpEnv(stubCtx);
-    const result = await tool.execute("call-2", {
+    const result = await callTool(tool, "call-2", {
       transport: "stdio",
       command: "npx",
       args: ["-y", "some-server"],
@@ -94,7 +101,7 @@ describe("detect_mcp_env tool", () => {
     });
 
     const tool = makeDetectMcpEnv(stubCtx);
-    const result = await tool.execute("call-3", {
+    const result = await callTool(tool, "call-3", {
       transport: "stdio",
       command: "foobar",
       args: [],
@@ -114,7 +121,7 @@ describe("detect_mcp_env tool", () => {
     });
 
     const tool = makeDetectMcpEnv(stubCtx);
-    const result = await tool.execute("call-4", {
+    const result = await callTool(tool, "call-4", {
       transport: "stdio",
       command: "npx",
       args: ["some-server"],
