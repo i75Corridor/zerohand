@@ -268,6 +268,8 @@ export const api = {
   testMcpServer: (id: string) =>
     request<{ connected: boolean; tools: ApiMcpTool[]; error?: string }>(`/mcp-servers/${id}/test`, { method: "POST" }),
   listMcpServerTools: (id: string) => request<ApiMcpTool[]>(`/mcp-servers/${id}/tools`),
+  detectMcpEnv: (body: { transport: string; command?: string; args?: string[]; url?: string; name?: string }) =>
+    request<{ detected: Array<{ name: string; required: boolean; description?: string; docsUrl?: string; detectedFrom: string }>; error?: string }>("/mcp-servers/detect-env", { method: "POST", body: JSON.stringify(body) }),
 
   // Models
   listModels: () => request<ApiModelEntry[]>("/models"),

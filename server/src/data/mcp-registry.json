@@ -1,0 +1,37 @@
+{
+  "@anthropic/brave-search-mcp": {
+    "envVars": [
+      { "name": "BRAVE_API_KEY", "description": "API key for Brave Search", "required": true, "docsUrl": "https://brave.com/search/api/" }
+    ]
+  },
+  "@modelcontextprotocol/server-github": {
+    "envVars": [
+      { "name": "GITHUB_PERSONAL_ACCESS_TOKEN", "description": "GitHub personal access token", "required": true, "docsUrl": "https://github.com/settings/tokens" }
+    ]
+  },
+  "@modelcontextprotocol/server-postgres": {
+    "envVars": [
+      { "name": "POSTGRES_CONNECTION_STRING", "description": "PostgreSQL connection URI", "required": true }
+    ]
+  },
+  "@modelcontextprotocol/server-slack": {
+    "envVars": [
+      { "name": "SLACK_BOT_TOKEN", "description": "Slack Bot User OAuth Token (xoxb-...)", "required": true, "docsUrl": "https://api.slack.com/apps" },
+      { "name": "SLACK_TEAM_ID", "description": "Slack workspace/team ID", "required": true }
+    ]
+  },
+  "@modelcontextprotocol/server-puppeteer": {
+    "envVars": []
+  },
+  "@modelcontextprotocol/server-filesystem": {
+    "envVars": []
+  },
+  "@modelcontextprotocol/server-sqlite": {
+    "envVars": []
+  },
+  "@modelcontextprotocol/server-google-maps": {
+    "envVars": [
+      { "name": "GOOGLE_MAPS_API_KEY", "description": "Google Maps Platform API key", "required": true, "docsUrl": "https://console.cloud.google.com/apis/credentials" }
+    ]
+  }
+}

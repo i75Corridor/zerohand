@@ -78,6 +78,11 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
   const [testError, setTestError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
 
+  // Compute missing required env vars from metadata
+  const missingEnvVars = (server.metadata?.envRequirements ?? [])
+    .filter(r => r.required && !(server.env && r.name in server.env))
+    .map(r => r.name);
+
   const toggleEnabled = useMutation({
     mutationFn: () => api.updateMcpServer(server.id, { enabled: !server.enabled }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mcp-servers"] }),
@@ -130,6 +135,15 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
             </span>
             {server.source === "package" && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">package</span>
+            )}
+            {missingEnvVars.length > 0 && (
+              <span
+                className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400"
+                title={`Missing: ${missingEnvVars.join(", ")}`}
+              >
+                <AlertCircle size={10} />
+                {missingEnvVars.length} env var{missingEnvVars.length > 1 ? "s" : ""} missing
+              </span>
             )}
           </div>
           {server.transport === "stdio" && server.command && (
@@ -210,12 +224,16 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
   const [headers, setHeaders] = useState("");
   const [envVars, setEnvVars] = useState("");
   const [error, setError] = useState("");
+  const [detectedVars, setDetectedVars] = useState<Array<{ name: string; required: boolean; description?: string; docsUrl?: string; detectedFrom: string; value: string }>>([]);
+  const [detectionRan, setDetectionRan] = useState(false);
 
   const create = useMutation({
     mutationFn: () => {
       const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
       const parsedHeaders = parseKV(headers);
-      const parsedEnv = parseKV(envVars);
+      const parsedEnv = detectedVars.length > 0
+        ? Object.fromEntries(detectedVars.filter(v => v.value).map(v => [v.name, v.value]))
+        : parseKV(envVars);
       return api.createMcpServer({
         name,
         transport,
@@ -232,6 +250,40 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
       onCreated();
     },
     onError: (e: Error) => setError(e.message),
+  });
+
+  const detect = useMutation({
+    mutationFn: () => {
+      const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
+      return api.detectMcpEnv({
+        transport,
+        command: transport === "stdio" ? command || undefined : undefined,
+        args: transport === "stdio" ? parsedArgs : undefined,
+        url: transport !== "stdio" ? url || undefined : undefined,
+        name: name || undefined,
+      });
+    },
+    onSuccess: (data) => {
+      setDetectionRan(true);
+      if (data.detected.length > 0) {
+        const existingEnv = parseKV(envVars);
+        const merged = data.detected.map(d => ({
+          ...d,
+          value: existingEnv[d.name] ?? (d.required ? `\${${d.name}}` : ""),
+        }));
+        setDetectedVars(merged);
+      } else {
+        setDetectedVars([]);
+      }
+    },
+    onError: (e: Error) => {
+      setDetectionRan(false);
+      if (e.message.includes("429")) {
+        setError("Detection is busy, try again in a moment");
+      } else {
+        setError(e.message);
+      }
+    },
   });
 
   const nameValid = /^[a-z0-9][a-z0-9_-]*$/.test(name);
@@ -316,15 +368,67 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           </>
         )}
 
-        <div>
-          <label className="text-xs text-slate-400 mb-1 block">Env Vars (KEY=VALUE, one per line)</label>
-          <textarea
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 resize-none"
-            rows={2}
-            placeholder={"BRAVE_API_KEY=...\nOTHER_VAR=value"}
-            value={envVars}
-            onChange={(e) => setEnvVars(e.target.value)}
-          />
+        {detectedVars.length > 0 ? (
+          <div className="space-y-2">
+            <label className="text-xs text-slate-400 mb-1 block">Detected Environment Variables</label>
+            {detectedVars.map((v, i) => (
+              <div key={v.name} className="bg-slate-800 border border-slate-700 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-mono font-medium text-white">{v.name}</span>
+                  {v.required && <span className="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded">required</span>}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${v.detectedFrom === "registry" || v.detectedFrom === "both" ? "bg-sky-500/20 text-sky-400" : "bg-amber-500/20 text-amber-400"}`}>
+                    {v.detectedFrom === "registry" || v.detectedFrom === "both" ? "verified" : "detected"}
+                  </span>
+                </div>
+                {v.description && <p className="text-xs text-slate-500 mb-1.5">{v.description}</p>}
+                {v.docsUrl && <a href={v.docsUrl} target="_blank" rel="noreferrer" className="text-xs text-sky-400 hover:text-sky-300 mb-1.5 block">Documentation →</a>}
+                <input
+                  className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                  placeholder={v.required ? `\${${v.name}}` : "optional"}
+                  value={v.value}
+                  onChange={(e) => {
+                    const updated = [...detectedVars];
+                    updated[i] = { ...updated[i], value: e.target.value };
+                    setDetectedVars(updated);
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => { setDetectedVars([]); setDetectionRan(false); }}
+              className="text-xs text-slate-500 hover:text-slate-300"
+            >
+              Switch to manual entry
+            </button>
+          </div>
+        ) : (
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Env Vars (KEY=VALUE, one per line)</label>
+            <textarea
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 resize-none"
+              rows={2}
+              placeholder={"BRAVE_API_KEY=...\nOTHER_VAR=value"}
+              value={envVars}
+              onChange={(e) => setEnvVars(e.target.value)}
+            />
+            {detectionRan && <p className="text-xs text-slate-500 mt-1">No required environment variables detected.</p>}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => detect.mutate()}
+            disabled={detect.isPending || (transport === "stdio" && !command)}
+            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-lg transition-colors disabled:opacity-40 flex items-center gap-1.5"
+          >
+            {detect.isPending ? (
+              <><Loader size={12} className="animate-spin" /> Detecting...</>
+            ) : (
+              <><Cable size={12} /> Detect Required Environment</>
+            )}
+          </button>
         </div>
 
         {error && <p className="text-xs text-rose-400">{error}</p>}
