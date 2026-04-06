@@ -1,7 +1,7 @@
 ---
 title: "feat: AI-assisted MCP server environment variable detection and configuration"
 type: feat
-status: active
+status: completed
 date: 2026-04-06
 deepened: 2026-04-06
 ---
@@ -80,7 +80,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ## Implementation Units
 
-- [ ] **Unit 1: `${ENV_VAR}` resolution in buildTransport**
+- [x] **Unit 1: `${ENV_VAR}` resolution in buildTransport**
 
 **Goal:** Add env var reference resolution so `${BRAVE_API_KEY}` in the env field resolves to `process.env.BRAVE_API_KEY` at connection time.
 
@@ -114,7 +114,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ---
 
-- [ ] **Unit 2: MCP server registry data file**
+- [x] **Unit 2: MCP server registry data file**
 
 **Goal:** Create a static JSON registry of popular MCP servers with their required/optional env vars, descriptions, and documentation links.
 
@@ -148,7 +148,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ---
 
-- [ ] **Unit 3: Dry-run env var detector service**
+- [x] **Unit 3: Dry-run env var detector service**
 
 **Goal:** Create a service that spawns an MCP server process with minimal env, captures stderr for up to 5 seconds, and parses error messages for missing environment variable names.
 
@@ -191,7 +191,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ---
 
-- [ ] **Unit 4: Detect env vars REST endpoint**
+- [x] **Unit 4: Detect env vars REST endpoint**
 
 **Goal:** Add a `POST /api/mcp-servers/detect-env` endpoint that accepts server config and returns detected env var requirements.
 
@@ -226,7 +226,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ---
 
-- [ ] **Unit 5: UI env detection in AddMcpServerForm**
+- [x] **Unit 5: UI env detection in AddMcpServerForm**
 
 **Goal:** Add a "Detect Required Environment" button to the Add MCP Server form that calls the detect endpoint and displays discovered env vars with descriptions and pre-populated fields.
 
@@ -265,7 +265,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ---
 
-- [ ] **Unit 6: Enable-with-warning validation in UI**
+- [x] **Unit 6: Enable-with-warning validation in UI**
 
 **Goal:** When toggling a server's enable state, check for missing required env vars and show a warning indicator if any are missing.
 
@@ -303,7 +303,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ---
 
-- [ ] **Unit 7: Agent tool for env detection**
+- [x] **Unit 7: Agent tool for env detection**
 
 **Goal:** Add a `detect_mcp_env` agent tool that the AI can call to discover required env vars for an MCP server.
 
