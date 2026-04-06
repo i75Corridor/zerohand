@@ -4,6 +4,7 @@ import type { Db } from "@zerohand/db";
 import { settings } from "@zerohand/db";
 import type { ApiModelEntry } from "@zerohand/shared";
 import { ollamaModelsToApiEntries } from "./ollama-provider.js";
+import { customProviderModelsToApiEntries } from "./custom-providers.js";
 
 // Providers that require OAuth (no simple env var API key) — skip for now
 const OAUTH_ONLY_PROVIDERS = new Set([
@@ -46,6 +47,9 @@ export function listAllModels(): ApiModelEntry[] {
 
   // Append Ollama models from background polling cache
   result.push(...ollamaModelsToApiEntries());
+
+  // Append custom provider models from config
+  result.push(...customProviderModelsToApiEntries());
 
   return result;
 }
