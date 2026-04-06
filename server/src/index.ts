@@ -35,6 +35,7 @@ import { migrateSkillsToNamespaces } from "./services/skill-migrator.js";
 import { startOllamaPolling, stopOllamaPolling } from "./services/ollama-provider.js";
 import { createCustomProvidersRouter } from "./routes/custom-providers.js";
 import { loadCustomProviders } from "./services/custom-providers.js";
+import { loadDatabaseConfig } from "./services/database-config.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
@@ -52,6 +53,20 @@ async function startPostgres(): Promise<{ url: string; stop: () => Promise<void>
     await applyPendingMigrations(dbUrl);
     console.log("[Postgres] Migrations up to date.");
     return { url: dbUrl, stop: async () => {} };
+  }
+
+  // If database.json exists in DATA_DIR, use it as config source
+  try {
+    const fileConfig = loadDatabaseConfig();
+    if (fileConfig) {
+      console.log("[Postgres] Using database.json config:", fileConfig.url.replace(/:\/\/[^@]+@/, "://<credentials>@"));
+      await applyPendingMigrations(fileConfig.url);
+      console.log("[Postgres] Migrations up to date.");
+      return { url: fileConfig.url, stop: async () => {} };
+    }
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
   }
 
   // Otherwise start embedded postgres for local dev
