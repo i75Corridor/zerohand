@@ -1,4 +1,6 @@
 import type { ApiModelEntry } from "@zerohand/shared";
+import { getModel } from "@mariozechner/pi-ai";
+import { getCustomProviderModels } from "./custom-providers.js";
 
 /**
  * Ollama provider — discovers locally-running models via polling and
@@ -120,6 +122,31 @@ export function stopOllamaPolling(): void {
   }
   cachedModels = [];
   available = false;
+}
+
+/**
+ * Resolve a model by provider and ID.
+ * Tries pi-ai's registry first, then falls back to Ollama cache for provider "ollama".
+ */
+export function resolveModel(provider: string, modelId: string): OllamaModel | ReturnType<typeof getModel> {
+  const piModel = getModel(provider as any, modelId as any);
+  if (piModel) return piModel;
+
+  if (provider === "ollama") {
+    const ollamaModels = getOllamaModels();
+    const found = ollamaModels.find((m) => m.id === modelId);
+    if (found) return found;
+    if (ollamaModels.length === 0) {
+      throw new Error("Ollama is not available — ensure Ollama is running and OLLAMA_HOST is set");
+    }
+    throw new Error(`Model not found in Ollama: ${modelId}`);
+  }
+
+  // Fallback: check custom provider models
+  const customModel = getCustomProviderModels().find((m) => m.provider === provider && m.id === modelId);
+  if (customModel) return customModel;
+
+  throw new Error(`Model not found: ${provider}/${modelId}`);
 }
 
 /** Map cached Ollama models to ApiModelEntry format for the /models endpoint */

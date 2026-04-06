@@ -10,7 +10,8 @@ import {
   type ResourceLoader,
   type Skill,
 } from "@mariozechner/pi-coding-agent";
-import { getModel, getProviders, getEnvApiKey } from "@mariozechner/pi-ai";
+import { getProviders, getEnvApiKey } from "@mariozechner/pi-ai";
+import { resolveModel } from "./ollama-provider.js";
 import type { StepRunEventType } from "@zerohand/shared";
 import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -25,6 +26,7 @@ export function makeAuthStorage(): AuthStorage {
     const key = getEnvApiKey(provider);
     if (key) auth.setRuntimeApiKey(provider, key);
   }
+  if (process.env.OLLAMA_HOST) auth.setRuntimeApiKey("ollama", "ollama");
   return auth;
 }
 
@@ -75,8 +77,7 @@ export async function runSkillStep(
   const provider = skill.modelProvider ?? modelProvider;
   const name = skill.modelName ?? modelName;
 
-  const model = getModel(provider as any, name as any);
-  if (!model) throw new Error(`Model not found: ${provider}/${name}`);
+  const model = resolveModel(provider, name);
 
   const { interpolateContext, makeScriptTools } = await import("./skill-loader.js");
   const skillBody = interpolateContext(skill.systemPrompt, context);
