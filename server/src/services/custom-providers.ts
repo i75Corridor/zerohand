@@ -122,7 +122,7 @@ export function loadCustomProviders(): void {
     return;
   }
 
-  const builtInProviders = new Set(getProviders());
+  const builtInProviders = new Set<string>(getProviders());
   const models: CustomProviderModel[] = [];
 
   for (const [providerName, providerConfig] of Object.entries(parsed.providers)) {

@@ -128,7 +128,8 @@ export function stopOllamaPolling(): void {
  * Resolve a model by provider and ID.
  * Tries pi-ai's registry first, then falls back to Ollama cache for provider "ollama".
  */
-export function resolveModel(provider: string, modelId: string): OllamaModel | ReturnType<typeof getModel> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function resolveModel(provider: string, modelId: string): any {
   const piModel = getModel(provider as any, modelId as any);
   if (piModel) return piModel;
 
