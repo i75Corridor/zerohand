@@ -1,5 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type, getEnvApiKey } from "@mariozechner/pi-ai";
+import { isOllamaAvailable } from "../ollama-provider.js";
 import { eq, asc } from "drizzle-orm";
 import { pipelines, pipelineSteps, mcpServers } from "@zerohand/db";
 import type { AgentToolContext } from "./context.js";
@@ -106,14 +107,26 @@ export async function validatePipeline(
         }
 
         // Check model API key availability
-        if (skill.modelProvider && !getEnvApiKey(skill.modelProvider)) {
-          warnings.push({
-            type: "missing_model",
-            stepIndex: si,
-            field: "model",
-            message: `Skill "${step.skillName}" requires model "${skill.modelProvider}/${skill.modelName ?? ""}" but no API key is configured for provider "${skill.modelProvider}".`,
-            severity: "warning",
-          });
+        if (skill.modelProvider) {
+          if (skill.modelProvider === "ollama") {
+            if (!isOllamaAvailable()) {
+              warnings.push({
+                type: "missing_model",
+                stepIndex: si,
+                field: "model",
+                message: `Skill "${step.skillName}" uses Ollama model "${skill.modelName ?? ""}" but Ollama server not reachable.`,
+                severity: "warning",
+              });
+            }
+          } else if (!getEnvApiKey(skill.modelProvider)) {
+            warnings.push({
+              type: "missing_model",
+              stepIndex: si,
+              field: "model",
+              message: `Skill "${step.skillName}" requires model "${skill.modelProvider}/${skill.modelName ?? ""}" but no API key is configured for provider "${skill.modelProvider}".`,
+              severity: "warning",
+            });
+          }
         }
       }
     }

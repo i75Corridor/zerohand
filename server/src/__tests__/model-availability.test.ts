@@ -1,8 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { checkModelAvailability } from "../services/package-manager.js";
+
+vi.mock("../services/ollama-provider.js", () => ({
+  isOllamaAvailable: vi.fn(() => false),
+}));
+import { isOllamaAvailable } from "../services/ollama-provider.js";
 
 describe("checkModelAvailability", () => {
   let skillsDir: string;
@@ -66,5 +71,21 @@ describe("checkModelAvailability", () => {
     const providers = warnings.map((w) => w.provider);
     expect(providers).toContain("fake-provider-a");
     expect(providers).toContain("fake-provider-b");
+  });
+
+  it("returns no warning for Ollama skill when Ollama is available", () => {
+    vi.mocked(isOllamaAvailable).mockReturnValue(true);
+    makeSkill("local", "llm-skill", 'name: llm-skill\nmodel: ollama/llama3');
+    const warnings = checkModelAvailability(["local/llm-skill"], skillsDir);
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("returns warning containing 'Ollama' when Ollama is unavailable", () => {
+    vi.mocked(isOllamaAvailable).mockReturnValue(false);
+    makeSkill("local", "llm-skill2", 'name: llm-skill2\nmodel: ollama/llama3');
+    const warnings = checkModelAvailability(["local/llm-skill2"], skillsDir);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].message).toContain("Ollama");
+    expect(warnings[0].provider).toBe("ollama");
   });
 });
