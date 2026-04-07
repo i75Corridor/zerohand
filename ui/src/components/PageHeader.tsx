@@ -22,7 +22,7 @@ export default function PageHeader({ title, subtitle, actions, className = "" }:
     <div className={`flex justify-between items-end mb-8 ${className}`}>
       <div>
         {subtitle && (
-          <p className="text-sky-400/80 text-xs font-medium uppercase tracking-wider mb-1">
+          <p className="text-pawn-gold-400/80 text-xs font-medium uppercase tracking-wider mb-1">
             {subtitle}
           </p>
         )}
