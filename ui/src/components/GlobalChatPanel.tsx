@@ -136,7 +136,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   return (
     <div className="flex flex-col h-full bg-pawn-surface-950 border-l border-white/[0.07]">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 flex-shrink-0">
+      <div className="flex items-center px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
         <div className="flex items-center gap-2 flex-1">
           {/* Pawn icon */}
           <span className="text-pawn-gold-400 text-base leading-none" aria-hidden="true">&#9823;</span>
@@ -219,8 +219,8 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
               <div
                 className={`min-w-0 rounded-card px-3 py-2 text-sm ${
                   msg.role === "user"
-                    ? "max-w-[90%] bg-pawn-gold-500/10 text-white"
-                    : "w-full bg-pawn-surface-900 text-pawn-surface-200"
+                    ? "max-w-[90%] bg-pawn-gold-500/10 text-white border border-pawn-gold-500/20"
+                    : "w-full bg-pawn-surface-800/60 text-pawn-surface-200 border border-pawn-surface-700/50"
                 }`}
               >
                 {msg.role === "assistant" ? (
@@ -237,7 +237,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {/* Tool call indicator */}
           {activeToolCall && (
             <div className="flex justify-start">
-              <div className="bg-pawn-surface-900 rounded-card px-3 py-2 text-xs text-pawn-gold-400 flex items-center gap-2">
+              <div className="bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-xs text-pawn-gold-400 flex items-center gap-2">
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-gold-400 rounded-full animate-pulse" />
                 {activeToolCall.replace(/_/g, " ")}
               </div>
@@ -247,7 +247,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {/* Streaming text */}
           {streamingText && (
             <div className="flex justify-start">
-              <div className="max-w-full bg-pawn-surface-900 rounded-card px-3 py-2 text-sm text-pawn-surface-200 min-w-0">
+              <div className="max-w-full bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-sm text-pawn-surface-200 min-w-0">
                 <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
                   <ReactMarkdown>{streamingText}</ReactMarkdown>
                 </div>
@@ -259,7 +259,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {/* Typing indicator */}
           {isStreaming && !streamingText && !activeToolCall && (
             <div className="flex justify-start">
-              <div className="bg-pawn-surface-900 rounded-card px-3 py-2 text-sm flex items-center gap-1.5">
+              <div className="bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-sm flex items-center gap-1.5">
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-surface-500 rounded-full animate-pulse" />
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-surface-500 rounded-full animate-pulse [animation-delay:150ms]" />
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-surface-500 rounded-full animate-pulse [animation-delay:300ms]" />
@@ -271,8 +271,8 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
         </div>
       </div>
 
-      {/* Input — tighter connection to content */}
-      <div className="px-3 pb-3 pt-2 flex-shrink-0">
+      {/* Input */}
+      <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-white/[0.07]">
         <div className="flex gap-2">
           <textarea
             ref={inputRef}
@@ -295,7 +295,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {isStreaming ? (
             <button
               onClick={handleAbort}
-              className="px-3 py-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-rose-900/40 hover:bg-rose-800/50 text-rose-400 rounded-button active:bg-rose-700/60 transition-colors"
+              className="px-3 py-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-rose-900/60 hover:bg-rose-800/60 border border-rose-800/50 text-rose-400 rounded-button active:bg-rose-700/60 transition-colors"
               title="Abort"
               aria-label="Abort agent response"
             >
@@ -305,7 +305,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
             <button
               onClick={sendMessage}
               disabled={!input.trim()}
-              className="px-2.5 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 rounded-button btn-press disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-2.5 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button btn-press disabled:opacity-40"
               title="Send"
               aria-label="Send message"
             >
