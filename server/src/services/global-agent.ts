@@ -28,7 +28,7 @@ const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copi
 - **Pipelines**: list, create, edit, delete; add/update/remove steps; validate; get YAML; export package
 - **Skills**: list, read, create, update, clone, delete (writes SKILL.md to disk)
 - **Scripts**: create, update, delete script files within a skill
-- **Runs**: trigger, cancel, check status, retrieve step outputs, test individual steps
+- **Runs**: trigger, cancel, check status, retrieve step outputs, get full execution trace (step events, LLM output, tool calls), test individual steps
 - **MCP**: list registered MCP servers, list MCP server tools, register/update/delete MCP servers
 - **Triggers**: list, create, update, delete cron/webhook/channel triggers for pipelines
 - **Approvals**: list pending approvals, approve or reject pipeline steps
@@ -73,7 +73,9 @@ Scripts receive JSON on stdin, write results to stdout. Key patterns:
 - Keep scripts focused: one capability per file
 
 ## Tool sequencing rules
-- **Gather before acting**: if required information (name, description, inputs, etc.) is missing from the user's request, ask for it before calling any tools.
+- **Gather before acting**: if required information (IDs, names, details) is missing from the user's request, use tools to find it — list_pipelines, get_pipeline_detail, list_skills, get_skill, get_run_status, get_run_log, list_mcp_servers, list_mcp_server_tools. Only ask the user when the information genuinely cannot be discovered via tools.
+- **Diagnosing failures**: when a run has failed, call get_run_status to see step errors, then get_step_run_output for detailed step output, and get_run_log for the full execution trace (LLM output, tool calls, errors per step). Use all three together to diagnose root causes before proposing fixes. get_run_log reads from the database and is always available.
+- **Never ask for IDs in context**: if the Navigation block includes a runId or pipelineId, that is the resource the user is referring to. Use it immediately — never ask "what run ID?" or "what pipeline ID?" when the answer is already in the Navigation block.
 - **Create before navigating**: always complete the creation/update tool call and confirm success before calling navigate_ui. Never navigate speculatively.
 - **Navigate after**: once a resource is successfully created or updated, navigate to it automatically without asking.
 - **Skill linking**: when adding a step to a pipeline with a skillName, always call list_skills first. If the skill exists, link it directly. If it does not exist, create it with create_skill before adding the step.
@@ -85,23 +87,27 @@ Scripts receive JSON on stdin, write results to stdout. Key patterns:
 ## Dashboard Context
 Each user message is prepended with a [Dashboard: ...] block containing live system state: active runs, cost this month, runs this month, pending approvals, and recent failures. A [Navigation: ...] block may follow with the current page and pipeline/run details.
 
-Use this context proactively — you already know the system state without calling get_system_stats or list_approvals for basic counts. For detailed or real-time data, use the tools. The context is a point-in-time snapshot (up to 30s old).
+Use this context proactively — you already know the system state without calling get_system_stats or list_approvals for basic counts. For detailed or real-time data, use the tools. The context is a point-in-time snapshot (up to 30s old). When the Navigation block includes a pipelineId or runId, use it automatically to scope your operations — do not ask the user for an ID you already have.
 
 Be concise and action-oriented. Confirm briefly what you did.`;
 
 function loadSkillSummary(skillsDir: string): string {
   if (!existsSync(skillsDir)) return "";
-  const entries = readdirSync(skillsDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => {
-      const skillPath = join(skillsDir, e.name, "SKILL.md");
-      if (!existsSync(skillPath)) return null;
+  const entries: string[] = [];
+  // Two-level traversal: namespace dirs → skill dirs (e.g. local/researcher, zerohand-daily-absurdist/publisher)
+  for (const ns of readdirSync(skillsDir, { withFileTypes: true })) {
+    if (!ns.isDirectory()) continue;
+    const nsPath = join(skillsDir, ns.name);
+    for (const skill of readdirSync(nsPath, { withFileTypes: true })) {
+      if (!skill.isDirectory()) continue;
+      const skillPath = join(nsPath, skill.name, "SKILL.md");
+      if (!existsSync(skillPath)) continue;
       const content = readFileSync(skillPath, "utf-8");
       const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       const desc = fm?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
-      return `- ${e.name}: ${desc}`;
-    })
-    .filter(Boolean);
+      entries.push(`- ${ns.name}/${skill.name}: ${desc}`);
+    }
+  }
   if (entries.length === 0) return "";
   return `\n\n## Available Skills\n${entries.join("\n")}`;
 }
@@ -110,6 +116,8 @@ const CONTEXT_CACHE_TTL_MS = 30_000;
 
 export class GlobalAgentService {
   private session: AgentSession | null = null;
+  private sessionCreating: Promise<AgentSession> | null = null;
+  private isProcessing = false;
   private sessionDir: string;
   private cancelRunFn: ((runId: string) => void) | null = null;
   private skillSummaryCache: string | null = null;
@@ -147,17 +155,32 @@ export class GlobalAgentService {
     }
 
     if (action === "prompt" && message) {
+      if (this.isProcessing) {
+        this.broadcastFn({
+          type: "global_agent_event",
+          eventType: "error",
+          message: "Agent is already processing a message. Please wait.",
+        });
+        return;
+      }
+      this.isProcessing = true;
       const session = await this.ensureSession();
       let fullMessage = message;
 
       // Inject dashboard context block (includes navigation details)
       try {
         const dashCtx = await this.getDashboardContext(context);
-        fullMessage = `${formatDashboardContext(dashCtx)}\n\n${message}`;
-      } catch { /* graceful degradation — proceed without context */ }
+        const formatted = formatDashboardContext(dashCtx);
+        console.log("[GlobalAgent] context injected:", formatted.slice(0, 400));
+        fullMessage = `${formatted}\n\n${message}`;
+      } catch (err) {
+        console.error("[GlobalAgent] Failed to build dashboard context:", err);
+        /* graceful degradation — proceed without context */
+      }
 
       try {
         await session.prompt(fullMessage);
+        this.broadcastFn({ type: "global_agent_event", eventType: "status_change", message: "done" });
       } catch (err) {
         this.broadcastFn({
           type: "global_agent_event",
@@ -165,7 +188,7 @@ export class GlobalAgentService {
           message: String(err),
         });
       } finally {
-        this.broadcastFn({ type: "global_agent_event", eventType: "status_change", message: "done" });
+        this.isProcessing = false;
       }
     }
   }
@@ -198,7 +221,13 @@ export class GlobalAgentService {
 
   private async ensureSession(): Promise<AgentSession> {
     if (this.session) return this.session;
+    if (this.sessionCreating) return this.sessionCreating;
 
+    this.sessionCreating = this._createSession().finally(() => { this.sessionCreating = null; });
+    return this.sessionCreating;
+  }
+
+  private async _createSession(): Promise<AgentSession> {
     const { provider, modelId } = await readModelSetting(this.db, "agent_model", "google/gemini-2.5-flash");
     const model = getModel(provider as any, modelId as any);
     if (!model) throw new Error(`Model not found: ${provider}/${modelId}`);
@@ -273,6 +302,8 @@ export class GlobalAgentService {
   }
 
   private async destroySession(): Promise<void> {
+    this.sessionCreating = null;
+    this.isProcessing = false;
     if (this.session) {
       try { await this.session.abort(); } catch { /* ignore */ }
       this.session = null;

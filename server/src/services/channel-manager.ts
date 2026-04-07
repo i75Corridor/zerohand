@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { triggers, pipelineRuns } from "@zerohand/db";
+import { createRun } from "./run-factory.js";
 import type { WsManager } from "../ws/index.js";
 
 interface TelegramConfig {
@@ -115,15 +116,12 @@ export class ChannelManager {
     inputParams: Record<string, unknown>,
   ): Promise<void> {
     const merged = { ...(trigger.defaultInputs as Record<string, unknown> ?? {}), ...inputParams };
-    const [run] = await this.db
-      .insert(pipelineRuns)
-      .values({
-        pipelineId: trigger.pipelineId,
-        inputParams: merged,
-        triggerType: "channel",
-        triggerDetail: trigger.channelType ?? "channel",
-      })
-      .returning();
+    const run = await createRun(this.db, {
+      pipelineId: trigger.pipelineId,
+      inputParams: merged,
+      triggerType: "channel",
+      triggerDetail: trigger.channelType ?? "channel",
+    });
 
     await this.db
       .update(triggers)

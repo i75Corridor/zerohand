@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useEffect, useRef, useCallback } from "react";
 import type { WsMessage } from "@zerohand/shared";
 
@@ -7,6 +8,7 @@ type WsHandler = (msg: WsMessage) => void;
 
 let sharedSocket: WebSocket | null = null;
 let refCount = 0;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 const handlers = new Set<WsHandler>();
 
 function getSocket(): WebSocket {
@@ -29,11 +31,15 @@ function getSocket(): WebSocket {
   socket.onerror = (err) => console.error("[WS] Error:", err);
 
   socket.onclose = () => {
-    // Auto-reconnect after a brief delay if there are still active consumers
+    // Only clear sharedSocket if it's still this socket (not a newer one)
+    if (sharedSocket === socket) sharedSocket = null;
+    // Auto-reconnect, but only if no socket was created in the meantime
+    // (guards against React Strict Mode's mount→cleanup→remount creating a new
+    // socket via getSocket() before this onclose timer fires)
     if (refCount > 0) {
-      setTimeout(() => {
-        if (refCount > 0) {
-          sharedSocket = null;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (refCount > 0 && !sharedSocket) {
           getSocket();
         }
       }, 2000);
@@ -42,6 +48,21 @@ function getSocket(): WebSocket {
 
   sharedSocket = socket;
   return socket;
+}
+
+// ── HMR cleanup — prevents stale sockets accumulating across Vite hot-reloads ─
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    if (sharedSocket) {
+      sharedSocket.onerror = () => {};
+      sharedSocket.onmessage = null;
+      sharedSocket.close();
+      sharedSocket = null;
+    }
+    handlers.clear();
+    refCount = 0;
+  });
 }
 
 export function useWebSocket(onMessage: WsHandler) {
@@ -60,12 +81,18 @@ export function useWebSocket(onMessage: WsHandler) {
     return () => {
       handlers.delete(handler);
       refCount--;
-      if (refCount === 0 && sharedSocket) {
-        // Suppress the "closed before connection established" browser warning by
-        // replacing onerror with a no-op before closing a still-connecting socket.
-        sharedSocket.onerror = () => {};
-        sharedSocket.close();
-        sharedSocket = null;
+      if (refCount === 0) {
+        // Cancel any pending reconnect — we no longer need a connection
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        if (sharedSocket) {
+          // Suppress browser warnings and prevent stale message delivery during the
+          // CLOSING handshake (the socket can still receive frames between .close()
+          // and the onclose event firing).
+          sharedSocket.onerror = () => {};
+          sharedSocket.onmessage = null;
+          sharedSocket.close();
+          sharedSocket = null;
+        }
       }
     };
   }, []);

@@ -27,14 +27,15 @@ The script filename (minus extension) becomes the tool name the agent calls at r
 
 Always add a comment header documenting the stdin and stdout fields.
 
-Node.js CJS (.js / .cjs) pattern:
-  "use strict";
+IMPORTANT: .js files run as ES modules (import/export). Never use require() in .js files — use import instead. Use .cjs only if a dependency forces CommonJS.
+
+Node.js ESM (.js) pattern:
   /**
    * stdin:  { field1, field2 }
    * stdout: { result }
    */
-  const readline = require("readline");
-  const rl = readline.createInterface({ input: process.stdin, terminal: false });
+  import { createInterface } from "readline";
+  const rl = createInterface({ input: process.stdin, terminal: false });
   let raw = "";
   rl.on("line", (l) => (raw += l));
   rl.on("close", async () => {
@@ -43,7 +44,7 @@ Node.js CJS (.js / .cjs) pattern:
     process.stdout.write(JSON.stringify({ result }) + "\\n");
   });
 
-NODE_PATH is pre-set to server/node_modules — require any package already installed in the server (e.g. @google/genai, axios, sharp, puppeteer) without a separate install step.
+NODE_PATH is pre-set to server/node_modules — import any package already installed in the server (e.g. @google/genai, axios, sharp) without a separate install step.
 
 Python (.py) pattern:
   import sys, json

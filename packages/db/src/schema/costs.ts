@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, doublePrecision, timestamp, index } from "drizzle-orm/pg-core";
 import { stepRuns, pipelineRuns } from "./pipeline-runs.js";
 
 export const costEvents = pgTable(
@@ -12,7 +12,7 @@ export const costEvents = pgTable(
     model: text("model").notNull(),
     inputTokens: integer("input_tokens").notNull().default(0),
     outputTokens: integer("output_tokens").notNull().default(0),
-    costCents: integer("cost_cents").notNull().default(0),
+    costCents: doublePrecision("cost_cents").notNull().default(0),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

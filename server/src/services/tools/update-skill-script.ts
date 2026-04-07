@@ -25,14 +25,15 @@ The script filename (minus extension) is the tool name the agent calls (e.g. web
 
 Always include a header comment documenting stdin/stdout fields.
 
-Node.js CJS (.js / .cjs):
-  "use strict";
+IMPORTANT: .js files run as ES modules (import/export). Never use require() in .js files — use import instead. Use .cjs only if a dependency forces CommonJS.
+
+Node.js ESM (.js):
   /**
    * stdin:  { field1, field2 }
    * stdout: { result }
    */
-  const readline = require("readline");
-  const rl = readline.createInterface({ input: process.stdin, terminal: false });
+  import { createInterface } from "readline";
+  const rl = createInterface({ input: process.stdin, terminal: false });
   let raw = "";
   rl.on("line", (l) => (raw += l));
   rl.on("close", async () => {
@@ -40,7 +41,7 @@ Node.js CJS (.js / .cjs):
     process.stdout.write(JSON.stringify({ result: field1 }) + "\\n");
   });
 
-NODE_PATH = server/node_modules — require installed packages (e.g. @google/genai, axios) without a separate install.
+NODE_PATH = server/node_modules — import installed packages (e.g. @google/genai, axios) without a separate install.
 
 Python (.py):
   import sys, json

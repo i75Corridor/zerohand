@@ -186,7 +186,9 @@ async function main() {
   globalAgentRef = globalAgent;
   globalAgent.setCancelRunFn((runId) => engine.cancelRun(runId));
   ws.onGlobalChatMessage((msg) => {
-    void globalAgent.handleMessage(msg.action, msg.message, msg.context);
+    globalAgent.handleMessage(msg.action, msg.message, msg.context).catch((err) => {
+      console.error("[GlobalAgent] Unhandled error:", err);
+    });
   });
 
   engine.start();

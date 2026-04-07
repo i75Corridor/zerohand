@@ -32,7 +32,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   const [streamingText, setStreamingText] = useState("");
   const [activeToolCall, setActiveToolCall] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { send: wsSend } = useWebSocket((msg: WsMessage) => {
@@ -86,6 +86,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
     setMessages((m) => [...m, { role: "user", content: text, timestamp: new Date() }]);
     wsSend({ type: "global_chat", action: "prompt", message: text, context: getContext(location.pathname) });
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     setIsStreaming(true);
     setStreamingText("");
   };
@@ -143,6 +144,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
                 <button
                   key={prompt}
                   onClick={() => {
+                    if (isStreaming) return;
                     setMessages((m) => [...m, { role: "user", content: prompt, timestamp: new Date() }]);
                     wsSend({ type: "global_chat", action: "prompt", message: prompt, context: getContext(location.pathname) });
                     setIsStreaming(true);
@@ -216,13 +218,23 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
       {/* Input */}
       <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-slate-800/60">
         <div className="flex gap-2">
-          <input
+          <textarea
             ref={inputRef}
-            className="flex-1 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 sm:py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 input-glow"
+            rows={1}
+            className="flex-1 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 sm:py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 input-glow resize-none overflow-hidden"
             placeholder="Ask anything..."
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            onChange={(e) => {
+              setInput(e.target.value);
+              e.target.style.height = "auto";
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
           />
           {isStreaming ? (
             <button

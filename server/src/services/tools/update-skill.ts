@@ -111,8 +111,12 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       const existingMeta = (existingFm.metadata as Record<string, string> | undefined) ?? {};
       const mergedMeta = params.metadata ? { ...existingMeta, ...params.metadata } : existingMeta;
 
+      // Use only the base name (after the namespace slash) — never write "local/foo" into name:
+      const slashIdx = params.skillName.indexOf("/");
+      const baseName = slashIdx > -1 ? params.skillName.slice(slashIdx + 1) : params.skillName;
+
       const content = buildSkillMd({
-        name: params.skillName,
+        name: baseName,
         description,
         body: params.body,
         model,

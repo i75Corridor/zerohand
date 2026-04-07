@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { Router } from "express";
 import { eq, asc, ne, inArray, desc, max, sql } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
-import { pipelines, pipelineSteps, installedPackages, pipelineVersions } from "@zerohand/db";
+import { pipelines, pipelineSteps, pipelineRuns, costEvents, installedPackages, pipelineVersions } from "@zerohand/db";
 import type { ApiPipeline, ApiPipelineStep } from "@zerohand/shared";
 import { pipelineToYaml } from "@zerohand/shared";
 import { skillsDir as getSkillsDir } from "../services/paths.js";
@@ -32,6 +32,8 @@ export async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise
     orderBy: [asc(pipelineSteps.stepIndex)],
   });
 
+  const skillsDir = getSkillsDir();
+
   return {
     id: pipeline.id,
     name: pipeline.name,
@@ -42,7 +44,13 @@ export async function loadPipelineWithSteps(db: Db, pipelineId: string): Promise
     modelProvider: pipeline.modelProvider ?? null,
     modelName: pipeline.modelName ?? null,
     createdAt: pipeline.createdAt.toISOString(),
-    steps: steps.map((s) => toApiStep(s)),
+    steps: steps.map((s) => {
+      const step = toApiStep(s);
+      if (step.skillName) {
+        step.skillFound = existsSync(join(skillsDir, step.skillName, "SKILL.md"));
+      }
+      return step;
+    }),
   };
 }
 
@@ -173,7 +181,19 @@ export function createPipelinesRouter(db: Db): Router {
         steps.map((s) => s.skillName).filter((n): n is string => !!n),
       )];
 
-      // Delete the pipeline (cascade deletes steps via FK)
+      // Delete in FK dependency order — neither cost_events nor pipeline_runs have cascade deletes
+      // 1. cost_events → pipeline_runs (no cascade)
+      const runIds = await db
+        .select({ id: pipelineRuns.id })
+        .from(pipelineRuns)
+        .where(eq(pipelineRuns.pipelineId, req.params.id));
+      if (runIds.length > 0) {
+        await db.delete(costEvents).where(inArray(costEvents.pipelineRunId, runIds.map((r) => r.id)));
+      }
+      // 2. pipeline_runs → pipeline (no cascade); step_runs cascade from pipeline_runs
+      await db.delete(pipelineRuns).where(eq(pipelineRuns.pipelineId, req.params.id));
+
+      // Delete the pipeline (cascade deletes steps and versions via FK)
       const deleted = await db.delete(pipelines).where(eq(pipelines.id, req.params.id)).returning();
       if (deleted.length === 0) return res.status(404).json({ error: "Pipeline not found" });
 

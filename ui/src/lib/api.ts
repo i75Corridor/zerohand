@@ -239,8 +239,9 @@ export const api = {
     a.click();
     URL.revokeObjectURL(url);
   },
+  getGhStatus: () => request<{ available: boolean }>("/packages/gh-status"),
   publishPackage: (body: { pipelineId: string; repo?: string; private?: boolean; description?: string }) =>
-    request<{ id: string; repoUrl: string; repoFullName: string }>("/packages/publish", {
+    request<{ id: string; repoUrl: string; repoFullName: string; prUrl?: string; noChanges?: boolean }>("/packages/publish", {
       method: "POST",
       body: JSON.stringify(body),
     }),

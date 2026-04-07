@@ -7,7 +7,7 @@ import { statusColor as getStatusColor, STATUS_BORDER_COLORS, STATUS_TEXT_COLORS
 import LoadingState from "../components/LoadingState.tsx";
 import { useWebSocket } from "../lib/ws.ts";
 import OutputPreview from "../components/OutputPreview.tsx";
-import type { WsMessage, ApiStepRun } from "@zerohand/shared";
+import type { WsMessage, ApiStepRun, RunStepSnapshot } from "@zerohand/shared";
 
 
 
@@ -203,12 +203,25 @@ export default function RunDetail() {
     enabled: !!run,
   });
 
-  const { data: pipelineSteps = [] } = useQuery({
+  // Use snapshotted steps when available (runs created after snapshot support was added).
+  // Fall back to fetching current pipeline steps for older runs.
+  const { data: livePipelineSteps = [] } = useQuery({
     queryKey: ["pipeline-steps", run?.pipelineId],
     queryFn: () => api.listSteps(run!.pipelineId),
-    enabled: !!run,
+    enabled: !!run && !run.stepSnapshot?.length,
     staleTime: Infinity,
   });
+  const pipelineSteps: RunStepSnapshot[] = run?.stepSnapshot?.length
+    ? run.stepSnapshot
+    : livePipelineSteps.map((s) => ({
+        stepIndex: s.stepIndex,
+        name: s.name,
+        skillName: s.skillName,
+        promptTemplate: s.promptTemplate,
+        approvalRequired: s.approvalRequired ?? false,
+        retryConfig: s.retryConfig as Record<string, unknown> | null,
+        metadata: s.metadata as Record<string, unknown> | null,
+      }));
 
   useWebSocket((msg: WsMessage) => {
     if (msg.type === "run_status" && msg.pipelineRunId === id) {
@@ -358,7 +371,7 @@ export default function RunDetail() {
             }
             return (
               <div
-                key={ps.id}
+                key={ps.stepIndex}
                 className="border border-slate-800 border-l-4 border-l-slate-800 rounded-xl overflow-hidden opacity-40"
               >
                 <div className="flex items-center gap-3 px-4 py-3 bg-slate-900/40">

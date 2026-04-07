@@ -8,7 +8,7 @@ export interface DashboardContext {
   costCentsThisMonth: number;
   pendingApprovals: number;
   recentFailures: { pipeline: string; error: string; createdAt: Date }[];
-  navigation?: { path: string; pipelineName?: string; runStatus?: string; runStepIndex?: number; runTotalSteps?: number };
+  navigation?: { path: string; pipelineId?: string; pipelineName?: string; runId?: string; runStatus?: string; runStepIndex?: number; runTotalSteps?: number };
 }
 
 export async function buildDashboardContext(
@@ -42,15 +42,12 @@ export async function buildDashboardContext(
         .where(eq(approvals.status, "pending")),
 
       // Recent failures (last 24h, limit 5)
-      db.query.pipelineRuns.findMany({
-        where: and(
-          eq(pipelineRuns.status, "failed"),
-          gte(pipelineRuns.createdAt, oneDayAgo),
-        ),
-        orderBy: [desc(pipelineRuns.createdAt)],
-        limit: 5,
-        with: { pipeline: { columns: { name: true } } } as any,
-      }),
+      db.select({ error: pipelineRuns.error, createdAt: pipelineRuns.createdAt, pipelineName: pipelines.name })
+        .from(pipelineRuns)
+        .leftJoin(pipelines, eq(pipelineRuns.pipelineId, pipelines.id))
+        .where(and(eq(pipelineRuns.status, "failed"), gte(pipelineRuns.createdAt, oneDayAgo)))
+        .orderBy(desc(pipelineRuns.createdAt))
+        .limit(5),
 
       // Navigation context (pipeline name + run status)
       resolveNavigation(db, navigation),
@@ -61,8 +58,8 @@ export async function buildDashboardContext(
     runsThisMonth: runsThisMonthResult[0]?.count ?? 0,
     costCentsThisMonth: Number(costResult[0]?.total ?? 0),
     pendingApprovals: pendingApprovalsResult[0]?.count ?? 0,
-    recentFailures: (failuresResult as any[]).map((r) => ({
-      pipeline: r.pipeline?.name ?? "Unknown",
+    recentFailures: failuresResult.map((r) => ({
+      pipeline: r.pipelineName ?? "Unknown",
       error: truncate(r.error ?? "", 150),
       createdAt: r.createdAt,
     })),
@@ -79,6 +76,7 @@ async function resolveNavigation(
   const result: NonNullable<DashboardContext["navigation"]> = { path: navigation.path };
 
   if (navigation.pipelineId) {
+    result.pipelineId = navigation.pipelineId;
     try {
       const p = await db.query.pipelines.findFirst({ where: eq(pipelines.id, navigation.pipelineId) });
       if (p) result.pipelineName = p.name;
@@ -86,9 +84,21 @@ async function resolveNavigation(
   }
 
   if (navigation.runId) {
+    result.runId = navigation.runId;
     try {
       const r = await db.query.pipelineRuns.findFirst({ where: eq(pipelineRuns.id, navigation.runId) });
-      if (r) result.runStatus = r.status;
+      if (r) {
+        result.runStatus = r.status;
+        // Inject pipelineId and name from the run when not already in navigation
+        // (e.g. when the user is on /runs/<id> rather than /pipelines/<id>/runs/<id>)
+        if (!result.pipelineId) {
+          result.pipelineId = r.pipelineId;
+          try {
+            const p = await db.query.pipelines.findFirst({ where: eq(pipelines.id, r.pipelineId) });
+            if (p) result.pipelineName = p.name;
+          } catch { /* ignore */ }
+        }
+      }
     } catch { /* ignore */ }
   }
 
@@ -120,11 +130,20 @@ export function formatDashboardContext(ctx: DashboardContext): string {
   block += "]";
 
   if (ctx.navigation) {
-    let nav = `[Navigation: ${ctx.navigation.path}`;
-    if (ctx.navigation.pipelineName) nav += ` — pipeline "${ctx.navigation.pipelineName}"`;
-    if (ctx.navigation.runStatus) nav += ` — run status: ${ctx.navigation.runStatus}`;
-    nav += "]";
-    block += `\n${nav}`;
+    const nav = ctx.navigation;
+    const navParts: string[] = [`path: ${nav.path}`];
+    if (nav.pipelineName) navParts.push(`pipeline: "${nav.pipelineName}"`);
+    if (nav.pipelineId) navParts.push(`pipelineId: ${nav.pipelineId}`);
+    if (nav.runId) navParts.push(`runId: ${nav.runId}`);
+    if (nav.runStatus) navParts.push(`status: ${nav.runStatus}`);
+    block += `\n[Navigation: ${navParts.join(" | ")}]`;
+
+    // Emit a strong imperative so the model doesn't ask the user for known IDs
+    if (nav.runId) {
+      block += `\nIMPORTANT: You already have runId=${nav.runId}. Call get_run_status and get_run_log with this ID immediately — do NOT ask the user for it.`;
+    } else if (nav.pipelineId) {
+      block += `\nIMPORTANT: You already have pipelineId=${nav.pipelineId}. Use it directly — do NOT ask the user for it.`;
+    }
   }
 
   return block;
