@@ -1,4 +1,5 @@
 import { eq, asc } from "drizzle-orm";
+import type { SnapshotStep } from "./run-factory.js";
 import { join, resolve } from "node:path";
 import { mkdirSync } from "node:fs";
 import type { Db } from "@zerohand/db";
@@ -187,10 +188,23 @@ export class ExecutionEngine {
     const pipelineModelProvider = pipeline?.modelProvider ?? defaultModel.provider;
     const pipelineModelName = pipeline?.modelName ?? defaultModel.modelId;
 
-    const steps = await this.db.query.pipelineSteps.findMany({
-      where: eq(pipelineSteps.pipelineId, run.pipelineId),
-      orderBy: [asc(pipelineSteps.stepIndex)],
-    });
+    // Prefer steps snapshotted at trigger time; fall back to live DB query for
+    // runs created before snapshotting was introduced.
+    const snapshotSteps = (run.metadata as Record<string, unknown> | null)?.steps as SnapshotStep[] | undefined;
+    const steps: SnapshotStep[] = snapshotSteps?.length
+      ? snapshotSteps
+      : (await this.db.query.pipelineSteps.findMany({
+          where: eq(pipelineSteps.pipelineId, run.pipelineId),
+          orderBy: [asc(pipelineSteps.stepIndex)],
+        })).map((s) => ({
+          stepIndex: s.stepIndex,
+          name: s.name,
+          skillName: s.skillName ?? null,
+          promptTemplate: s.promptTemplate ?? null,
+          approvalRequired: s.approvalRequired ?? false,
+          retryConfig: (s.retryConfig as Record<string, unknown> | null) ?? null,
+          metadata: (s.metadata as Record<string, unknown> | null) ?? null,
+        }));
 
     logger.info("run_start", { pipelineId: run.pipelineId, pipelineName: pipeline?.name ?? run.pipelineId, inputs: run.inputParams });
 
@@ -323,7 +337,7 @@ export class ExecutionEngine {
         status: "queued",
       });
 
-      const resolvedPrompt = resolvePrompt(step.promptTemplate, run.inputParams, stepOutputs);
+      const resolvedPrompt = resolvePrompt(step.promptTemplate ?? "", run.inputParams, stepOutputs);
 
       await this.db
         .update(stepRuns)

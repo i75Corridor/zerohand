@@ -49,8 +49,13 @@ function parseSkillFile(skillDir: string, namespace: string, skillFolderName: st
     scripts.push(...files.map((f: string) => f.replace(/\.(js|ts|py|sh)$/, "")));
   }
 
+  // Strip any accidental "namespace/" prefix from the name field
+  const rawName = String(fm.name ?? skillFolderName);
+  const nameSlash = rawName.indexOf("/");
+  const skillBaseName = nameSlash > -1 ? rawName.slice(nameSlash + 1) : rawName;
+
   return {
-    name: String(fm.name ?? skillFolderName),
+    name: skillBaseName,
     namespace,
     version: String(fm.version ?? "0.0.0"),
     description: String(fm.description ?? ""),

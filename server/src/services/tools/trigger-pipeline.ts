@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
-import { pipelineRuns } from "@zerohand/db";
+import { createRun } from "../run-factory.js";
 import type { AgentToolContext } from "./context.js";
 
 export function makeTriggerPipeline(ctx: AgentToolContext): ToolDefinition {
@@ -13,14 +13,11 @@ export function makeTriggerPipeline(ctx: AgentToolContext): ToolDefinition {
       inputParams: Type.Optional(Type.Record(Type.String(), Type.Unknown(), { description: "Input parameters for the pipeline" })),
     }),
     execute: async (_id, params: { pipelineId: string; inputParams?: Record<string, unknown> }) => {
-      const [run] = await ctx.db
-        .insert(pipelineRuns)
-        .values({
-          pipelineId: params.pipelineId,
-          inputParams: params.inputParams ?? {},
-          triggerType: "manual",
-        })
-        .returning();
+      const run = await createRun(ctx.db, {
+        pipelineId: params.pipelineId,
+        inputParams: params.inputParams ?? {},
+        triggerType: "manual",
+      });
       return {
         content: [{
           type: "text" as const,

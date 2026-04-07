@@ -34,7 +34,7 @@ describe("formatDashboardContext", () => {
     expect(result).toContain("47 runs this month");
     expect(result).toContain("2 pending approvals");
     expect(result).toContain('Recent failures: "ETL Pipeline": timeout after 300s; "Slack Notifier": 429 rate limit');
-    expect(result).toContain('[Navigation: /pipelines/abc — pipeline "ETL Pipeline" — run status: running]');
+    expect(result).toContain('[Navigation: path: /pipelines/abc | pipeline: "ETL Pipeline" | status: running]');
   });
 
   it("produces a block with zero values and no failures section", () => {
@@ -61,7 +61,7 @@ describe("formatDashboardContext", () => {
     const ctx = makeContext({ navigation: { path: "/settings" } });
     const result = formatDashboardContext(ctx);
 
-    expect(result).toContain("[Navigation: /settings]");
+    expect(result).toContain("[Navigation: path: /settings]");
     expect(result).not.toContain("pipeline");
     expect(result).not.toContain("run status");
   });

@@ -92,6 +92,13 @@
       "when": 1744156800000,
       "tag": "0012_repo_not_found",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1744243200000,
+      "tag": "0013_float_cost_cents",
+      "breakpoints": true
     }
   ]
 }

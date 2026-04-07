@@ -27,6 +27,17 @@ export const STEP_RUN_EVENT_TYPE = [
 ] as const;
 export type StepRunEventType = (typeof STEP_RUN_EVENT_TYPE)[number];
 
+/** Immutable step definition snapshotted when a run is created. */
+export interface RunStepSnapshot {
+  stepIndex: number;
+  name: string;
+  skillName: string | null;
+  promptTemplate: string | null;
+  approvalRequired: boolean;
+  retryConfig: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+}
+
 // API response shapes
 export interface ApiPipelineRun {
   id: string;
@@ -40,6 +51,8 @@ export interface ApiPipelineRun {
   finishedAt: string | null;
   error: string | null;
   createdAt: string;
+  /** Step definitions as they existed when this run was triggered. */
+  stepSnapshot?: RunStepSnapshot[];
 }
 
 export interface ApiStepRun {
@@ -90,6 +103,8 @@ export interface ApiPipelineStep {
   stepIndex: number;
   name: string;
   skillName: string | null;
+  /** Whether the skill file exists on disk. undefined when skillName is null. */
+  skillFound?: boolean;
   promptTemplate: string;
   timeoutSeconds: number;
   approvalRequired: boolean;

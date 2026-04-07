@@ -127,6 +127,17 @@ export default function Layout({ children }: { children: ReactNode }) {
       }
     } catch { /* localStorage unavailable — skip onboarding */ }
   }, []);
+  // Track viewport to render exactly one GlobalChatPanel (prevents duplicate WS handlers)
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const [agentWidth, setAgentWidth] = useState(384); // 96 * 4 = w-96 default
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -268,28 +279,30 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </main>
 
-        {/* Desktop: side panel with resize handle — always mounted, hidden when closed */}
-        <div className={`hidden md:flex md:flex-shrink-0 ${agentOpen ? "animate-slide-in-right" : "hidden"}`} style={agentOpen ? {} : { display: "none" }}>
-          <div
-            className="w-1 flex-shrink-0 cursor-col-resize hover:bg-sky-500/40 active:bg-sky-500/60 transition-colors"
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize agent panel"
-            onMouseDown={onDragStart}
-          />
-          <div className="flex-shrink-0" style={{ width: agentWidth }}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}>
-              <GlobalChatPanel onClose={() => setAgentOpen(false)} />
-            </Suspense>
-          </div>
-        </div>
-        {/* Mobile: full-screen overlay */}
+        {/* Agent panel — exactly one instance mounted at a time to avoid duplicate WS handlers */}
         {agentOpen && (
-          <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
-            <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}>
-              <GlobalChatPanel onClose={() => setAgentOpen(false)} />
-            </Suspense>
-          </div>
+          isDesktop ? (
+            <div className="flex flex-shrink-0 animate-slide-in-right">
+              <div
+                className="w-1 flex-shrink-0 cursor-col-resize hover:bg-sky-500/40 active:bg-sky-500/60 transition-colors"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize agent panel"
+                onMouseDown={onDragStart}
+              />
+              <div className="flex-shrink-0" style={{ width: agentWidth }}>
+                <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}>
+                  <GlobalChatPanel onClose={() => setAgentOpen(false)} />
+                </Suspense>
+              </div>
+            </div>
+          ) : (
+            <div className="fixed inset-0 z-50 animate-fade-in">
+              <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading...</div>}>
+                <GlobalChatPanel onClose={() => setAgentOpen(false)} />
+              </Suspense>
+            </div>
+          )
         )}
       </div>
       <OnboardingModal

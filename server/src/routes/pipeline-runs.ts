@@ -2,9 +2,12 @@ import { Router } from "express";
 import { eq, desc, asc } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { pipelineRuns, stepRuns, stepRunEvents, pipelines } from "@zerohand/db";
-import type { ApiPipelineRun, ApiStepRun } from "@zerohand/shared";
+import { createRun } from "../services/run-factory.js";
+import type { ApiPipelineRun, ApiStepRun, RunStepSnapshot } from "@zerohand/shared";
 
 function toApiRun(row: typeof pipelineRuns.$inferSelect, pipelineName?: string): ApiPipelineRun {
+  const meta = (row.metadata as Record<string, unknown> | null) ?? {};
+  const stepSnapshot = Array.isArray(meta.steps) ? (meta.steps as RunStepSnapshot[]) : undefined;
   return {
     id: row.id,
     pipelineId: row.pipelineId,
@@ -17,6 +20,7 @@ function toApiRun(row: typeof pipelineRuns.$inferSelect, pipelineName?: string):
     finishedAt: row.finishedAt?.toISOString() ?? null,
     error: row.error,
     createdAt: row.createdAt.toISOString(),
+    stepSnapshot,
   };
 }
 
@@ -84,11 +88,12 @@ export function createPipelineRunsRouter(db: Db): Router {
       const pipeline = await db.query.pipelines.findFirst({ where: eq(pipelines.id, pipelineId) });
       if (!pipeline) return res.status(404).json({ error: "Pipeline not found" });
 
-      const metadata = executionMode ? { executionMode } : undefined;
-      const [run] = await db
-        .insert(pipelineRuns)
-        .values({ pipelineId, inputParams, triggerType, metadata })
-        .returning();
+      const run = await createRun(db, {
+        pipelineId,
+        inputParams,
+        triggerType,
+        metadata: executionMode ? { executionMode } : {},
+      });
 
       res.status(201).json(toApiRun(run, pipeline.name));
     } catch (err) {

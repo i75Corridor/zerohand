@@ -52,6 +52,7 @@ import { makeUpdatePackage } from "./update-package.js";
 import { makeUninstallPackage } from "./uninstall-package.js";
 import { makeDiscoverPackages } from "./discover-packages.js";
 import { makeScanPackage } from "./scan-package.js";
+import { makeGetRunLog } from "./get-run-log.js";
 import { makeDetectMcpEnv } from "./detect-mcp-env.js";
 
 export type { AgentToolContext } from "./context.js";
@@ -111,5 +112,6 @@ export function makeAllTools(ctx: AgentToolContext): ToolDefinition[] {
     makeUninstallPackage(ctx),
     makeDiscoverPackages(ctx),
     makeScanPackage(ctx),
+    makeGetRunLog(ctx),
   ];
 }

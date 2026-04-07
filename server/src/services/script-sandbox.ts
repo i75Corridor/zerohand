@@ -49,6 +49,8 @@ export interface SandboxOpts {
   timeoutMs: number;
   maxStdout: number;
   secretEnv?: Record<string, string>;
+  /** Host path for the output directory. Mounted at the same path inside the container so scripts can write files that persist to the host. */
+  outputDir?: string;
 }
 
 export async function runInSandbox(opts: SandboxOpts): Promise<string> {
@@ -57,7 +59,7 @@ export async function runInSandbox(opts: SandboxOpts): Promise<string> {
     throw new Error("Docker not available — caller should use subprocess fallback");
   }
 
-  const { scriptPath, input, networkEnabled, timeoutMs, maxStdout, secretEnv = {} } = opts;
+  const { scriptPath, input, networkEnabled, timeoutMs, maxStdout, secretEnv = {}, outputDir } = opts;
 
   const ext = extname(scriptPath);
   let entrypoint: string;
@@ -79,6 +81,13 @@ export async function runInSandbox(opts: SandboxOpts): Promise<string> {
     "--entrypoint", entrypoint,
     "-i", // stdin
   ];
+
+  // Mount output directory at the same host path so scripts can write files that
+  // persist to the host and report the correct absolute path in their output.
+  if (outputDir) {
+    dockerArgs.push("-v", `${outputDir}:${outputDir}:rw`);
+    dockerArgs.push("-e", `OUTPUT_DIR=${outputDir}`);
+  }
 
   // Inject only declared secrets
   for (const [key, value] of Object.entries(secretEnv)) {

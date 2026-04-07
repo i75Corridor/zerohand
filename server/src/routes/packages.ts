@@ -42,8 +42,21 @@ async function buildPackageDir(
 
   mkdirSync(outDir, { recursive: true });
 
-  // pipeline.yaml
-  writeFileSync(join(outDir, "pipeline.yaml"), pipelineToYaml(pipeline), "utf-8");
+  // pipeline.yaml — strip namespace from skill refs so they're portable.
+  // "zerohand-daily-absurdist/researcher" → "researcher"
+  // "local/localvibe-page-manager"        → "localvibe-page-manager"
+  // At install time, qualifySkillRef() re-prefixes bare names with the
+  // install namespace so all skills resolve correctly.
+  const exportablePipeline = {
+    ...pipeline,
+    steps: pipeline.steps.map((step) => ({
+      ...step,
+      skillName: step.skillName?.includes("/")
+        ? step.skillName.slice(step.skillName.indexOf("/") + 1)
+        : step.skillName ?? null,
+    })),
+  };
+  writeFileSync(join(outDir, "pipeline.yaml"), pipelineToYaml(exportablePipeline), "utf-8");
 
   // skills — strip namespace prefix in the exported directory structure
   // e.g. "daily-absurdist/researcher" exports as "skills/researcher/"
@@ -105,6 +118,11 @@ async function buildPackageDir(
 
 export function createPackagesRouter(db: Db, ws: WsManager): Router {
   const router = Router();
+
+  // GET /api/packages/gh-status — check if gh CLI is available
+  router.get("/packages/gh-status", (_req, res) => {
+    res.json({ available: ghAvailable() });
+  });
 
   // GET /api/packages — list installed packages
   router.get("/packages", async (_req, res, next) => {
@@ -443,7 +461,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
     }
   });
 
-  // POST /api/packages/publish — publish to GitHub
+  // POST /api/packages/publish — publish to GitHub (create repo or update via PR)
   router.post("/packages/publish", async (req, res, next) => {
     let tempDir: string | null = null;
     try {
@@ -473,6 +491,69 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
 
       const repoName = repo ?? result.slugName;
 
+      // Find a previously-published authored package for this pipeline.
+      // Match by pipelineId (set on publish since v1) OR by repoFullName slug
+      // (for records created before pipelineId was stored).
+      const allAuthored = await db
+        .select()
+        .from(installedPackages)
+        .then((rows) => rows.filter((r) => (r.metadata as Record<string, unknown>)?.origin === "authored"));
+
+      const existingPkg = allAuthored.find(
+        (r) =>
+          r.pipelineId === pipelineId ||
+          r.repoFullName === repoName ||
+          r.repoFullName.endsWith(`/${repoName}`),
+      ) ?? null;
+
+      /** Clone an existing repo, commit updated package files, push a branch, open a PR. */
+      async function pushUpdatePR(repoFullName: string, packageName: string, packageDir: string) {
+        const cloneDir = mkdtempSync(join(tmpdir(), "zerohand-clone-"));
+        try {
+          const cloneResult = spawnSync("gh", ["repo", "clone", repoFullName, cloneDir], { encoding: "utf-8", stdio: "pipe" });
+          if (cloneResult.status !== 0) return { error: `Failed to clone repository: ${cloneResult.stderr?.trim()}` };
+
+          spawnSync("bash", ["-c", `cp -r ${packageDir}/. ${cloneDir}/`], { stdio: "ignore" });
+
+          const branch = `update/${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
+          spawnSync("git", ["checkout", "-b", branch], { cwd: cloneDir, stdio: "ignore" });
+          spawnSync("git", ["add", "."], { cwd: cloneDir, stdio: "ignore" });
+
+          const commitResult = spawnSync("git", ["commit", "-m", `Update ${packageName}`], { cwd: cloneDir, encoding: "utf-8", stdio: "pipe" });
+          if (commitResult.status !== 0) return { noChanges: true };
+
+          spawnSync("git", ["push", "origin", branch], { cwd: cloneDir, stdio: "ignore" });
+
+          const prResult = spawnSync(
+            "gh", ["pr", "create", "--title", `Update ${packageName}`, "--body", `Automated update from Zerohand — pipeline "${packageName}" was modified.`, "--head", branch, "--base", "main"],
+            { cwd: cloneDir, encoding: "utf-8", stdio: "pipe" },
+          );
+          return { prUrl: prResult.stdout?.trim() ?? `https://github.com/${repoFullName}/pulls` };
+        } finally {
+          if (existsSync(cloneDir)) rmSync(cloneDir, { recursive: true, force: true });
+        }
+      }
+
+      if (existingPkg) {
+        // ── Update path: clone existing repo, create feature branch, open PR ──
+        // If the user supplied an explicit repo name, prefer it over the stored one
+        // (covers org transfers, renames, or first-time org publish).
+        const targetFullName = repo ?? existingPkg.repoFullName;
+        const targetRepoUrl = `https://github.com/${targetFullName}`;
+        // Persist the authoritative name for future publishes
+        if (targetFullName !== existingPkg.repoFullName) {
+          await db.update(installedPackages)
+            .set({ repoFullName: targetFullName, repoUrl: targetRepoUrl, pipelineId, updatedAt: new Date() })
+            .where(eq(installedPackages.id, existingPkg.id));
+        }
+        const pr = await pushUpdatePR(targetFullName, result.name, tempDir!);
+        if ("error" in pr) { res.status(500).json({ error: pr.error }); return; }
+        res.status(200).json({ id: existingPkg.id, repoUrl: targetRepoUrl, repoFullName: targetFullName, ...pr });
+        return;
+      }
+
+      // ── Create path: new repo ─────────────────────────────────────────────
+
       // git init + commit
       spawnSync("git", ["init"], { cwd: tempDir, stdio: "ignore" });
       spawnSync("git", ["add", "."], { cwd: tempDir, stdio: "ignore" });
@@ -485,23 +566,42 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
 
       const createResult = spawnSync("gh", ghArgs, { cwd: tempDir, encoding: "utf-8", stdio: "pipe" });
       if (createResult.status !== 0) {
-        res.status(500).json({ error: `Failed to create GitHub repository: ${createResult.stderr?.trim()}` });
+        const stderr = createResult.stderr?.trim() ?? "";
+        // Repo already exists but our DB record was missing — resolve full name and update
+        if (stderr.includes("Name already exists") || stderr.includes("already exists")) {
+          const viewResult = spawnSync("gh", ["repo", "view", repoName, "--json", "nameWithOwner", "-q", ".nameWithOwner"], { encoding: "utf-8", stdio: "pipe" });
+          const resolvedFullName = viewResult.stdout?.trim();
+          if (!resolvedFullName) {
+            res.status(500).json({ error: `Repository already exists but could not resolve owner: ${stderr}` });
+            return;
+          }
+          const resolvedRepoUrl = `https://github.com/${resolvedFullName}`;
+          // Upsert record so future publishes find it by pipelineId
+          await db.insert(installedPackages)
+            .values({ repoUrl: resolvedRepoUrl, repoFullName: resolvedFullName, pipelineId, localPath: tempDir!, skills: [], updateAvailable: false, metadata: { origin: "authored" } })
+            .onConflictDoUpdate({ target: installedPackages.repoUrl, set: { pipelineId, updatedAt: new Date() } });
+          const pr = await pushUpdatePR(resolvedFullName, result.name, tempDir!);
+          if ("error" in pr) { res.status(500).json({ error: pr.error }); return; }
+          res.status(200).json({ repoUrl: resolvedRepoUrl, repoFullName: resolvedFullName, ...pr });
+          return;
+        }
+        res.status(500).json({ error: `Failed to create GitHub repository: ${stderr}` });
         return;
       }
 
       // Add topic
       spawnSync("gh", ["repo", "edit", repoName, "--add-topic", "zerohand-package"], { stdio: "ignore" });
 
-      // Parse owner/repo from repoName (may be "repo" or "owner/repo")
-      const repoFullName = repoName.includes("/") ? repoName : repoName;
+      const repoFullName = repoName;
       const repoUrl = `https://github.com/${repoFullName}`;
 
-      // Create installed_packages record
+      // Create installed_packages record, storing pipelineId for future re-publishes
       const [pkg] = await db
         .insert(installedPackages)
         .values({
           repoUrl,
           repoFullName,
+          pipelineId,
           localPath: tempDir,
           skills: [],
           updateAvailable: false,

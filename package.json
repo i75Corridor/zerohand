@@ -9,6 +9,7 @@
     "build": "pnpm --filter @zerohand/db build && pnpm --filter server build && pnpm --filter ui build && pnpm --filter @i75corridor/zh-cli build && pnpm --filter @i75corridor/zerohand-mcp build",
     "db:generate": "pnpm --filter @zerohand/db generate",
     "db:reset": "rm -rf .data/postgres && echo 'Database reset. Run pnpm dev to re-initialize.'",
+    "output:reset": "rm -rf .data/logs .data/sessions .data/output && echo 'Output directories cleared.'",
     "reset": "rm -rf .data && echo 'Full reset complete. Run pnpm dev to re-initialize.'",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --filter='{./server}...' --filter=@i75corridor/zh-cli test",

@@ -2,6 +2,7 @@ import { Cron } from "croner";
 import { and, eq, lte, isNull, or } from "drizzle-orm";
 import type { Db } from "@zerohand/db";
 import { triggers, pipelineRuns } from "@zerohand/db";
+import { createRun } from "./run-factory.js";
 import type { WsManager } from "../ws/index.js";
 
 export function computeNextRun(expression: string, timezone = "UTC"): Date {
@@ -68,15 +69,12 @@ export class TriggerManager {
 
   private async fire(trigger: typeof triggers.$inferSelect): Promise<void> {
     try {
-      const [run] = await this.db
-        .insert(pipelineRuns)
-        .values({
-          pipelineId: trigger.pipelineId,
-          inputParams: (trigger.defaultInputs as Record<string, unknown>) ?? {},
-          triggerType: "cron",
-          triggerDetail: trigger.cronExpression ?? undefined,
-        })
-        .returning();
+      const run = await createRun(this.db, {
+        pipelineId: trigger.pipelineId,
+        inputParams: (trigger.defaultInputs as Record<string, unknown>) ?? {},
+        triggerType: "cron",
+        triggerDetail: trigger.cronExpression ?? undefined,
+      });
 
       const next = computeNextRun(trigger.cronExpression!, trigger.timezone);
       await this.db

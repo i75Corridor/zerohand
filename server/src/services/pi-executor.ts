@@ -83,12 +83,14 @@ export async function runSkillStep(
   const skillBody = interpolateContext(skill.systemPrompt, context);
   const fullSystemPrompt = [pipelineSystemPrompt, skillBody].filter(Boolean).join("\n\n---\n\n");
 
+  console.log("[pi-executor] systemPrompt length:", fullSystemPrompt.length, "| preview:", fullSystemPrompt.slice(0, 300));
   const authStorage = makeAuthStorage();
   const modelRegistry = ModelRegistry.inMemory(authStorage);
   const resourceLoader = makeResourceLoader(fullSystemPrompt, []);
 
-  const scriptTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths, scriptExecOpts ?? {});
+  const scriptTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths, scriptExecOpts ?? {}, skill.scriptParameters);
   const customTools: ToolDefinition[] = [...scriptTools, ...(mcpTools ?? [])];
+  console.log("[pi-executor] customTools schemas:", JSON.stringify(customTools.map((t) => ({ name: t.name, parameters: t.parameters })), null, 2).slice(0, 3000));
 
   const sessionManager = sessionDir
     ? SessionManager.create(sessionDir)
@@ -124,6 +126,7 @@ export async function runSkillStep(
     }
   });
 
+  console.log("[pi-executor] prompt length:", prompt.length, "| preview:", prompt.slice(0, 500));
   try {
     await session.prompt(prompt);
   } finally {
@@ -136,6 +139,7 @@ export async function runSkillStep(
   const lastAssistant = [...session.messages].reverse().find((m: any) => m.role === "assistant") as any | undefined;
   if (lastAssistant?.stopReason === "error") {
     const errMsg = lastAssistant.errorMessage as string | undefined;
+    console.error("[pi-executor] Model error stop. Full last assistant message:", JSON.stringify(lastAssistant, null, 2).slice(0, 2000));
     throw new Error(errMsg ?? "Model returned an error stop reason (UNEXPECTED_TOOL_CALL / SAFETY / MALFORMED_FUNCTION_CALL). Check that all tools referenced in the skill system prompt are registered and available.");
   }
 

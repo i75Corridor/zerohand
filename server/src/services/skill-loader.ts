@@ -8,7 +8,7 @@ import { isDockerAvailable, runInSandbox } from "./script-sandbox.js";
 import { outputDir as getOutputDir } from "./paths.js";
 
 const SCRIPT_TIMEOUT_MS = 30_000;
-const STDOUT_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB
+const STDOUT_SIZE_LIMIT = 10 * 1024 * 1024; // 10 MB — supports base64-encoded images (~5 MB PNG → ~7 MB base64)
 
 // Env vars stripped from child process environment
 const REDACTED_ENV_PREFIXES = ["GEMINI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "DATABASE_URL"];
@@ -31,6 +31,13 @@ function safeChildEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
+export interface ScriptParameter {
+  name: string;
+  type?: "string" | "number" | "boolean";
+  description?: string;
+  required?: boolean;
+}
+
 export interface SkillDef {
   name: string;
   /** Namespace portion of the qualified skill name (e.g. "local", "daily-absurdist") */
@@ -51,6 +58,8 @@ export interface SkillDef {
   secrets?: string[];
   /** MCP server names (from the global registry) this skill wants tools from */
   mcpServers?: string[];
+  /** Parameter definitions for script tools, parsed from SKILL.md `parameters:` frontmatter */
+  scriptParameters?: ScriptParameter[];
 }
 
 export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef | null {
@@ -96,6 +105,13 @@ export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef
   const skillNetwork = (fm.network as boolean | undefined) ?? false;
   const skillSecrets = (fm.secrets as string[] | undefined) ?? [];
   const skillMcpServers = (fm.mcpServers as string[] | undefined) ?? [];
+  const rawParams = fm.parameters as Array<Record<string, unknown>> | undefined;
+  const scriptParameters: ScriptParameter[] | undefined = rawParams?.map((p) => ({
+    name: String(p.name ?? ""),
+    type: (p.type as ScriptParameter["type"]) ?? "string",
+    description: p.description !== undefined ? String(p.description) : undefined,
+    required: Boolean(p.required ?? false),
+  }));
 
   // version lives in metadata per spec; fall back to top-level for old skills
   const version = String(skillMetadata?.version ?? fm.version ?? "0.0.0");
@@ -105,8 +121,13 @@ export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef
   const namespace = slashIdx > -1 ? qualifiedName.slice(0, slashIdx) : "local";
   const skillBaseName = slashIdx > -1 ? qualifiedName.slice(slashIdx + 1) : qualifiedName;
 
+  // Strip any accidental "namespace/" prefix from fm.name
+  const rawFmName = String(fm.name ?? skillBaseName);
+  const fmNameSlash = rawFmName.indexOf("/");
+  const resolvedName = fmNameSlash > -1 ? rawFmName.slice(fmNameSlash + 1) : rawFmName;
+
   return {
-    name: String(fm.name ?? skillBaseName),
+    name: resolvedName,
     namespace,
     qualifiedName,
     version,
@@ -120,6 +141,7 @@ export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef
     network: skillNetwork,
     secrets: skillSecrets,
     mcpServers: skillMcpServers,
+    scriptParameters,
   };
 }
 
@@ -144,8 +166,9 @@ async function execScript(
         input,
         networkEnabled: opts.networkEnabled ?? false,
         timeoutMs,
-        maxStdout: STDOUT_SIZE_LIMIT,
+        maxStdout: STDOUT_SIZE_LIMIT, // shared constant — keep in sync
         secretEnv: opts.secretEnv,
+        outputDir: getOutputDir(),
       });
     } catch (err) {
       // If it's a Docker-specific failure (image missing, etc.), fall through to subprocess
@@ -207,25 +230,34 @@ async function execScript(
   });
 }
 
-export function makeScriptTools(scriptPaths: string[], execOpts: ExecScriptOpts = {}): ToolDefinition[] {
+function buildScriptSchema(params?: ScriptParameter[]) {
+  if (!params || params.length === 0) {
+    return Type.Object({ input: Type.Optional(Type.String({ description: "Input for the script" })) });
+  }
+  const entries: Record<string, unknown> = {};
+  for (const p of params) {
+    const opts = p.description ? { description: p.description } : {};
+    let base;
+    switch (p.type) {
+      case "number": base = Type.Number(opts); break;
+      case "boolean": base = Type.Boolean(opts); break;
+      default: base = Type.String(opts);
+    }
+    entries[p.name] = p.required ? base : Type.Optional(base);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return Type.Object(entries as any);
+}
+
+export function makeScriptTools(scriptPaths: string[], execOpts: ExecScriptOpts = {}, scriptParameters?: ScriptParameter[]): ToolDefinition[] {
+  const schema = buildScriptSchema(scriptParameters);
   return scriptPaths.map((scriptPath) => {
     const toolName = basename(scriptPath, extname(scriptPath));
     return {
       name: toolName,
       label: toolName.replace(/_/g, " "),
-      description: `Run the ${toolName} script. Pass whatever parameters the skill body instructs — all fields are forwarded as JSON to the script via stdin.`,
-      parameters: Type.Object({
-        query: Type.Optional(Type.String({ description: "Search query or text input" })),
-        prompt: Type.Optional(Type.String({ description: "Text prompt for generation tools" })),
-        maxResults: Type.Optional(Type.Number({ description: "Maximum number of results" })),
-        outputDir: Type.Optional(Type.String({ description: "Output directory path" })),
-        slug: Type.Optional(Type.String({ description: "Filename slug (lowercase, hyphens)" })),
-        aspectRatio: Type.Optional(Type.String({ description: "Aspect ratio, e.g. '16:9'" })),
-        personGeneration: Type.Optional(Type.String({ description: "Person generation setting" })),
-        modelName: Type.Optional(Type.String({ description: "Model name override" })),
-        article: Type.Optional(Type.String({ description: "Article text for publishing tools" })),
-        imagePath: Type.Optional(Type.String({ description: "Image file path" })),
-      }),
+      description: `Run the ${toolName} script. Pass the parameters described in the skill body — all fields are forwarded as JSON to the script via stdin.`,
+      parameters: schema,
       execute: async (_id: string, params: Record<string, unknown>) => {
         const stdout = await execScript(scriptPath, params, execOpts);
         return { content: [{ type: "text" as const, text: stdout.trim() }], details: {} };

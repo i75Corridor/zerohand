@@ -37,9 +37,20 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-white">{step.name}</div>
-          {step.skillName && (
-            <div className="text-xs text-violet-400 mt-0.5">
-              skill: {step.skillName}
+          {step.skillName ? (
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className="text-xs text-violet-400">{step.skillName}</span>
+              {step.skillFound === false && (
+                <span className="text-xs text-rose-400 bg-rose-900/30 border border-rose-800/50 rounded px-1.5 py-0.5 leading-none">
+                  not found
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-xs text-amber-500/80 bg-amber-900/20 border border-amber-800/30 rounded px-1.5 py-0.5 leading-none">
+                no skill
+              </span>
             </div>
           )}
           {preview && (
@@ -203,11 +214,14 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
               ))}
             </div>
           )}
-          <div className="flex gap-3 justify-end">
+          <div className="flex gap-3 justify-end items-center">
+            {validation && validation.errors.length > 0 && (
+              <span className="text-xs text-rose-400 flex-1">Fix validation errors before running.</span>
+            )}
             <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Cancel</button>
             <button
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg disabled:opacity-50"
-              disabled={trigger.isPending}
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={trigger.isPending || (validation?.errors.length ?? 0) > 0}
               onClick={() => trigger.mutate()}
             >
               {trigger.isPending ? "Starting..." : "Run Pipeline"}
@@ -291,7 +305,11 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
   const slugName = pipeline.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const [repo, setRepo] = useState(slugName);
   const [isPrivate, setIsPrivate] = useState(false);
-  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [publishResult, setPublishResult] = useState<{
+    repoUrl: string;
+    prUrl?: string;
+    noChanges?: boolean;
+  } | null>(null);
 
   const publish = useMutation({
     mutationFn: () =>
@@ -303,7 +321,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
       }),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
-      setPublishedUrl(result.repoUrl);
+      setPublishResult({ repoUrl: result.repoUrl, prUrl: result.prUrl, noChanges: result.noChanges });
     },
   });
 
@@ -319,17 +337,35 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
             </Dialog.Close>
           </div>
 
-          {publishedUrl ? (
+          {publishResult ? (
             <div className="space-y-4">
-              <p className="text-sm text-emerald-400">Published successfully!</p>
-              <a
-                href={publishedUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-xs font-mono text-sky-400 hover:text-sky-300 bg-slate-800 rounded-xl px-4 py-3 truncate"
-              >
-                {publishedUrl}
-              </a>
+              {publishResult.noChanges ? (
+                <p className="text-sm text-slate-400">No changes detected — the repository is already up to date.</p>
+              ) : publishResult.prUrl ? (
+                <>
+                  <p className="text-sm text-emerald-400">Pull request created!</p>
+                  <a
+                    href={publishResult.prUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-xs font-mono text-sky-400 hover:text-sky-300 bg-slate-800 rounded-xl px-4 py-3 truncate"
+                  >
+                    {publishResult.prUrl}
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-emerald-400">Published successfully!</p>
+                  <a
+                    href={publishResult.repoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-xs font-mono text-sky-400 hover:text-sky-300 bg-slate-800 rounded-xl px-4 py-3 truncate"
+                  >
+                    {publishResult.repoUrl}
+                  </a>
+                </>
+              )}
               <button
                 onClick={onClose}
                 className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
@@ -526,32 +562,31 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
 // ── Validation panel ──────────────────────────────────────────────────────────
 
 function ValidationPanel({ pipelineId }: { pipelineId: string }) {
-  const [result, setResult] = useState<ApiValidationResult | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function validate() {
-    setLoading(true);
-    try {
-      const r = await api.validatePipeline(pipelineId);
-      setResult(r);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data: result, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ["validate", pipelineId],
+    queryFn: () => api.validatePipeline(pipelineId),
+    staleTime: 60_000,
+  });
 
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Validation</h2>
         <button
-          onClick={validate}
-          disabled={loading}
+          onClick={() => refetch()}
+          disabled={isFetching}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors disabled:opacity-50"
         >
-          {loading ? <Loader size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-          {loading ? "Checking..." : "Validate"}
+          {isFetching ? <Loader size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+          {isFetching ? "Checking..." : "Re-validate"}
         </button>
       </div>
+
+      {isLoading && (
+        <div className="flex items-center gap-2 text-xs text-slate-500 px-1">
+          <Loader size={12} className="animate-spin" /> Checking pipeline…
+        </div>
+      )}
 
       {result && (
         <div className={`border rounded-xl p-4 ${result.valid ? "border-emerald-800/40 bg-emerald-900/10" : "border-rose-800/40 bg-rose-900/10"}`}>
@@ -647,6 +682,7 @@ export default function PipelineDetail() {
   const [showRun, setShowRun] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -672,6 +708,12 @@ export default function PipelineDetail() {
   const { data: packages = [] } = useQuery({
     queryKey: ["packages"],
     queryFn: () => api.listInstalledPackages(),
+  });
+
+  const { data: ghStatus } = useQuery({
+    queryKey: ["gh-status"],
+    queryFn: () => api.getGhStatus(),
+    staleTime: 60_000,
   });
 
   if (isLoading) return <LoadingState />;
@@ -719,10 +761,7 @@ export default function PipelineDetail() {
           </div>
           <div className="flex flex-wrap gap-2 flex-shrink-0">
             <button
-              onClick={() => {
-                if (!confirm(`Delete "${pipeline.name}"? This will also remove any skills used only by this pipeline.`)) return;
-                deletePipeline.mutate();
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deletePipeline.isPending}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-900/40 hover:text-rose-400 text-slate-500 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
               title="Delete pipeline"
@@ -790,11 +829,19 @@ export default function PipelineDetail() {
             {exporting ? "Exporting..." : "Export as Package"}
           </button>
           <button
-            onClick={() => setShowPublish(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+            onClick={() => ghStatus?.available !== false && setShowPublish(true)}
+            disabled={ghStatus?.available === false}
+            title={ghStatus?.available === false ? "gh CLI not found — install from https://cli.github.com" : undefined}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload size={13} />
             Publish to GitHub
+            {ghStatus?.available === false && (
+              <span className="flex items-center gap-1 ml-1 px-1.5 py-0.5 bg-amber-500/15 border border-amber-500/30 rounded text-amber-400 text-xs font-normal">
+                <AlertTriangle size={10} />
+                gh missing
+              </span>
+            )}
           </button>
         </div>
         {exportError && <p className="text-xs text-rose-400 mb-2" role="alert">{exportError}</p>}
@@ -831,6 +878,43 @@ export default function PipelineDetail() {
       {showRun && <RunModal pipeline={pipeline} onClose={() => setShowRun(false)} />}
       {showPublish && <PublishModal pipeline={pipeline} onClose={() => setShowPublish(false)} />}
       {showPreview && <PreviewModal pipelineId={pipeline.id} onClose={() => setShowPreview(false)} />}
+
+      {/* Delete confirmation dialog */}
+      <Dialog.Root open={showDeleteConfirm} onOpenChange={(open) => { setShowDeleteConfirm(open); if (!open) setDeleteError(""); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900 border border-slate-700/60 rounded-xl p-6 w-[calc(100%-2rem)] max-w-sm shadow-lg animate-scale-in">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-rose-900/40 flex items-center justify-center">
+                <Trash2 size={14} className="text-rose-400" />
+              </div>
+              <div>
+                <Dialog.Title className="text-base font-semibold text-white">Delete pipeline?</Dialog.Title>
+                <Dialog.Description className="text-sm text-slate-400 mt-1">
+                  <span className="text-white font-medium">{pipeline.name}</span> and any skills used only by this pipeline will be permanently removed.
+                </Dialog.Description>
+              </div>
+            </div>
+            {deleteError && (
+              <p className="text-xs text-rose-400 bg-rose-900/20 border border-rose-800/40 rounded-lg px-3 py-2 mb-4">{deleteError}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Dialog.Close asChild>
+                <button className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors">
+                  Cancel
+                </button>
+              </Dialog.Close>
+              <button
+                onClick={() => deletePipeline.mutate()}
+                disabled={deletePipeline.isPending}
+                className="px-4 py-2 text-sm font-medium text-white bg-rose-700 hover:bg-rose-600 rounded-xl transition-colors disabled:opacity-50"
+              >
+                {deletePipeline.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

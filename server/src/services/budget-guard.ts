@@ -64,9 +64,7 @@ export function estimateCostCents(
     costs[modelName] ??
     Object.entries(costs).find(([k]) => k.endsWith(`/${modelName}`))?.[1] ??
     { inputPerM: 50, outputPerM: 150 };
-  return Math.ceil(
-    (inputTokens * rates.inputPerM + outputTokens * rates.outputPerM) / 1_000_000,
-  );
+  return (inputTokens * rates.inputPerM + outputTokens * rates.outputPerM) / 1_000_000;
 }
 
 export async function recordCost(

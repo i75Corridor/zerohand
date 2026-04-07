@@ -9,9 +9,16 @@ import type { McpClientPool, McpToolInfo } from "./mcp-client.js";
 
 const MCP_PREFIX = "mcp__";
 
+/** Sanitize a name segment to a valid function name component.
+ *  Most LLM providers (Gemini, OpenAI, Anthropic) only allow [a-zA-Z0-9_] in function names.
+ *  Replaces any other character (e.g. hyphens in MCP server names) with underscore. */
+function sanitizeNameSegment(s: string): string {
+  return s.replace(/[^a-zA-Z0-9_]/g, "_");
+}
+
 /** Build the composite tool name used inside pi-coding-agent */
 export function mcpToolName(serverName: string, toolName: string): string {
-  return `${MCP_PREFIX}${serverName}__${toolName}`;
+  return `${MCP_PREFIX}${sanitizeNameSegment(serverName)}__${sanitizeNameSegment(toolName)}`;
 }
 
 /** Parse server name and tool name back from composite name */
@@ -23,15 +30,17 @@ export function parseMcpToolName(compositeName: string): { serverName: string; t
   return { serverName: rest.slice(0, idx), toolName: rest.slice(idx + 2) };
 }
 
-/** Convert a JSON Schema object to a TypeBox-compatible TSchema. */
+/** Convert a JSON Schema object to a TypeBox-compatible TSchema safe for Gemini.
+ *  Gemini's function schema does not support additionalProperties or typeless ({}) schemas,
+ *  so we use Type.Object({}) as the fallback for unknown/untyped objects. */
 function jsonSchemaToTypeBox(schema: Record<string, unknown>): TSchema {
   const type = schema.type as string | undefined;
   const props = schema.properties as Record<string, Record<string, unknown>> | undefined;
   const required = schema.required as string[] | undefined;
 
   if (type !== "object" || !props) {
-    // Fallback: accept any object
-    return Type.Record(Type.String(), Type.Unknown());
+    // Unknown or untyped schema — use an empty object (Gemini accepts { type: "object" })
+    return Type.Object({});
   }
 
   const fields: Record<string, TSchema> = {};
@@ -58,15 +67,16 @@ function jsonFieldSchema(schema: Record<string, unknown>): TSchema {
       return Type.Boolean(opts);
     case "array": {
       const items = schema.items as Record<string, unknown> | undefined;
-      const itemSchema = items ? jsonFieldSchema(items) : Type.Unknown();
+      // Use String as item fallback — Gemini requires typed array items
+      const itemSchema = items ? jsonFieldSchema(items) : Type.String();
       return Type.Array(itemSchema, opts);
     }
-    case "object": {
-      const nested = jsonSchemaToTypeBox(schema);
-      return nested;
-    }
+    case "object":
+      return jsonSchemaToTypeBox(schema);
     default:
-      return Type.Unknown(opts as any);
+      // Unknown type — fall back to string rather than Type.Unknown() which
+      // serializes to {} (no type field) and is rejected by Gemini
+      return Type.String(opts);
   }
 }
 
