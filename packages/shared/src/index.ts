@@ -265,6 +265,16 @@ export interface McpEnvRequirement {
   detectedFrom?: string;
 }
 
+export interface DatabaseConfig {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  ssl: boolean;
+  sslMode?: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full";
+}
+
 export interface ApiMcpServer {
   id: string;
   name: string;

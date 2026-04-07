@@ -30,5 +30,8 @@ export function registerSettingsCommand(program: Command, client: ApiClient): vo
       }
       await client.updateSetting(key, parsedValue);
       console.log(`Set ${key} = ${JSON.stringify(parsedValue)}`);
+      if (key === "database_config") {
+        console.log("Warning: Database configuration changes require a server restart to take effect.");
+      }
     });
 }
