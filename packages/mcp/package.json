@@ -1,17 +1,17 @@
 {
-  "name": "@i75corridor/zerohand-mcp",
+  "name": "@i75corridor/pawn-mcp",
   "version": "0.1.0",
-  "description": "Zerohand MCP server — expose pipelines, skills, and runs to AI assistants",
+  "description": "Pawn MCP server — expose pipelines, skills, and runs to AI assistants",
   "type": "module",
   "bin": {
-    "zerohand-mcp": "./dist/mcp.cjs"
+    "pawn-mcp": "./dist/mcp.cjs"
   },
   "exports": {
     ".": "./dist/mcp.cjs"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/i75Corridor/zerohand.git",
+    "url": "https://github.com/i75Corridor/pawn.git",
     "directory": "packages/mcp"
   },
   "publishConfig": {
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@zerohand/shared": "workspace:*",
+    "@pawn/shared": "workspace:*",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "zod": "^3.23.8"

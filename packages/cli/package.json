@@ -1,17 +1,17 @@
 {
-  "name": "@i75corridor/zh-cli",
+  "name": "@i75corridor/pawn-cli",
   "version": "0.1.0",
-  "description": "Zerohand CLI — manage pipelines, runs, and packages from the terminal",
+  "description": "Pawn CLI — manage pipelines, runs, and packages from the terminal",
   "type": "module",
   "bin": {
-    "zerohand": "./dist/cli.cjs"
+    "pawn": "./dist/cli.cjs"
   },
   "exports": {
     ".": "./dist/cli.cjs"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/i75Corridor/zerohand.git",
+    "url": "https://github.com/i75Corridor/pawn.git",
     "directory": "packages/cli"
   },
   "publishConfig": {
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
-    "@zerohand/shared": "workspace:*",
+    "@pawn/shared": "workspace:*",
     "commander": "^13.1.0",
     "ws": "^8.18.2",
     "yaml": "^2.7.1"

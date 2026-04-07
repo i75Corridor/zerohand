@@ -23,7 +23,7 @@ importers:
       '@clack/prompts':
         specifier: ^0.9.1
         version: 0.9.1
-      '@zerohand/shared':
+      '@pawn/shared':
         specifier: workspace:*
         version: link:../shared
       commander:
@@ -85,7 +85,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@3.25.76)
-      '@zerohand/shared':
+      '@pawn/shared':
         specifier: workspace:*
         version: link:../shared
       cors:
@@ -144,10 +144,10 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@3.25.76)
-      '@zerohand/db':
+      '@pawn/db':
         specifier: workspace:*
         version: link:../packages/db
-      '@zerohand/shared':
+      '@pawn/shared':
         specifier: workspace:*
         version: link:../packages/shared
       cors:
@@ -199,6 +199,9 @@ importers:
 
   ui:
     dependencies:
+      '@pawn/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
       '@radix-ui/react-dialog':
         specifier: ^1.1.4
         version: 1.1.15(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -223,9 +226,6 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.2
         version: 12.10.2(@types/react@18.3.28)(immer@11.1.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@zerohand/shared':
-        specifier: workspace:*
-        version: link:../packages/shared
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
