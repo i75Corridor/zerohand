@@ -6,6 +6,7 @@ import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import OutputPreview from "../components/OutputPreview.tsx";
 import EmptyState from "../components/EmptyState.tsx";
+import PageHeader from "../components/PageHeader.tsx";
 import type { ApiStepRun, ApiPipelineRun } from "@pawn/shared";
 
 function getOutputText(step: ApiStepRun): string {
@@ -144,11 +145,12 @@ export default function Canvas() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl pt-14 lg:pt-8">
-      <div className="flex items-center gap-3 mb-8">
-        <Layers size={20} className="text-rose-400" />
-        <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Canvas</h1>
-        <span className="text-sm text-pawn-surface-500">{completedRuns.length} completed runs</span>
-      </div>
+      <PageHeader
+        title="Canvas"
+        actions={
+          <span className="text-sm text-pawn-surface-500">{completedRuns.length} completed runs</span>
+        }
+      />
 
       {completedRuns.length === 0 ? (
         <EmptyState

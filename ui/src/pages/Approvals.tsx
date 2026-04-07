@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
+import PageHeader from "../components/PageHeader.tsx";
 import type { ApiApproval } from "@pawn/shared";
 
 function ApprovalCard({ approval }: { approval: ApiApproval }) {
@@ -100,14 +101,16 @@ export default function Approvals() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl pt-14 lg:pt-8">
-      <h1 className="text-2xl font-semibold font-display text-white tracking-tight mb-8">
-        Approvals
-        {pending.length > 0 && (
-          <span className="ml-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-md px-2.5 py-1 text-xs font-semibold">
-            {pending.length} pending
-          </span>
-        )}
-      </h1>
+      <PageHeader
+        title="Approvals"
+        actions={
+          pending.length > 0 ? (
+            <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-md px-2.5 py-1 text-xs font-semibold">
+              {pending.length} pending
+            </span>
+          ) : undefined
+        }
+      />
 
       {pending.length === 0 ? (
         <EmptyState

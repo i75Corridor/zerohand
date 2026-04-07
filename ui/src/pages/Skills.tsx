@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
+import PageHeader from "../components/PageHeader.tsx";
 import type { ApiSkill } from "@pawn/shared";
 
 function NewSkillForm({ onCancel }: { onCancel: () => void }) {
@@ -104,22 +105,19 @@ export default function Skills() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold font-display text-white tracking-tight">Skills</h1>
-          <p className="text-sm text-pawn-surface-500 mt-1">
-            Skills are installed from packages or created in-app.
-          </p>
-        </div>
-        {!creating && (
-          <button
-            onClick={() => setCreating(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-xl transition-colors"
-          >
-            <Plus size={13} /> New Skill
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Skills"
+        actions={
+          !creating ? (
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-xl transition-colors"
+            >
+              <Plus size={13} /> New Skill
+            </button>
+          ) : undefined
+        }
+      />
 
       {creating && <NewSkillForm onCancel={() => setCreating(false)} />}
 

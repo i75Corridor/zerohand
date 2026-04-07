@@ -15,6 +15,7 @@ import {
 import { api } from "../lib/api.ts";
 import StatCard from "../components/StatCard.tsx";
 import LoadingState from "../components/LoadingState.tsx";
+import PageHeader from "../components/PageHeader.tsx";
 import { formatCost, formatCostShort } from "../lib/format.ts";
 type Range = "7d" | "30d" | "90d";
 
@@ -59,28 +60,27 @@ export default function Costs() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 sm:mb-8">
-        <div>
-          <p className="text-amber-400/80 text-xs font-medium uppercase tracking-wider mb-1">Spend</p>
-          <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Cost Dashboard</h1>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {ranges.map((r) => (
-            <button
-              key={r.value}
-              onClick={() => setRange(r.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                range === r.value
-                  ? "bg-pawn-gold-600 text-white"
-                  : "bg-pawn-surface-800/60 text-pawn-surface-400 hover:text-pawn-surface-200 hover:bg-pawn-surface-800"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        title="Cost Dashboard"
+        subtitle="Spend"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {ranges.map((r) => (
+              <button
+                key={r.value}
+                onClick={() => setRange(r.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  range === r.value
+                    ? "bg-pawn-gold-600 text-white"
+                    : "bg-pawn-surface-800/60 text-pawn-surface-400 hover:text-pawn-surface-200 hover:bg-pawn-surface-800"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-10">

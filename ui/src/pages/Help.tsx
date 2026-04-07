@@ -15,6 +15,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import OnboardingModal from "../components/OnboardingModal.tsx";
+import PageHeader from "../components/PageHeader.tsx";
 
 const CONCEPTS = [
   {
@@ -73,11 +74,7 @@ export default function Help() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
-      {/* Header */}
-      <div className="mb-8">
-        <p className="text-pawn-gold-400/80 text-xs font-medium uppercase tracking-wider mb-1">Learn</p>
-        <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Help & Reference</h1>
-      </div>
+      <PageHeader title="Help & Reference" subtitle="Learn" />
 
       {/* Getting Started */}
       <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl p-6 mb-8">

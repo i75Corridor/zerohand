@@ -3,6 +3,7 @@ import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCi
 import { useState } from "react";
 import { api } from "../lib/api.ts";
 import ModelSelector from "../components/ModelSelector.tsx";
+import PageHeader from "../components/PageHeader.tsx";
 import type { ApiMcpServer, ApiMcpTool } from "@pawn/shared";
 
 // ── Active Models ─────────────────────────────────────────────────────────────
@@ -749,10 +750,7 @@ function AddProviderForm({
 export default function Settings() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl pt-14 lg:pt-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold font-display text-white tracking-tight">Settings</h1>
-        <p className="text-sm text-pawn-surface-500 mt-1">Manage your models and preferences.</p>
-      </div>
+      <PageHeader title="Settings" />
 
       <ActiveModelsSection />
       <CustomProvidersSection />

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { api } from "../lib/api.ts";
 import EmptyState from "../components/EmptyState.tsx";
+import PageHeader from "../components/PageHeader.tsx";
 import type { ApiInstalledPackage, ApiDiscoveredPackage, ApiModelWarning } from "@pawn/shared";
 
 // ── Security error parsing ─────────────────────────────────────────────────────
@@ -397,20 +398,19 @@ export default function Packages() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Package size={20} className="text-teal-400" />
-          <h1 className="text-2xl font-semibold font-display text-white tracking-tight">Packages</h1>
-        </div>
-        <button
-          onClick={() => checkUpdates.mutate()}
-          disabled={checkUpdates.isPending}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={12} className={checkUpdates.isPending ? "animate-spin" : ""} />
-          {checkUpdates.isPending ? "Checking..." : "Check for updates"}
-        </button>
-      </div>
+      <PageHeader
+        title="Packages"
+        actions={
+          <button
+            onClick={() => checkUpdates.mutate()}
+            disabled={checkUpdates.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={checkUpdates.isPending ? "animate-spin" : ""} />
+            {checkUpdates.isPending ? "Checking..." : "Check for updates"}
+          </button>
+        }
+      />
 
       {/* Installed packages */}
       <section className="mb-10">
