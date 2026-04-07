@@ -18,10 +18,9 @@ export default {
             900: 'var(--pawn-gold-900)',
             950: 'var(--pawn-gold-950)',
           },
-          bronze: {
-            400: 'var(--pawn-bronze-400)',
-            500: 'var(--pawn-bronze-500)',
-            600: 'var(--pawn-bronze-600)',
+          info: {
+            400: 'var(--pawn-info-400)',
+            500: 'var(--pawn-info-500)',
           },
           surface: {
             50:  'var(--pawn-surface-50)',
@@ -36,10 +35,6 @@ export default {
             900: 'var(--pawn-surface-900)',
             950: 'var(--pawn-surface-950)',
           },
-          success: 'var(--pawn-success)',
-          error:   'var(--pawn-error)',
-          warning: 'var(--pawn-warning)',
-          info:    'var(--pawn-info)',
         },
       },
       borderRadius: {
