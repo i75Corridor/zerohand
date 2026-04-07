@@ -246,6 +246,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           >
             <Menu size={20} />
           </button>
+          <div className="absolute inset-0 board-grid" aria-hidden="true" />
           <div className="relative">
             {children}
           </div>
