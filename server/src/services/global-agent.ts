@@ -94,7 +94,7 @@ Be concise and action-oriented. Confirm briefly what you did.`;
 function loadSkillSummary(skillsDir: string): string {
   if (!existsSync(skillsDir)) return "";
   const entries: string[] = [];
-  // Two-level traversal: namespace dirs → skill dirs (e.g. local/researcher, zerohand-daily-absurdist/publisher)
+  // Two-level traversal: namespace dirs → skill dirs (e.g. local/researcher, pawn-daily-absurdist/publisher)
   for (const ns of readdirSync(skillsDir, { withFileTypes: true })) {
     if (!ns.isDirectory()) continue;
     const nsPath = join(skillsDir, ns.name);

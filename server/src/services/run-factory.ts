@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { pipelineRuns, pipelineSteps } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { pipelineRuns, pipelineSteps } from "@pawn/db";
 
 export interface SnapshotStep {
   stepIndex: number;

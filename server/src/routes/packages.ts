@@ -43,7 +43,7 @@ async function buildPackageDir(
   mkdirSync(outDir, { recursive: true });
 
   // pipeline.yaml — strip namespace from skill refs so they're portable.
-  // "zerohand-daily-absurdist/researcher" → "researcher"
+  // "pawn-daily-absurdist/researcher" → "researcher"
   // "local/localvibe-page-manager"        → "localvibe-page-manager"
   // At install time, qualifySkillRef() re-prefixes bare names with the
   // install namespace so all skills resolve correctly.
@@ -508,7 +508,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
 
       /** Clone an existing repo, commit updated package files, push a branch, open a PR. */
       async function pushUpdatePR(repoFullName: string, packageName: string, packageDir: string) {
-        const cloneDir = mkdtempSync(join(tmpdir(), "zerohand-clone-"));
+        const cloneDir = mkdtempSync(join(tmpdir(), "pawn-clone-"));
         try {
           const cloneResult = spawnSync("gh", ["repo", "clone", repoFullName, cloneDir], { encoding: "utf-8", stdio: "pipe" });
           if (cloneResult.status !== 0) return { error: `Failed to clone repository: ${cloneResult.stderr?.trim()}` };
@@ -525,7 +525,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
           spawnSync("git", ["push", "origin", branch], { cwd: cloneDir, stdio: "ignore" });
 
           const prResult = spawnSync(
-            "gh", ["pr", "create", "--title", `Update ${packageName}`, "--body", `Automated update from Zerohand — pipeline "${packageName}" was modified.`, "--head", branch, "--base", "main"],
+            "gh", ["pr", "create", "--title", `Update ${packageName}`, "--body", `Automated update from Pawn — pipeline "${packageName}" was modified.`, "--head", branch, "--base", "main"],
             { cwd: cloneDir, encoding: "utf-8", stdio: "pipe" },
           );
           return { prUrl: prResult.stdout?.trim() ?? `https://github.com/${repoFullName}/pulls` };

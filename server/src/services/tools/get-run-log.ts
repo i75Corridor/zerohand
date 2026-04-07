@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { asc, eq } from "drizzle-orm";
-import { pipelineRuns, stepRuns, stepRunEvents } from "@zerohand/db";
+import { pipelineRuns, stepRuns, stepRunEvents } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 const MAX_EVENTS = 500;
