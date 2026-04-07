@@ -32,16 +32,20 @@ export default function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-pawn-surface-950/70 z-50 animate-overlay-in" />
+        <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <Dialog.Content
-          className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-panel p-6 w-full ${maxWidth} shadow-lg max-h-[90vh] overflow-y-auto animate-scale-in`}
+          className={`pointer-events-auto bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-panel p-6 w-full ${maxWidth} shadow-lg max-h-[90vh] overflow-y-auto animate-scale-in`}
         >
-          <Dialog.Title className="text-lg font-semibold text-white mb-4">
-            {titleIcon && <span className="inline mr-2 align-middle">{titleIcon}</span>}
-            {title}
-          </Dialog.Title>
+          {title && (
+            <Dialog.Title className="text-lg font-semibold text-white mb-4">
+              {titleIcon && <span className="inline mr-2 align-middle">{titleIcon}</span>}
+              {title}
+            </Dialog.Title>
+          )}
           {children}
         </Dialog.Content>
+        </div>
       </Dialog.Portal>
     </Dialog.Root>
   );
