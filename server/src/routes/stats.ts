@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { sql, gte, lte, and, inArray, eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { pipelineRuns, costEvents, pipelines } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { pipelineRuns, costEvents, pipelines } from "@pawn/db";
 
 export function createStatsRouter(db: Db): Router {
   const router = Router();

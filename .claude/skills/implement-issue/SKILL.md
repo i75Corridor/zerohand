@@ -1,6 +1,6 @@
 ---
 name: implement-issue
-description: End-to-end GitHub issue implementation workflow for i75Corridor/zerohand. Fetches issue details via `gh` CLI, enters plan mode to design the implementation, executes the plan, creates tests, then confirms with the user before committing, pushing, and opening a PR. Triggered by the slash command `/implement-issue <number>` (e.g. `/implement-issue 21`).
+description: End-to-end GitHub issue implementation workflow for i75Corridor/pawn. Fetches issue details via `gh` CLI, enters plan mode to design the implementation, executes the plan, creates tests, then confirms with the user before committing, pushing, and opening a PR. Triggered by the slash command `/implement-issue <number>` (e.g. `/implement-issue 21`).
 ---
 
 ## What this skill does
@@ -16,11 +16,11 @@ Full issue-to-PR workflow:
 
 ## Step 1 — Fetch issue and prepare branch
 
-The repo is always `i75Corridor/zerohand`. Parse the issue number from the argument passed to `/issue`.
+The repo is always `i75Corridor/pawn`. Parse the issue number from the argument passed to `/issue`.
 
 Fetch the issue:
 ```bash
-gh issue view <N> --repo i75Corridor/zerohand \
+gh issue view <N> --repo i75Corridor/pawn \
   --json number,title,body,labels,state,assignees,milestone,url,comments
 ```
 

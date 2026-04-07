@@ -1,6 +1,6 @@
 # Version History
 
-Every time a pipeline or its steps are modified, Zerohand automatically saves a snapshot of the full pipeline state before applying the change. These snapshots form a version history that you can browse and restore from.
+Every time a pipeline or its steps are modified, Pawn automatically saves a snapshot of the full pipeline state before applying the change. These snapshots form a version history that you can browse and restore from.
 
 **Source:** `server/src/routes/pipelines.ts` (`snapshotPipeline()`), `packages/db/src/schema/pipeline-versions.ts`
 

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { costEvents, settings } from "@zerohand/db";
-import type { ModelCostEntry } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { costEvents, settings } from "@pawn/db";
+import type { ModelCostEntry } from "@pawn/shared";
 import { listAllModels } from "./model-utils.js";
 
 const SETTINGS_KEY = "model_costs";

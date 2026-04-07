@@ -1,12 +1,12 @@
 # Secrets
 
-Zerohand has two separate secrets systems that serve different purposes and never fall back to each other. Understanding which to use for a given need avoids confusion.
+Pawn has two separate secrets systems that serve different purposes and never fall back to each other. Understanding which to use for a given need avoids confusion.
 
 ---
 
 ## System 1: Environment Variables (Model Provider API Keys)
 
-Environment variables are the **only** way to authenticate model providers. Zerohand reads them at startup via the pi-ai library's `getEnvApiKey()` function and registers them into `AuthStorage` so the model routing layer can make API calls.
+Environment variables are the **only** way to authenticate model providers. Pawn reads them at startup via the pi-ai library's `getEnvApiKey()` function and registers them into `AuthStorage` so the model routing layer can make API calls.
 
 | Provider | Environment Variable |
 |----------|---------------------|

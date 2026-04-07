@@ -20,7 +20,7 @@ export function registerPrompts(server: McpServer, client: ApiClient): void {
             content: {
               type: "text" as const,
               text: [
-                "I want to create a new Zerohand pipeline. Help me define it step by step.",
+                "I want to create a new Pawn pipeline. Help me define it step by step.",
                 "",
                 "I need to provide:",
                 "1. A name for the pipeline",

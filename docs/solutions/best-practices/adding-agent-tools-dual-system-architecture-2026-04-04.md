@@ -23,7 +23,7 @@ tags:
 
 ## Context
 
-The zerohand project exposes agent capabilities through two parallel tool systems:
+The pawn project exposes agent capabilities through two parallel tool systems:
 
 1. **In-app global agent** — tools in `server/src/services/tools/`, with direct DB access via Drizzle ORM. Each tool is a factory function `make<Name>(ctx: AgentToolContext): ToolDefinition` with parameters defined using `Type.Object()` from `@mariozechner/pi-ai`.
 
@@ -49,7 +49,7 @@ When a tool needs to broadcast a message type not currently in `AgentToolContext
 
 ```typescript
 // 1. server/src/services/tools/context.ts
-import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange } from "@zerohand/shared";
+import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange } from "@pawn/shared";
 export interface AgentToolContext {
   broadcast: (msg: WsGlobalAgentEvent | WsDataChanged | WsRunStatusChange) => void;
   // ...

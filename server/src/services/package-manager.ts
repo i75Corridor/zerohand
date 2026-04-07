@@ -1,7 +1,7 @@
 /**
- * GitHub-based package manager for Zerohand.
+ * GitHub-based package manager for Pawn.
  *
- * A "package" is a GitHub repository tagged with the `zerohand-package` topic.
+ * A "package" is a GitHub repository tagged with the `pawn-package` topic.
  * It contains a pipeline.yaml at the root and a skills/ directory with all
  * referenced skills bundled.
  *
@@ -19,8 +19,8 @@ import {
 } from "node:fs";
 import { join, resolve, sep, basename, dirname } from "node:path";
 import { eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { installedPackages, packageSecurityChecks, pipelines } from "@pawn/db";
 import { importPipelinePackage } from "./pipeline-import.js";
 import { scanPackage, type SecurityReport } from "./security-scanner.js";
 import { loadSkillDef } from "./skill-loader.js";
@@ -484,7 +484,7 @@ export async function discoverPackages(
   query?: string,
 ): Promise<DiscoveredPackage[]> {
   const token = getGithubToken();
-  const q = `topic:zerohand-package${query ? `+${encodeURIComponent(query)}` : ""}`;
+  const q = `topic:pawn-package${query ? `+${encodeURIComponent(query)}` : ""}`;
   const url = `https://api.github.com/search/repositories?q=${q}&sort=stars&per_page=30`;
 
   const headers: Record<string, string> = {

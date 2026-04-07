@@ -15,7 +15,7 @@ export function registerNewCommand(program: Command): void {
     .command("new <package-name>")
     .description("scaffold a new pipeline package")
     .action(async (packageName: string) => {
-      p.intro(`Creating new zerohand package: ${packageName}`);
+      p.intro(`Creating new pawn package: ${packageName}`);
 
       const answers = await p.group(
         {
@@ -127,15 +127,15 @@ export function registerNewCommand(program: Command): void {
         "## Install",
         "",
         "```bash",
-        `zerohand packages install https://github.com/YOUR_ORG/${packageName}`,
+        `pawn packages install https://github.com/YOUR_ORG/${packageName}`,
         "```",
         "",
         "## Usage",
         "",
         "```bash",
         inputParam
-          ? `zerohand run "${answers.pipelineName}" --input ${inputParam}="..." --watch`
-          : `zerohand run "${answers.pipelineName}" --watch`,
+          ? `pawn run "${answers.pipelineName}" --input ${inputParam}="..." --watch`
+          : `pawn run "${answers.pipelineName}" --watch`,
         "```",
       ].join("\n");
       writeFileSync(join(dir, "README.md"), readme + "\n", "utf-8");
@@ -188,6 +188,6 @@ export function registerNewCommand(program: Command): void {
       console.log(`  cd ${packageName}`);
       console.log(`  # edit pipeline.yaml and skills/`);
       console.log(`  git add . && git commit -m "Initial pipeline package"`);
-      console.log(`  zerohand packages install https://github.com/YOUR_ORG/${packageName}`);
+      console.log(`  pawn packages install https://github.com/YOUR_ORG/${packageName}`);
     });
 }

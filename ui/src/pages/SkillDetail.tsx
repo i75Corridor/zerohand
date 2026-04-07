@@ -6,7 +6,7 @@ import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
 import ModelSelector from "../components/ModelSelector.tsx";
-import type { ApiSkillBundleScript } from "@zerohand/shared";
+import type { ApiSkillBundleScript } from "@pawn/shared";
 
 // ── Front matter parsing / serialization ──────────────────────────────────────
 

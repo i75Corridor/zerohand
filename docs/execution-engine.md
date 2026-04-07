@@ -1,6 +1,6 @@
 # Execution Engine
 
-The execution engine is the core of Zerohand. It polls the database for queued pipeline runs, executes each step in sequence, streams events to the UI, and records all output.
+The execution engine is the core of Pawn. It polls the database for queued pipeline runs, executes each step in sequence, streams events to the UI, and records all output.
 
 **Source:** `server/src/services/execution-engine.ts`
 

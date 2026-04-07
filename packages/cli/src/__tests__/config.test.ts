@@ -9,13 +9,13 @@ let tmpDir: string;
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), "zh-config-test-"));
   process.env.XDG_CONFIG_HOME = tmpDir;
-  delete process.env.ZEROHAND_SERVER_URL;
+  delete process.env.PAWN_SERVER_URL;
 });
 
 afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
   delete process.env.XDG_CONFIG_HOME;
-  delete process.env.ZEROHAND_SERVER_URL;
+  delete process.env.PAWN_SERVER_URL;
 });
 
 describe("loadConfig", () => {
@@ -54,7 +54,7 @@ describe("getServerUrl", () => {
 
   it("returns env var override when set", async () => {
     const { getServerUrl } = await import("../config.js");
-    process.env.ZEROHAND_SERVER_URL = "http://override:5555";
+    process.env.PAWN_SERVER_URL = "http://override:5555";
     expect(getServerUrl()).toBe("http://override:5555");
   });
 });

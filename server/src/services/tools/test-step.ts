@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq, asc } from "drizzle-orm";
-import { pipelines, pipelineSteps } from "@zerohand/db";
+import { pipelines, pipelineSteps } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 import { loadSkillDef } from "../skill-loader.js";
 import { resolvePrompt } from "../execution-engine.js";

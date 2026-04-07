@@ -70,11 +70,11 @@ export function safeSkillDir(skillName: string, skillsDir: string): string | nul
 export interface SkillMdParams {
   name: string;
   description: string;
-  /** Zerohand model override in provider/name format */
+  /** Pawn model override in provider/name format */
   model?: string;
-  /** Whether scripts need outbound network access (zerohand extension) */
+  /** Whether scripts need outbound network access (pawn extension) */
   network?: boolean;
-  /** Secret keys to inject as env vars (zerohand extension) */
+  /** Secret keys to inject as env vars (pawn extension) */
   secrets?: string[];
   /** Names of registered MCP servers whose tools this skill can access at runtime */
   mcpServers?: string[];
@@ -116,7 +116,7 @@ export function buildSkillMd(params: SkillMdParams): string {
     lines.push(`allowed-tools: ${params.allowedTools}`);
   }
 
-  // Zerohand-specific runtime fields (extensions, not in spec)
+  // Pawn-specific runtime fields (extensions, not in spec)
   if (params.model) lines.push(`model: ${params.model}`);
   if (params.network) lines.push(`network: true`);
   if (params.secrets && params.secrets.length > 0) {

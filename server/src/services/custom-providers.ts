@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { getProviders } from "@mariozechner/pi-ai";
-import type { ApiModelEntry } from "@zerohand/shared";
+import type { ApiModelEntry } from "@pawn/shared";
 import { dataDir } from "./paths.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────

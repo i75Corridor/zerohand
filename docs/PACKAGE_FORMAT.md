@@ -1,4 +1,4 @@
-# Zerohand Pipeline Package Format
+# Pawn Pipeline Package Format
 
 A pipeline package is a directory that can be distributed as a git repository, npm package, or zip archive. When placed in the `PIPELINES_DIR` directory (default: `../pipelines`), the server auto-imports it on startup.
 

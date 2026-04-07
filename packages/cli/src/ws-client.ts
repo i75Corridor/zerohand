@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import type { WsMessage } from "@zerohand/shared";
+import type { WsMessage } from "@pawn/shared";
 
 const TERMINAL_STATUSES = new Set(["completed", "failed", "cancelled"]);
 

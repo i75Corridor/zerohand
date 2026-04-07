@@ -64,7 +64,7 @@ export class McpClientPool {
       return this.entries.get(config.name)!.tools;
     }
 
-    const client = new Client({ name: "zerohand", version: "1.0.0" });
+    const client = new Client({ name: "pawn", version: "1.0.0" });
     const transport = buildTransport(config);
 
     await Promise.race([

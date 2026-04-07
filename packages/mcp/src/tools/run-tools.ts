@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../api-client.js";
-import type { ApiPipelineRun, ApiStepRun } from "@zerohand/shared";
+import type { ApiPipelineRun, ApiStepRun } from "@pawn/shared";
 
 function formatRun(run: ApiPipelineRun): string {
   const lines = [`Run: ${run.id}`];

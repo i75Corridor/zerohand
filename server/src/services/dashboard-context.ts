@@ -1,6 +1,6 @@
 import { count, eq, sql, gte, desc, and } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { pipelineRuns, pipelines, approvals, costEvents } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { pipelineRuns, pipelines, approvals, costEvents } from "@pawn/db";
 
 export interface DashboardContext {
   activeRuns: number;

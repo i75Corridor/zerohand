@@ -1,6 +1,6 @@
 # Global Agent & Pipeline Authoring Tools
 
-Zerohand includes a global LLM agent (accessible via the chat interface) that can create, edit, validate, test, and export pipelines. The agent uses the same REST API as the UI but has additional tools for richer authoring workflows.
+Pawn includes a global LLM agent (accessible via the chat interface) that can create, edit, validate, test, and export pipelines. The agent uses the same REST API as the UI but has additional tools for richer authoring workflows.
 
 **Source:** `server/src/services/global-agent.ts`, `server/src/services/tools/`
 

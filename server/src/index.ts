@@ -7,7 +7,7 @@ import cors from "cors";
 // @ts-ignore - detect-port types
 import detectPort from "detect-port";
 import EmbeddedPostgres from "embedded-postgres";
-import { createDb, ensurePostgresDatabase, applyPendingMigrations } from "@zerohand/db";
+import { createDb, ensurePostgresDatabase, applyPendingMigrations } from "@pawn/db";
 import { WsManager } from "./ws/index.js";
 import { ExecutionEngine } from "./services/execution-engine.js";
 import { TriggerManager } from "./services/trigger-manager.js";
@@ -39,9 +39,9 @@ import { loadDatabaseConfig } from "./services/database-config.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
-const DB_NAME = "zerohand";
-const DB_USER = "zerohand";
-const DB_PASS = "zerohand";
+const DB_NAME = "pawn";
+const DB_USER = "pawn";
+const DB_PASS = "pawn";
 
 mkdirSync(DATA_DIR, { recursive: true });
 

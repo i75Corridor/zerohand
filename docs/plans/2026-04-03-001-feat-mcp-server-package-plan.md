@@ -1,29 +1,29 @@
 ---
-title: "feat: Add MCP server package for Zerohand"
+title: "feat: Add MCP server package for Pawn"
 type: feat
 status: completed
 date: 2026-04-03
 ---
 
-# feat: Add MCP server package for Zerohand
+# feat: Add MCP server package for Pawn
 
 ## Overview
 
-Create a new `packages/mcp/` package that exposes Zerohand pipelines, skills, and runs as an MCP (Model Context Protocol) server. This enables Claude Desktop, Claude Code, Perplexity, Cursor, and any MCP-compatible client to interact with Zerohand programmatically. Phase 1 focuses on local stdio transport; Phase 2 adds remote Streamable HTTP transport.
+Create a new `packages/mcp/` package that exposes Pawn pipelines, skills, and runs as an MCP (Model Context Protocol) server. This enables Claude Desktop, Claude Code, Perplexity, Cursor, and any MCP-compatible client to interact with Pawn programmatically. Phase 1 focuses on local stdio transport; Phase 2 adds remote Streamable HTTP transport.
 
 ## Problem Frame
 
-Zerohand currently has a REST API and a CLI, but no native integration with AI-powered IDEs and assistants. Users must manually switch between their AI tools and the Zerohand UI/CLI to manage pipelines and runs. An MCP server bridges this gap, letting AI assistants directly list pipelines, trigger runs, inspect results, and browse skills — all within the user's existing workflow.
+Pawn currently has a REST API and a CLI, but no native integration with AI-powered IDEs and assistants. Users must manually switch between their AI tools and the Pawn UI/CLI to manage pipelines and runs. An MCP server bridges this gap, letting AI assistants directly list pipelines, trigger runs, inspect results, and browse skills — all within the user's existing workflow.
 
 ## Requirements Trace
 
 - R1. Expose all 10 tools from issue #23: `list_pipelines`, `create_pipeline`, `execute_pipeline`, `get_run_status`, `modify_pipeline`, `remove_pipeline`, `list_skills`, `get_skill`, `list_runs`, `cancel_run`
-- R2. Expose resources: `zerohand://pipelines`, `zerohand://pipelines/{id}`, `zerohand://skills`, `zerohand://skills/{name}`, `zerohand://runs/{id}`
+- R2. Expose resources: `pawn://pipelines`, `pawn://pipelines/{id}`, `pawn://skills`, `pawn://skills/{name}`, `pawn://runs/{id}`
 - R3. Expose prompts: `create-pipeline`, `debug-run`
 - R4. Support stdio transport for local clients (Claude Desktop, Claude Code, Perplexity Mac, Cursor)
 - R5. Support Streamable HTTP transport for remote clients (Perplexity Web Pro)
-- R6. Reuse `packages/cli/src/api-client.ts` for Zerohand REST API calls
-- R7. Package as `npx @i75corridor/zerohand-mcp` runnable
+- R6. Reuse `packages/cli/src/api-client.ts` for Pawn REST API calls
+- R7. Package as `npx @i75corridor/pawn-mcp` runnable
 - R8. Never use `console.log()` with stdio transport (corrupts JSON-RPC framing)
 
 ## Scope Boundaries
@@ -37,8 +37,8 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 
 ### Relevant Code and Patterns
 
-- `packages/cli/src/api-client.ts` — The `ApiClient` class wraps all Zerohand REST API calls. MCP tools will delegate to this same client. It takes `baseUrl` and optional `apiKey`, provides methods for all pipeline, run, skill, and package operations.
-- `packages/cli/package.json` — Shows monorepo package pattern: workspace dependency on `@zerohand/shared`, esbuild bundling for distribution, `bin` entry for CLI executable.
+- `packages/cli/src/api-client.ts` — The `ApiClient` class wraps all Pawn REST API calls. MCP tools will delegate to this same client. It takes `baseUrl` and optional `apiKey`, provides methods for all pipeline, run, skill, and package operations.
+- `packages/cli/package.json` — Shows monorepo package pattern: workspace dependency on `@pawn/shared`, esbuild bundling for distribution, `bin` entry for CLI executable.
 - `packages/shared/src/index.ts` — All API response types (`ApiPipeline`, `ApiPipelineRun`, `ApiSkill`, etc.) are defined here. The MCP server will reference these types.
 - `server/src/routes/pipelines.ts` — Express route pattern showing how pipeline CRUD works. The MCP tools mirror these endpoints through the ApiClient.
 - `server/src/routes/skills.ts` — Shows skill listing and retrieval, including SKILL.md content bundling.
@@ -52,7 +52,7 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 
 ## Key Technical Decisions
 
-- **Reuse ApiClient rather than direct DB access**: The MCP server runs as a separate process communicating with the Zerohand server via HTTP. This maintains separation of concerns and avoids coupling the MCP package to the database layer. The CLI already proves this pattern works.
+- **Reuse ApiClient rather than direct DB access**: The MCP server runs as a separate process communicating with the Pawn server via HTTP. This maintains separation of concerns and avoids coupling the MCP package to the database layer. The CLI already proves this pattern works.
 - **Single entry point with transport selection via env var**: `TRANSPORT=http` selects Streamable HTTP; default is stdio. This keeps one codebase for both transports.
 - **esbuild bundling like the CLI**: Follow the CLI's build pattern for distribution — bundle to a single CJS file with a shebang for `npx` execution.
 - **Zod schemas for tool params**: The MCP SDK uses Zod for tool input validation. Define schemas alongside tool handlers for co-location.
@@ -88,11 +88,11 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 **Approach:**
 - Follow the CLI package pattern for `package.json` structure
 - Use `@modelcontextprotocol/sdk` and `zod` as dependencies
-- Use `@zerohand/shared` as workspace dependency for types
+- Use `@pawn/shared` as workspace dependency for types
 - Copy the API client from CLI or import it (decision: copy to avoid cross-package import complexity — the client is small and stable)
 - esbuild config: bundle to `dist/mcp.cjs` with shebang `#!/usr/bin/env node`
-- Add `bin: { "zerohand-mcp": "./dist/mcp.cjs" }` for npx execution
-- `"name": "@i75corridor/zerohand-mcp"` matching the issue spec
+- Add `bin: { "pawn-mcp": "./dist/mcp.cjs" }` for npx execution
+- `"name": "@i75corridor/pawn-mcp"` matching the issue spec
 
 **Patterns to follow:**
 - `packages/cli/package.json` for monorepo package structure
@@ -123,8 +123,8 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
   - `deletePipeline(id: string)` → `DELETE /pipelines/:id`
   - `listSkills()` → `GET /skills` (returns `ApiSkill[]`)
   - `getSkill(name: string)` → `GET /skills/:name` (returns `ApiSkill` with `content` field — distinct from `/skills/:name/bundle`)
-- `server.ts` creates `McpServer` instance with name "zerohand", version from package.json
-- `index.ts` reads `ZEROHAND_URL` env var (default `http://localhost:3009`), validates URL (must be http/https scheme), creates ApiClient, creates server, connects stdio transport
+- `server.ts` creates `McpServer` instance with name "pawn", version from package.json
+- `index.ts` reads `PAWN_URL` env var (default `http://localhost:3009`), validates URL (must be http/https scheme), creates ApiClient, creates server, connects stdio transport
 - All logging via `console.error()` (stderr), never `console.log()` (stdout)
 - Server setup function takes ApiClient as dependency for testability
 
@@ -133,8 +133,8 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 - `packages/cli/src/index.ts` — env var and client initialization pattern
 
 **Test scenarios:**
-- Happy path: Server creates successfully with valid ZEROHAND_URL
-- Error path: Server handles missing ZEROHAND_URL by using default localhost:3009
+- Happy path: Server creates successfully with valid PAWN_URL
+- Error path: Server handles missing PAWN_URL by using default localhost:3009
 
 **Verification:**
 - Running `node dist/mcp.cjs` connects to stdio and responds to MCP `initialize` handshake
@@ -261,8 +261,8 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 - Test: `packages/mcp/src/__tests__/resources.test.ts`
 
 **Approach:**
-- Register static resources for catalog endpoints: `zerohand://pipelines`, `zerohand://skills`
-- Register resource templates for parameterized resources: `zerohand://pipelines/{id}`, `zerohand://skills/{name}`, `zerohand://runs/{id}`
+- Register static resources for catalog endpoints: `pawn://pipelines`, `pawn://skills`
+- Register resource templates for parameterized resources: `pawn://pipelines/{id}`, `pawn://skills/{name}`, `pawn://runs/{id}`
 - Resources return JSON content with MIME type `application/json`
 - Each resource handler calls the appropriate ApiClient method
 
@@ -271,11 +271,11 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 - `packages/shared/src/index.ts` — response types for shaping resource content
 
 **Test scenarios:**
-- Happy path: `zerohand://pipelines` returns pipeline list as JSON
-- Happy path: `zerohand://pipelines/{id}` returns single pipeline with steps
-- Happy path: `zerohand://skills` returns skill catalog
-- Happy path: `zerohand://skills/{name}` returns skill definition with content
-- Happy path: `zerohand://runs/{id}` returns run result with step outputs
+- Happy path: `pawn://pipelines` returns pipeline list as JSON
+- Happy path: `pawn://pipelines/{id}` returns single pipeline with steps
+- Happy path: `pawn://skills` returns skill catalog
+- Happy path: `pawn://skills/{name}` returns skill definition with content
+- Happy path: `pawn://runs/{id}` returns run result with step outputs
 - Error path: Resource for non-existent pipeline/skill/run returns appropriate error
 
 **Verification:**
@@ -313,7 +313,7 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 
 - [x] **Unit 8: Build, package, and integration test**
 
-**Goal:** Configure esbuild, verify npx execution, and run end-to-end test with a running Zerohand server.
+**Goal:** Configure esbuild, verify npx execution, and run end-to-end test with a running Pawn server.
 
 **Requirements:** R4, R7
 
@@ -326,7 +326,7 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 
 **Approach:**
 - Add esbuild build script matching CLI pattern: `esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/mcp.cjs --banner:js="#!/usr/bin/env node" --external:ws`
-- Add `packages/mcp` to root build command: append `&& pnpm --filter @i75corridor/zerohand-mcp build` to root `package.json` build script (after `@zerohand/db` which builds `@zerohand/shared`)
+- Add `packages/mcp` to root build command: append `&& pnpm --filter @i75corridor/pawn-mcp build` to root `package.json` build script (after `@pawn/db` which builds `@pawn/shared`)
 - Integration test: start MCP server with stdio, send `initialize` + `tools/list` requests via stdin, verify responses
 - Update root `pnpm-workspace.yaml` if needed (already includes `packages/*`)
 
@@ -341,17 +341,17 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 - Happy path: Built `dist/mcp.cjs` is executable and starts without errors
 
 **Verification:**
-- `pnpm --filter @i75corridor/zerohand-mcp build` produces working `dist/mcp.cjs`
-- `npx @i75corridor/zerohand-mcp` starts and responds to MCP protocol
+- `pnpm --filter @i75corridor/pawn-mcp build` produces working `dist/mcp.cjs`
+- `npx @i75corridor/pawn-mcp` starts and responds to MCP protocol
 - All tools, resources, and prompts are listed in MCP responses
 
 ## System-Wide Impact
 
-- **Interaction graph:** The MCP server is a new standalone process that communicates with the Zerohand server via REST API only. No server-side code changes needed. No WebSocket consumption in Phase 1.
+- **Interaction graph:** The MCP server is a new standalone process that communicates with the Pawn server via REST API only. No server-side code changes needed. No WebSocket consumption in Phase 1.
 - **Error propagation:** ApiClient errors (network failures, 4xx/5xx responses) must be caught and translated into MCP-protocol error responses, not process crashes.
-- **State lifecycle risks:** None — the MCP server is stateless. All state lives in the Zerohand server.
+- **State lifecycle risks:** None — the MCP server is stateless. All state lives in the Pawn server.
 - **API surface parity:** The MCP tools expose a subset of the REST API. No new server endpoints are needed — all required endpoints already exist.
-- **Integration coverage:** End-to-end test should verify the MCP protocol flow (initialize → list tools → call tool → receive response) without requiring a running Zerohand server (mock the ApiClient).
+- **Integration coverage:** End-to-end test should verify the MCP protocol flow (initialize → list tools → call tool → receive response) without requiring a running Pawn server (mock the ApiClient).
 - **Unchanged invariants:** The REST API, CLI, UI, and WebSocket interfaces are not modified by this change.
 
 ## Risks & Dependencies
@@ -365,6 +365,6 @@ Zerohand currently has a REST API and a CLI, but no native integration with AI-p
 
 ## Sources & References
 
-- GitHub issue: i75Corridor/zerohand#23
+- GitHub issue: i75Corridor/pawn#23
 - Related code: `packages/cli/src/api-client.ts`, `packages/shared/src/index.ts`
 - External docs: MCP specification, `@modelcontextprotocol/sdk` npm package

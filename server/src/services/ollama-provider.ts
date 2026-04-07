@@ -1,4 +1,4 @@
-import type { ApiModelEntry } from "@zerohand/shared";
+import type { ApiModelEntry } from "@pawn/shared";
 import { getModel } from "@mariozechner/pi-ai";
 import { getCustomProviderModels } from "./custom-providers.js";
 

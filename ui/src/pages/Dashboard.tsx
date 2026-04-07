@@ -11,8 +11,8 @@ import EmptyState from "../components/EmptyState.tsx";
 import PageHeader from "../components/PageHeader.tsx";
 import SectionPanel from "../components/SectionPanel.tsx";
 import { formatCost } from "../lib/format.ts";
-import type { WsMessage } from "@zerohand/shared";
-import type { ApiPipelineRun } from "@zerohand/shared";
+import type { WsMessage } from "@pawn/shared";
+import type { ApiPipelineRun } from "@pawn/shared";
 
 function RunRow({ run, onCancel, cancellingId }: { run: ApiPipelineRun; onCancel: (id: string) => void; cancellingId: string | null }) {
   const duration = run.finishedAt

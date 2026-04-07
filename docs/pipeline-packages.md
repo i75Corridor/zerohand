@@ -176,7 +176,7 @@ Once a pipeline is ready, export it as a redistributable `.tar.gz` archive:
 
 ### Publish to GitHub
 
-Publishing creates a GitHub repository from the pipeline, adds the `zerohand-package` topic (making it discoverable via `zerohand packages discover`), and records the package in your installed packages list.
+Publishing creates a GitHub repository from the pipeline, adds the `pawn-package` topic (making it discoverable via `pawn packages discover`), and records the package in your installed packages list.
 
 **Prerequisite:** The `gh` CLI must be installed and authenticated.
 
@@ -189,7 +189,7 @@ brew install gh          # macOS
 gh auth login
 ```
 
-`gh auth login` writes credentials to `~/.config/gh/hosts.yml`. The Zerohand server calls `gh repo create` via this credential — no additional environment variables are needed.
+`gh auth login` writes credentials to `~/.config/gh/hosts.yml`. The Pawn server calls `gh repo create` via this credential — no additional environment variables are needed.
 
 > **Note:** `gh` auth is distinct from the `GITHUB_TOKEN` env var (which is used for API rate limiting and cloning private repos during `packages install`). For publishing, only `gh auth login` matters.
 
@@ -200,7 +200,7 @@ To publish from the UI:
 3. Choose a repository name, visibility, and optional description.
 4. Click **Publish** — the repo is created on GitHub and the package is registered locally.
 
-> **Private repos:** A private repository won't appear in `zerohand packages discover` results (which searches public repos by topic). It can still be installed explicitly via `zerohand packages install https://github.com/YOUR_ORG/repo` if you have access.
+> **Private repos:** A private repository won't appear in `pawn packages discover` results (which searches public repos by topic). It can still be installed explicitly via `pawn packages install https://github.com/YOUR_ORG/repo` if you have access.
 
 ---
 

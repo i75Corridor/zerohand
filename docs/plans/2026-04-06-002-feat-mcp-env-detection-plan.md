@@ -14,7 +14,7 @@ Add intelligent environment variable detection, guided configuration, and valida
 
 ## Problem Frame
 
-Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-mcp`) requires users to already know which environment variables are needed, where to get API keys, and how to configure them correctly. The current flow is a blank `KEY=VALUE` textarea with no guidance, no detection, and no validation beyond "Test Connection" which gives opaque errors. This creates friction for onboarding new MCP servers. (See [Issue #62](https://github.com/i75Corridor/zerohand/issues/62))
+Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-mcp`) requires users to already know which environment variables are needed, where to get API keys, and how to configure them correctly. The current flow is a blank `KEY=VALUE` textarea with no guidance, no detection, and no validation beyond "Test Connection" which gives opaque errors. This creates friction for onboarding new MCP servers. (See [Issue #62](https://github.com/i75Corridor/pawn/issues/62))
 
 ## Requirements Trace
 
@@ -355,7 +355,7 @@ Adding an MCP server (especially stdio-based ones like `@anthropic/brave-search-
 
 ## Sources & References
 
-- Related issue: [#62](https://github.com/i75Corridor/zerohand/issues/62)
-- Related issue: [#61](https://github.com/i75Corridor/zerohand/issues/61) (Custom models — similar AI-assisted configuration pattern)
+- Related issue: [#62](https://github.com/i75Corridor/pawn/issues/62)
+- Related issue: [#61](https://github.com/i75Corridor/pawn/issues/61) (Custom models — similar AI-assisted configuration pattern)
 - Existing pattern: `server/src/services/tools/validate-pipeline.ts` (secrets validation from `process.env`)
 - Institutional learning: `docs/solutions/best-practices/adding-agent-tools-dual-system-architecture-2026-04-04.md`

@@ -1,5 +1,5 @@
 {
-  "name": "@zerohand/shared",
+  "name": "@pawn/shared",
   "version": "0.1.0",
   "type": "module",
   "exports": {

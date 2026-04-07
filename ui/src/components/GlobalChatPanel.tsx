@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { RotateCcw, Send, StopCircle, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useWebSocket } from "../lib/ws.ts";
-import type { WsMessage, WsIncomingGlobalChat } from "@zerohand/shared";
+import type { WsMessage, WsIncomingGlobalChat } from "@pawn/shared";
 
 interface ChatMessage {
   role: "user" | "assistant";

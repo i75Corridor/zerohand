@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq, asc } from "drizzle-orm";
-import { pipelineRuns, stepRuns } from "@zerohand/db";
+import { pipelineRuns, stepRuns } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeGetStepRunOutput(ctx: AgentToolContext): ToolDefinition {

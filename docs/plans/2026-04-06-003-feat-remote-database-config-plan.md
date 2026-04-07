@@ -70,7 +70,7 @@ The chicken-and-egg problem (settings live in the DB, so we cannot read settings
 
 ### Deferred to Implementation
 
-- Whether to also support `ZEROHAND_DATABASE_CONFIG` env var pointing to an arbitrary file path (extending Option B from the issue) — defer until a concrete use case surfaces
+- Whether to also support `PAWN_DATABASE_CONFIG` env var pointing to an arbitrary file path (extending Option B from the issue) — defer until a concrete use case surfaces
 - Whether to expose a `database_config` seed in the settings table on first startup if no `database.json` exists — defer; the file is optional
 - **Connection failure behavior**: If `database.json` is valid but the external DB is unreachable, does the server fail-fast (exit with descriptive error) or fall back to embedded Postgres? The issue (Option C) flagged this as an open design question. The current plan assumes fail-fast — server exits if `database.json` exists and the connection throws during `applyPendingMigrations`. This is the safer default for production警觉性, but the implementer should confirm the choice and add a test scenario accordingly.
 
@@ -115,7 +115,7 @@ function buildDatabaseUrl(config: DatabaseConfig): string {
 - `server/src/services/mcp-client.ts` `resolveEnvRefs()` for interpolation style
 
 **Test scenarios:**
-- Happy path: `{ host: "localhost", port: 5432, database: "zerohand", username: "user", password: "pass" }` → valid `postgresql://` URL
+- Happy path: `{ host: "localhost", port: 5432, database: "pawn", username: "user", password: "pass" }` → valid `postgresql://` URL
 - Happy path: password containing special chars (`@`, `/`, `:`, `%`) are URI-encoded
 - Edge case: `${DB_HOST}` is resolved from `process.env.DB_HOST`
 - Edge case: `${MISSING_VAR}` is left as-is in the resulting URL (not an error at build time)
@@ -271,7 +271,7 @@ Add `DatabaseConfig` interface (matching the Zod schema from Unit 1) and `Databa
 - Test expectation: none — pure type-only change
 
 **Verification:**
-- Type is importable from `@zerohand/shared` in server and other packages
+- Type is importable from `@pawn/shared` in server and other packages
 
 ---
 

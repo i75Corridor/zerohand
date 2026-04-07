@@ -18,7 +18,7 @@ Both use pi-ai's existing `openai-completions` streaming path. Ollama gets dedic
 
 ## Problem Frame
 
-Zerohand delegates all model discovery and execution to `@mariozechner/pi-ai`, which has a hardcoded registry of cloud providers. Users running local models via Ollama have no way to use them — despite `.env.example` already listing `OLLAMA_HOST`. This blocks users who want free, private, offline-capable model execution.
+Pawn delegates all model discovery and execution to `@mariozechner/pi-ai`, which has a hardcoded registry of cloud providers. Users running local models via Ollama have no way to use them — despite `.env.example` already listing `OLLAMA_HOST`. This blocks users who want free, private, offline-capable model execution.
 
 ## Requirements Trace
 
@@ -35,7 +35,7 @@ Zerohand delegates all model discovery and execution to `@mariozechner/pi-ai`, w
 
 ## Scope Boundaries
 
-- No Ollama model pull/management from the zerohand UI
+- No Ollama model pull/management from the pawn UI
 - No multi-GPU or concurrency configuration
 - Custom providers must be OpenAI-compatible (`/v1/chat/completions`); no support for Anthropic-native or Google-native APIs via custom config
 - No per-model cost configuration for custom providers in v1 (all treated as zero-cost like Ollama; cloud providers use pi-ai's built-in cost data)

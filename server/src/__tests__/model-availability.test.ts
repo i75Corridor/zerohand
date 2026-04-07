@@ -13,7 +13,7 @@ describe("checkModelAvailability", () => {
   let skillsDir: string;
 
   beforeEach(() => {
-    skillsDir = mkdtempSync(join(tmpdir(), "zerohand-model-test-"));
+    skillsDir = mkdtempSync(join(tmpdir(), "pawn-model-test-"));
   });
 
   function makeSkill(namespace: string, name: string, frontMatter: string, body = "You are helpful.") {

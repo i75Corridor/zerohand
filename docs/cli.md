@@ -1,6 +1,6 @@
-# Zerohand CLI
+# Pawn CLI
 
-`zerohand` is the command-line interface for managing pipelines, runs, and packages — and for scaffolding new pipeline packages ready to publish as GitHub repositories.
+`pawn` is the command-line interface for managing pipelines, runs, and packages — and for scaffolding new pipeline packages ready to publish as GitHub repositories.
 
 ## Installation
 
@@ -39,12 +39,12 @@ To test CLI changes locally without publishing:
 # Build the CLI
 pnpm --filter @i75corridor/zh-cli build
 
-# Link it globally — makes `zerohand` available in your PATH
+# Link it globally — makes `pawn` available in your PATH
 cd packages/cli
 pnpm link --global
 
 # Verify
-zerohand --help
+pawn --help
 
 # After each change, rebuild (the global link picks it up immediately)
 pnpm --filter @i75corridor/zh-cli build
@@ -56,40 +56,40 @@ pnpm unlink --global
 
 ## Configuration
 
-The CLI reads its configuration from `~/.config/zerohand/config.json`. You can override the server URL at any time with an environment variable.
+The CLI reads its configuration from `~/.config/pawn/config.json`. You can override the server URL at any time with an environment variable.
 
 ```bash
 # Show current config
-zerohand config show
+pawn config show
 
 # Point at a local dev server (default)
-zerohand config set server http://localhost:3009
+pawn config set server http://localhost:3009
 
 # Point at a remote server
-zerohand config set server https://my-zerohand.example.com
+pawn config set server https://my-pawn.example.com
 
 # Set an API key (if your server requires one)
-zerohand config set api-key <key>
+pawn config set api-key <key>
 ```
 
-The `ZEROHAND_SERVER_URL` environment variable overrides the configured server URL for a single invocation:
+The `PAWN_SERVER_URL` environment variable overrides the configured server URL for a single invocation:
 
 ```bash
-ZEROHAND_SERVER_URL=http://staging:3009 zerohand pipelines list
+PAWN_SERVER_URL=http://staging:3009 pawn pipelines list
 ```
 
 ---
 
 ## Run management
 
-### `zerohand run <pipeline-name>`
+### `pawn run <pipeline-name>`
 
 Trigger a pipeline run by name. Pipeline names are matched case-insensitively.
 
 ```bash
-zerohand run "The Daily Absurdist"
-zerohand run "The Daily Absurdist" --input topic="AI hype"
-zerohand run "The Daily Absurdist" --input topic="robots" --watch
+pawn run "The Daily Absurdist"
+pawn run "The Daily Absurdist" --input topic="AI hype"
+pawn run "The Daily Absurdist" --input topic="robots" --watch
 ```
 
 **Options:**
@@ -103,14 +103,14 @@ When `--watch` is active, text deltas from each step are printed as they arrive 
 
 ---
 
-### `zerohand runs list`
+### `pawn runs list`
 
 List recent runs (last 100).
 
 ```bash
-zerohand runs list
-zerohand runs list --pipeline "The Daily Absurdist"
-zerohand runs list --pipeline "The Daily Absurdist" --limit 5
+pawn runs list
+pawn runs list --pipeline "The Daily Absurdist"
+pawn runs list --pipeline "The Daily Absurdist" --limit 5
 ```
 
 **Options:**
@@ -122,48 +122,48 @@ zerohand runs list --pipeline "The Daily Absurdist" --limit 5
 
 ---
 
-### `zerohand runs tail <run-id>`
+### `pawn runs tail <run-id>`
 
 Stream step output for an already-running run. If the run has already finished, prints its final status and exits.
 
 ```bash
-zerohand runs tail 4f3a1b2c
+pawn runs tail 4f3a1b2c
 ```
 
 Accepts a full UUID or a truncated prefix (8+ chars). The 8-char shortened ID is shown in `runs list` output.
 
 ---
 
-### `zerohand runs cancel <run-id>`
+### `pawn runs cancel <run-id>`
 
 Cancel a run.
 
 ```bash
-zerohand runs cancel 4f3a1b2c-...
+pawn runs cancel 4f3a1b2c-...
 ```
 
 ---
 
 ## Pipeline management
 
-### `zerohand pipelines list`
+### `pawn pipelines list`
 
 List all pipelines.
 
 ```bash
-zerohand pipelines list
+pawn pipelines list
 ```
 
 Output columns: name, status, model, created.
 
 ---
 
-### `zerohand pipelines import <file.yaml>`
+### `pawn pipelines import <file.yaml>`
 
 Import a `pipeline.yaml` file into the server. If a pipeline with the same name already exists it is updated in place — run history is preserved.
 
 ```bash
-zerohand pipelines import ./my-pipeline/pipeline.yaml
+pawn pipelines import ./my-pipeline/pipeline.yaml
 ```
 
 The YAML format matches the [Pipeline Package Format](./PACKAGE_FORMAT.md). Steps are synced by position: existing steps are replaced, new ones added, removed ones deleted.
@@ -172,13 +172,13 @@ The YAML format matches the [Pipeline Package Format](./PACKAGE_FORMAT.md). Step
 
 ---
 
-### `zerohand pipelines export <name>`
+### `pawn pipelines export <name>`
 
 Export a pipeline to `pipeline.yaml` format. Prints to stdout by default; use `--output` to write to a file.
 
 ```bash
-zerohand pipelines export "The Daily Absurdist"
-zerohand pipelines export "The Daily Absurdist" --output pipeline.yaml
+pawn pipelines export "The Daily Absurdist"
+pawn pipelines export "The Daily Absurdist" --output pipeline.yaml
 ```
 
 **Options:**
@@ -191,42 +191,42 @@ zerohand pipelines export "The Daily Absurdist" --output pipeline.yaml
 
 ## Package management
 
-### `zerohand packages list`
+### `pawn packages list`
 
 List installed packages.
 
 ```bash
-zerohand packages list
+pawn packages list
 ```
 
 Shows repo name, skills, whether an update is available, and install date.
 
 ---
 
-### `zerohand packages install <repo-url-or-path>`
+### `pawn packages install <repo-url-or-path>`
 
 Install a pipeline package from a GitHub repository URL **or a local directory path**.
 
 ```bash
 # From GitHub
-zerohand packages install https://github.com/i75Corridor/zerohand-daily-absurdist
+pawn packages install https://github.com/i75Corridor/pawn-daily-absurdist
 
 # From a local directory
-zerohand packages install ./my-pipeline
-zerohand packages install /absolute/path/to/my-pipeline
+pawn packages install ./my-pipeline
+pawn packages install /absolute/path/to/my-pipeline
 ```
 
 **Local path install** is the bridge between your local files and the UI editor. When you install from a local path:
 
 1. The server imports `pipeline.yaml` into the database so the pipeline appears in the UI at `http://localhost:3008/packages`
 2. Any edits you make in the UI editor are written back to `pipeline.yaml` on disk automatically
-3. The install is **ephemeral by path** — if you move the directory, re-run `zerohand packages install <new-path>` to re-register it
+3. The install is **ephemeral by path** — if you move the directory, re-run `pawn packages install <new-path>` to re-register it
 
-This is useful when you've scaffolded a new package with `zerohand new` and want to iterate on it visually before publishing:
+This is useful when you've scaffolded a new package with `pawn new` and want to iterate on it visually before publishing:
 
 ```bash
-zerohand new my-pipeline          # scaffold
-zerohand packages install ./my-pipeline  # load into UI
+pawn new my-pipeline          # scaffold
+pawn packages install ./my-pipeline  # load into UI
 # edit in UI at http://localhost:3008/packages
 # changes flow back to ./my-pipeline/pipeline.yaml
 ```
@@ -235,47 +235,47 @@ The `packages list` command shows a `TYPE` column (`local` or `remote`) so you c
 
 ---
 
-### `zerohand packages update <name>`
+### `pawn packages update <name>`
 
 Pull the latest version of an installed package.
 
 ```bash
-zerohand packages update zerohand-daily-absurdist
+pawn packages update pawn-daily-absurdist
 ```
 
 The `<name>` matches the last segment of the repository full name (case-insensitive).
 
 ---
 
-### `zerohand packages uninstall <name>`
+### `pawn packages uninstall <name>`
 
 Uninstall a package.
 
 ```bash
-zerohand packages uninstall zerohand-daily-absurdist
+pawn packages uninstall pawn-daily-absurdist
 ```
 
 ---
 
-### `zerohand packages discover [query]`
+### `pawn packages discover [query]`
 
-Search GitHub for repositories tagged with the `zerohand-package` topic.
+Search GitHub for repositories tagged with the `pawn-package` topic.
 
 ```bash
-zerohand packages discover
-zerohand packages discover news
+pawn packages discover
+pawn packages discover news
 ```
 
 ---
 
 ## Scaffolding
 
-### `zerohand new <package-name>`
+### `pawn new <package-name>`
 
 Interactively scaffold a new pipeline package. Prompts for name, description, model, input parameters, and step definitions, then generates a ready-to-publish directory structure.
 
 ```bash
-zerohand new my-pipeline
+pawn new my-pipeline
 ```
 
 **Generated structure:**
@@ -299,8 +299,8 @@ cd my-pipeline
 git add .
 git commit -m "Initial pipeline package"
 gh repo create my-pipeline --public --push
-gh repo edit my-pipeline --add-topic zerohand-package
-zerohand packages install https://github.com/YOUR_ORG/my-pipeline
+gh repo edit my-pipeline --add-topic pawn-package
+pawn packages install https://github.com/YOUR_ORG/my-pipeline
 ```
 
 > **In-app alternative:** You can skip the CLI entirely and author pipelines + skills directly in the UI, then use the **Publish to GitHub** button on the pipeline detail page. See [`docs/pipeline-packages.md`](./pipeline-packages.md) for the full workflow.
@@ -317,16 +317,16 @@ zerohand packages install https://github.com/YOUR_ORG/my-pipeline
 Pass `--help` after any subcommand for its specific options:
 
 ```bash
-zerohand run --help
-zerohand pipelines export --help
+pawn run --help
+pawn pipelines export --help
 ```
 
 ---
 
 ## How it works
 
-The CLI is a pure REST + WebSocket client — it does not embed any server logic. All commands communicate with the Zerohand server via the API documented in [`docs/api.md`](./api.md).
+The CLI is a pure REST + WebSocket client — it does not embed any server logic. All commands communicate with the Pawn server via the API documented in [`docs/api.md`](./api.md).
 
 Run streaming (`--watch`, `runs tail`) connects to the same WebSocket endpoint used by the web UI (`ws://server`), filters events by run ID, and writes text deltas to stdout as they arrive.
 
-Config is stored at `~/.config/zerohand/config.json` (respects `XDG_CONFIG_HOME`).
+Config is stored at `~/.config/pawn/config.json` (respects `XDG_CONFIG_HOME`).

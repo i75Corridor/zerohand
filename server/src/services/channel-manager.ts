@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq, and } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { triggers, pipelineRuns } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { triggers, pipelineRuns } from "@pawn/db";
 import { createRun } from "./run-factory.js";
 import type { WsManager } from "../ws/index.js";
 

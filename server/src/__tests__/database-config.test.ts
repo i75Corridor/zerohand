@@ -16,7 +16,7 @@ describe("validateDatabaseConfig", () => {
     const result = validateDatabaseConfig({
       host: "localhost",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "pass",
     });
@@ -27,7 +27,7 @@ describe("validateDatabaseConfig", () => {
   it("applies defaults for optional fields", () => {
     const result = validateDatabaseConfig({
       host: "localhost",
-      database: "zerohand",
+      database: "pawn",
       username: "user",
     });
     expect(result.valid).toBe(true);
@@ -38,7 +38,7 @@ describe("validateDatabaseConfig", () => {
 
   it("rejects missing host", () => {
     const result = validateDatabaseConfig({
-      database: "zerohand",
+      database: "pawn",
       username: "user",
     });
     expect(result.valid).toBe(false);
@@ -49,7 +49,7 @@ describe("validateDatabaseConfig", () => {
     const result = validateDatabaseConfig({
       host: "localhost",
       port: 99999,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
     });
     expect(result.valid).toBe(false);
@@ -65,7 +65,7 @@ describe("validateDatabaseConfig", () => {
   it("accepts valid sslMode values", () => {
     const result = validateDatabaseConfig({
       host: "localhost",
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       ssl: true,
       sslMode: "require",
@@ -76,7 +76,7 @@ describe("validateDatabaseConfig", () => {
   it("rejects invalid sslMode", () => {
     const result = validateDatabaseConfig({
       host: "localhost",
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       ssl: true,
       sslMode: "bogus",
@@ -125,19 +125,19 @@ describe("buildDatabaseUrl", () => {
     const url = buildDatabaseUrl({
       host: "localhost",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "pass",
       ssl: false,
     });
-    expect(url).toBe("postgresql://user:pass@localhost:5432/zerohand");
+    expect(url).toBe("postgresql://user:pass@localhost:5432/pawn");
   });
 
   it("URI-encodes special characters in password", () => {
     const url = buildDatabaseUrl({
       host: "localhost",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "p@ss:w/rd%",
       ssl: false,
@@ -149,20 +149,20 @@ describe("buildDatabaseUrl", () => {
     const url = buildDatabaseUrl({
       host: "db.example.com",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "pass",
       ssl: true,
       sslMode: "require",
     });
-    expect(url).toBe("postgresql://user:pass@db.example.com:5432/zerohand?sslmode=require");
+    expect(url).toBe("postgresql://user:pass@db.example.com:5432/pawn?sslmode=require");
   });
 
   it("does not append sslmode when ssl is false", () => {
     const url = buildDatabaseUrl({
       host: "localhost",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "pass",
       ssl: false,
@@ -176,12 +176,12 @@ describe("buildDatabaseUrl", () => {
     const url = buildDatabaseUrl({
       host: "${TEST_DB_HOST}",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "admin",
       password: "${TEST_DB_PASS}",
       ssl: false,
     });
-    expect(url).toBe("postgresql://admin:s3cret@remote.db.com:5432/zerohand");
+    expect(url).toBe("postgresql://admin:s3cret@remote.db.com:5432/pawn");
   });
 
   it("leaves unresolved ${VAR} refs as-is in the URL", () => {
@@ -189,7 +189,7 @@ describe("buildDatabaseUrl", () => {
     const url = buildDatabaseUrl({
       host: "${NONEXISTENT}",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "pass",
       ssl: false,
@@ -201,7 +201,7 @@ describe("buildDatabaseUrl", () => {
   it("uses default port 5432 from validated config", () => {
     const result = validateDatabaseConfig({
       host: "localhost",
-      database: "zerohand",
+      database: "pawn",
       username: "user",
     });
     const url = buildDatabaseUrl(result.config!);
@@ -214,7 +214,7 @@ describe("maskDatabaseConfig", () => {
     const masked = maskDatabaseConfig({
       host: "localhost",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "supersecret",
       ssl: false,
@@ -293,7 +293,7 @@ describe("loadDatabaseConfig", () => {
       join(tmpDir, "database.json"),
       JSON.stringify({
         host: "${TEST_LOAD_HOST}",
-        database: "zerohand",
+        database: "pawn",
         username: "deploy",
         password: "${TEST_LOAD_PASS}",
       }),

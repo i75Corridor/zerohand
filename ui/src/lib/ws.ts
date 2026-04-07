@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { useEffect, useRef, useCallback } from "react";
-import type { WsMessage } from "@zerohand/shared";
+import type { WsMessage } from "@pawn/shared";
 
 type WsHandler = (msg: WsMessage) => void;
 

@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
-import { settings } from "@zerohand/db";
+import { settings } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeListSettings(ctx: AgentToolContext): ToolDefinition {

@@ -1,6 +1,6 @@
 # MCP Servers
 
-Zerohand can connect to external [Model Context Protocol](https://modelcontextprotocol.io) servers and expose their tools to pipeline skills during execution. This lets skills call tools like web search, file access, database queries, or any other capability provided by an MCP-compliant server.
+Pawn can connect to external [Model Context Protocol](https://modelcontextprotocol.io) servers and expose their tools to pipeline skills during execution. This lets skills call tools like web search, file access, database queries, or any other capability provided by an MCP-compliant server.
 
 **Source:** `server/src/services/mcp-client.ts`, `server/src/services/mcp-tool-bridge.ts`, `server/src/routes/mcp-servers.ts`
 
@@ -185,5 +185,5 @@ Live tool list for a server (connects, queries, disconnects).
 ## Security Notes
 
 - MCP server credentials (API keys in `env` or `headers`) are stored in the database. Keep your database access secure.
-- Environment variables passed to stdio servers are merged with the server process environment, not the full Zerohand server environment — standard tools (search, filesystem) will not receive your `ANTHROPIC_API_KEY` unless you explicitly pass it.
+- Environment variables passed to stdio servers are merged with the server process environment, not the full Pawn server environment — standard tools (search, filesystem) will not receive your `ANTHROPIC_API_KEY` unless you explicitly pass it.
 - MCP tools can perform arbitrary actions depending on the server. Only register servers you trust.

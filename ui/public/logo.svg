@@ -1,7 +1,7 @@
 <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
   <!--
-    Zerohand full logo mark
-    Fist (palm toward viewer) · "Zerohand" on the palm · tagline below
+    Pawn full logo mark
+    Fist (palm toward viewer) · "Pawn" on the palm · tagline below
     Sky-400 (#38bdf8) on transparent background
   -->
 
@@ -22,7 +22,7 @@
         stroke="#0f172a" stroke-width="3" fill="none"
         stroke-linecap="round" opacity="0.15"/>
 
-  <!-- "Zerohand" on the palm -->
+  <!-- "Pawn" on the palm -->
   <text
     x="149" y="115"
     text-anchor="middle"
@@ -30,7 +30,7 @@
     font-size="22" font-weight="700"
     fill="#0f172a"
     letter-spacing="-0.4"
-  >Zerohand</text>
+  >Pawn</text>
 
   <!-- Tagline -->
   <text

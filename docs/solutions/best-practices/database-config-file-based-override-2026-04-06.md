@@ -28,7 +28,7 @@ tags:
 
 ## Context
 
-The zerohand server connected to PostgreSQL exclusively through a `DATABASE_URL` environment variable or a bundled embedded Postgres instance. Users deploying with external Postgres wanted a file-based configuration alternative with visibility through the settings API, CLI, and MCP tooling.
+The pawn server connected to PostgreSQL exclusively through a `DATABASE_URL` environment variable or a bundled embedded Postgres instance. Users deploying with external Postgres wanted a file-based configuration alternative with visibility through the settings API, CLI, and MCP tooling.
 
 The core challenge was a **chicken-and-egg problem**: the application's settings table lives inside the database, so you cannot read database connection parameters from settings if you haven't connected to the database yet.
 
@@ -175,7 +175,7 @@ async function startPostgres() {
 
 ## Related
 
-- GitHub issue: [#60 — Add remote database configuration override in settings](https://github.com/i75Corridor/zerohand/issues/60)
+- GitHub issue: [#60 — Add remote database configuration override in settings](https://github.com/i75Corridor/pawn/issues/60)
 - Plan: `docs/plans/2026-04-06-003-feat-remote-database-config-plan.md`
 - Existing pattern: `server/src/services/custom-providers.ts` (`providers.json` file-read + cache pattern)
 - Related doc: `docs/solutions/best-practices/adding-agent-tools-dual-system-architecture-2026-04-04.md` (dual-system MCP/in-app architecture for settings tools)

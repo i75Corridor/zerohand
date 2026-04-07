@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
-import { triggers } from "@zerohand/db";
+import { triggers } from "@pawn/db";
 import { computeNextRun } from "../trigger-manager.js";
 import type { AgentToolContext } from "./context.js";
 

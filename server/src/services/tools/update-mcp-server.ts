@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
-import { mcpServers } from "@zerohand/db";
+import { mcpServers } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeUpdateMcpServer(ctx: AgentToolContext): ToolDefinition {

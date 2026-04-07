@@ -21,7 +21,7 @@ export function makeScanPackage(_ctx: AgentToolContext): ToolDefinition {
     execute: async (_id, params: { repoUrl: string }) => {
       let tempDir: string | null = null;
       try {
-        tempDir = mkdtempSync(join(tmpdir(), "zerohand-scan-"));
+        tempDir = mkdtempSync(join(tmpdir(), "pawn-scan-"));
 
         await new Promise<void>((resolve, reject) => {
           const child = spawn("git", ["clone", "--depth", "1", params.repoUrl, tempDir!], {

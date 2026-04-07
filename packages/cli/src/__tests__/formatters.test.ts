@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { formatTable, relativeTime, shortId } from "../formatters.js";
 import { pipelineToYaml } from "../formatters.js";
-import type { ApiPipeline } from "@zerohand/shared";
+import type { ApiPipeline } from "@pawn/shared";
 
 describe("shortId", () => {
   it("returns first 8 chars", () => {

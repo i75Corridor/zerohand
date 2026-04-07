@@ -2,10 +2,10 @@ import { writeFileSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { Router } from "express";
 import { eq, asc, ne, inArray, desc, max, sql } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { pipelines, pipelineSteps, pipelineRuns, costEvents, installedPackages, pipelineVersions } from "@zerohand/db";
-import type { ApiPipeline, ApiPipelineStep } from "@zerohand/shared";
-import { pipelineToYaml } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { pipelines, pipelineSteps, pipelineRuns, costEvents, installedPackages, pipelineVersions } from "@pawn/db";
+import type { ApiPipeline, ApiPipelineStep } from "@pawn/shared";
+import { pipelineToYaml } from "@pawn/shared";
 import { skillsDir as getSkillsDir } from "../services/paths.js";
 import { validatePipeline } from "../services/tools/validate-pipeline.js";
 
@@ -18,7 +18,7 @@ export function toApiStep(row: typeof pipelineSteps.$inferSelect): ApiPipelineSt
     promptTemplate: row.promptTemplate,
     timeoutSeconds: row.timeoutSeconds,
     approvalRequired: row.approvalRequired,
-    retryConfig: (row.retryConfig as import("@zerohand/shared").RetryConfig) ?? null,
+    retryConfig: (row.retryConfig as import("@pawn/shared").RetryConfig) ?? null,
     metadata: (row.metadata as Record<string, unknown>) ?? null,
   };
 }

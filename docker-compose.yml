@@ -2,13 +2,13 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: zerohand
-      POSTGRES_PASSWORD: zerohand
-      POSTGRES_DB: zerohand
+      POSTGRES_USER: pawn
+      POSTGRES_PASSWORD: pawn
+      POSTGRES_DB: pawn
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zerohand"]
+      test: ["CMD-SHELL", "pg_isready -U pawn"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -18,7 +18,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql://zerohand:zerohand@postgres:5432/zerohand
+      DATABASE_URL: postgresql://pawn:pawn@postgres:5432/pawn
       PORT: 3009
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

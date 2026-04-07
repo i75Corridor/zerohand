@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
-import { pipelineSteps } from "@zerohand/db";
+import { pipelineSteps } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeUpdatePipelineStep(ctx: AgentToolContext): ToolDefinition {

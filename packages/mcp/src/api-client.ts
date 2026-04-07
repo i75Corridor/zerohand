@@ -9,7 +9,7 @@ import type {
   ApiBudgetPolicy,
   ApiInstalledPackage,
   ApiSetting,
-} from "@zerohand/shared";
+} from "@pawn/shared";
 
 export class ApiError extends Error {
   constructor(

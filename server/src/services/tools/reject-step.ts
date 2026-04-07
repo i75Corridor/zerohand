@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
-import { approvals, pipelineRuns, stepRuns } from "@zerohand/db";
+import { approvals, pipelineRuns, stepRuns } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeRejectStep(ctx: AgentToolContext): ToolDefinition {

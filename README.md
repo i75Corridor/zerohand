@@ -1,7 +1,7 @@
-# Zerohand
+# Pawn
 
 <p align="center">
-  <img src=".github/zerohand.svg" width="300" alt="Zerohand" />
+  <img src=".github/pawn.svg" width="300" alt="Pawn" />
 </p>
 
 An agentic workflow orchestrator built on [pi.dev](https://github.com/badlogic/pi-mono). Define pipelines as YAML packages, configure workers, schedule them with cron triggers, gate steps behind human approvals, enforce budget caps — and watch runs execute in real-time through the web portal.
@@ -34,7 +34,7 @@ An agentic workflow orchestrator built on [pi.dev](https://github.com/badlogic/p
 |---------|-------------|
 | `packages/db` | Drizzle ORM schema + migration client |
 | `packages/shared` | Shared API types, status enums, WebSocket message types |
-| `packages/cli` | `zerohand` CLI — manage pipelines, runs, and packages from the terminal |
+| `packages/cli` | `pawn` CLI — manage pipelines, runs, and packages from the terminal |
 | `packages/mcp` | MCP server — exposes pipelines, runs, and skills as MCP tools/resources |
 | `server` | Express API + embedded PostgreSQL + execution engine |
 | `ui` | React + Vite + TailwindCSS operator dashboard |
@@ -55,7 +55,7 @@ See [`docs/`](./docs) for detailed component documentation.
 
 ```bash
 git clone <repo>
-cd zerohand
+cd pawn
 cp .env.example .env
 # Add your GEMINI_API_KEY to .env
 
@@ -100,19 +100,19 @@ npm install -g @i75corridor/zh-cli
 Point it at your server (default is `http://localhost:3009`):
 
 ```bash
-zerohand config set server http://localhost:3009
+pawn config set server http://localhost:3009
 ```
 
 Trigger a run and stream output:
 
 ```bash
-zerohand run "The Daily Absurdist" --input topic="AI hype" --watch
+pawn run "The Daily Absurdist" --input topic="AI hype" --watch
 ```
 
 Scaffold a new pipeline package:
 
 ```bash
-zerohand new my-pipeline
+pawn new my-pipeline
 ```
 
 See [`docs/cli.md`](./docs/cli.md) for the full command reference.
@@ -177,7 +177,7 @@ pnpm --filter @i75corridor/zh-cli build # build the CLI binary
 ## File Structure
 
 ```
-zerohand/
+pawn/
 ├── pipelines/                         # Pipeline packages (YAML config)
 │   └── daily-absurdist/
 │       ├── pipeline.yaml              # Manifest: model, steps (skill-based), inputSchema

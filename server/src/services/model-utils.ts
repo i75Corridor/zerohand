@@ -1,8 +1,8 @@
 import { getProviders, getModels, getEnvApiKey } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { settings } from "@zerohand/db";
-import type { ApiModelEntry } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { settings } from "@pawn/db";
+import type { ApiModelEntry } from "@pawn/shared";
 import { ollamaModelsToApiEntries } from "./ollama-provider.js";
 import { customProviderModelsToApiEntries } from "./custom-providers.js";
 

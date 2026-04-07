@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
-import { settings } from "@zerohand/db";
+import { settings } from "@pawn/db";
 import { invalidateModelCostsCache } from "../budget-guard.js";
 import type { AgentToolContext } from "./context.js";
 

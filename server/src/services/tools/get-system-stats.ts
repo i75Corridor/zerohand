@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { gte, count, sql } from "drizzle-orm";
-import { pipelineRuns, costEvents } from "@zerohand/db";
+import { pipelineRuns, costEvents } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeGetSystemStats(ctx: AgentToolContext): ToolDefinition {

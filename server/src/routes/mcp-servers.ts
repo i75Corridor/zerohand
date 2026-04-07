@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { mcpServers } from "@zerohand/db";
-import type { ApiMcpServer } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { mcpServers } from "@pawn/db";
+import type { ApiMcpServer } from "@pawn/shared";
 import { McpClientPool } from "../services/mcp-client.js";
 import { detectEnvVars } from "../services/mcp-env-detector.js";
 

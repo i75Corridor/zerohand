@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { budgetPolicies } from "@zerohand/db";
-import type { ApiBudgetPolicy } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { budgetPolicies } from "@pawn/db";
+import type { ApiBudgetPolicy } from "@pawn/shared";
 import type { WsManager } from "../ws/index.js";
 
 function toApi(row: typeof budgetPolicies.$inferSelect): ApiBudgetPolicy {

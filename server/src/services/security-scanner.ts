@@ -1,5 +1,5 @@
 /**
- * Security scanner for Zerohand pipeline packages.
+ * Security scanner for Pawn pipeline packages.
  *
  * Scans a cloned package directory for suspicious patterns in scripts,
  * skill metadata, and dependencies. Returns a structured report with a

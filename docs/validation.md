@@ -1,6 +1,6 @@
 # Pipeline Validation
 
-Zerohand includes a fast, static validation pass that checks a pipeline for common errors before running it. Validation does not execute any LLM calls or scripts — it inspects the pipeline definition, its steps, and references to external resources.
+Pawn includes a fast, static validation pass that checks a pipeline for common errors before running it. Validation does not execute any LLM calls or scripts — it inspects the pipeline definition, its steps, and references to external resources.
 
 **Source:** `server/src/services/tools/validate-pipeline.ts`, `server/src/routes/pipelines.ts`
 

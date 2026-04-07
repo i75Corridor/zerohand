@@ -8,15 +8,15 @@ import {
 import { resolveModel } from "./ollama-provider.js";
 import { join } from "node:path";
 import { mkdirSync, rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
-import type { Db } from "@zerohand/db";
-import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@pawn/shared";
 import { makeAuthStorage, makeResourceLoader, runSkillStep } from "./pi-executor.js";
 import { readModelSetting } from "./model-utils.js";
 import { makeAllTools, type AgentToolContext } from "./tools/index.js";
 import { skillsDir as getSkillsDir } from "./paths.js";
 import { buildDashboardContext, formatDashboardContext, type DashboardContext } from "./dashboard-context.js";
 
-const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
+const SYSTEM_PROMPT = `You are the Pawn assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
 
 ## Concepts
 - **Pipeline**: an orchestration graph of sequential steps executed in order. Each step references a skill by name. Has a name, input schema, a top-level model, and a system prompt shared across all steps.
@@ -94,7 +94,7 @@ Be concise and action-oriented. Confirm briefly what you did.`;
 function loadSkillSummary(skillsDir: string): string {
   if (!existsSync(skillsDir)) return "";
   const entries: string[] = [];
-  // Two-level traversal: namespace dirs → skill dirs (e.g. local/researcher, zerohand-daily-absurdist/publisher)
+  // Two-level traversal: namespace dirs → skill dirs (e.g. local/researcher, pawn-daily-absurdist/publisher)
   for (const ns of readdirSync(skillsDir, { withFileTypes: true })) {
     if (!ns.isDirectory()) continue;
     const nsPath = join(skillsDir, ns.name);

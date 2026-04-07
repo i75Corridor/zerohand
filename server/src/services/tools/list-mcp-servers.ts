@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
-import { mcpServers } from "@zerohand/db";
+import { mcpServers } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeListMcpServers(ctx: AgentToolContext): ToolDefinition {

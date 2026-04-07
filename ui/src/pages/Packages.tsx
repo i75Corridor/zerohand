@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { api } from "../lib/api.ts";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiInstalledPackage, ApiDiscoveredPackage, ApiModelWarning } from "@zerohand/shared";
+import type { ApiInstalledPackage, ApiDiscoveredPackage, ApiModelWarning } from "@pawn/shared";
 
 // ── Security error parsing ─────────────────────────────────────────────────────
 
@@ -293,7 +293,7 @@ function DiscoverCard({
       <div className="flex items-center justify-between mt-auto">
         <div className="flex flex-wrap gap-1">
           {pkg.topics
-            .filter((t) => t !== "zerohand-package")
+            .filter((t) => t !== "pawn-package")
             .slice(0, 3)
             .map((t) => (
               <span key={t} className="text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
@@ -464,7 +464,7 @@ export default function Packages() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-              placeholder="Search GitHub for zerohand packages..."
+              placeholder="Search GitHub for pawn packages..."
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleDiscover()}

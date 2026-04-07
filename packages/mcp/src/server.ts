@@ -3,7 +3,7 @@ import type { ApiClient } from "./api-client.js";
 
 export function createMcpServer(client: ApiClient): McpServer {
   const server = new McpServer({
-    name: "zerohand",
+    name: "pawn",
     version: "0.1.0",
   });
 

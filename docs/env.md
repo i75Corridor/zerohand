@@ -9,7 +9,7 @@ All variables are optional unless marked **required**. Defaults assume the serve
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3009` | HTTP + WebSocket listen port |
-| `PUBLIC_URL` | _(none)_ | Publicly reachable base URL of the server, e.g. `https://zerohand.example.com`. Required for Slack webhook callbacks. |
+| `PUBLIC_URL` | _(none)_ | Publicly reachable base URL of the server, e.g. `https://pawn.example.com`. Required for Slack webhook callbacks. |
 
 ---
 
@@ -29,7 +29,7 @@ All variables are optional unless marked **required**. Defaults assume the serve
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | _(none)_ | External Postgres connection string, e.g. `postgresql://user:pass@host:5432/zerohand`. When set, the embedded Postgres instance is skipped entirely. **Takes precedence over `database.json`.** |
+| `DATABASE_URL` | _(none)_ | External Postgres connection string, e.g. `postgresql://user:pass@host:5432/pawn`. When set, the embedded Postgres instance is skipped entirely. **Takes precedence over `database.json`.** |
 
 ### `database.json` file
 
@@ -45,8 +45,8 @@ As an alternative to `DATABASE_URL`, you can place a `database.json` file in `DA
 {
   "host": "postgres.example.com",
   "port": 5432,
-  "database": "zerohand",
-  "username": "zerohand",
+  "database": "pawn",
+  "username": "pawn",
   "password": "${DB_PASSWORD}",
   "ssl": true,
   "sslMode": "require"
