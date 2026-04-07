@@ -6,9 +6,9 @@
     </linearGradient>
 
     <radialGradient id="halo5" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.18"/>
-      <stop offset="60%" stop-color="#0ea5e9" stop-opacity="0.06"/>
-      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#b8862d" stop-opacity="0.18"/>
+      <stop offset="60%" stop-color="#b8862d" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#b8862d" stop-opacity="0"/>
     </radialGradient>
 
     <filter id="pawnEdge5" x="-20%" y="-20%" width="140%" height="140%">
@@ -71,24 +71,24 @@
 
   <!-- Pawn bloom layer -->
   <g transform="translate(128, 48) scale(6)" filter="url(#bloom5)" opacity="0.55">
-    <circle cx="12" cy="6" r="4" fill="#38bdf8"/>
-    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#38bdf8"/>
-    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#38bdf8"/>
-    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#38bdf8"/>
+    <circle cx="12" cy="6" r="4" fill="#c99a3e"/>
+    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#c99a3e"/>
+    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#c99a3e"/>
+    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#c99a3e"/>
   </g>
 
   <!-- Pawn crisp render -->
   <g transform="translate(128, 48) scale(6)" filter="url(#pawnEdge5)">
-    <circle cx="12" cy="6" r="4" fill="#38bdf8"/>
-    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#38bdf8"/>
-    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#38bdf8"/>
-    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#38bdf8"/>
+    <circle cx="12" cy="6" r="4" fill="#c99a3e"/>
+    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#c99a3e"/>
+    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#c99a3e"/>
+    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#c99a3e"/>
     <!-- Subtle highlight -->
     <rect x="8" y="11.5" width="8" height="3" rx="1" fill="rgba(255,255,255,0.07)"/>
   </g>
 
   <!-- Divider -->
-  <line x1="140" y1="282" x2="260" y2="282" stroke="#0ea5e9" stroke-width="0.75" opacity="0.25"/>
+  <line x1="140" y1="282" x2="260" y2="282" stroke="#b8862d" stroke-width="0.75" opacity="0.25"/>
 
   <!-- Wordmark -->
   <g filter="url(#textGlow5)">
@@ -107,7 +107,7 @@
     text-anchor="middle" fill="#475569">Agentic workflows for engineers</text>
 
   <!-- Corner L-brackets -->
-  <g stroke="#0ea5e9" stroke-width="1.2" opacity="0.22" fill="none" stroke-linecap="square">
+  <g stroke="#b8862d" stroke-width="1.2" opacity="0.22" fill="none" stroke-linecap="square">
     <polyline points="14,34 14,14 34,14"/>
     <polyline points="366,14 386,14 386,34"/>
     <polyline points="14,366 14,386 34,386"/>
@@ -115,7 +115,7 @@
   </g>
 
   <!-- Corner accent dots -->
-  <g fill="#0ea5e9" opacity="0.35">
+  <g fill="#b8862d" opacity="0.35">
     <circle cx="14" cy="14" r="1.5"/>
     <circle cx="386" cy="14" r="1.5"/>
     <circle cx="14" cy="386" r="1.5"/>

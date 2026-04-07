@@ -26,7 +26,7 @@ const markdownComponents: Components = {
         src={resolved}
         alt={alt ?? ""}
         loading="lazy"
-        className="rounded-xl max-w-full border border-slate-700/60 my-4"
+        className="rounded-card max-w-full border border-pawn-surface-700/60 my-4"
       />
     );
   },
@@ -46,10 +46,10 @@ function MarkdownOutput({ serverPath }: { serverPath: string }) {
   }, [serverPath]);
 
   if (error) return <p className="text-xs text-rose-400 italic">Could not load file.</p>;
-  if (content === null) return <p className="text-xs text-slate-500 italic">Loading...</p>;
+  if (content === null) return <p className="text-xs text-pawn-surface-500 italic">Loading...</p>;
 
   return (
-    <div className="prose prose-invert prose-sm max-w-none text-slate-300">
+    <div className="prose prose-invert prose-sm max-w-none text-pawn-surface-300">
       <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
     </div>
   );
@@ -71,7 +71,7 @@ export default memo(function OutputPreview({ text, compact = false }: OutputPrev
         src={fileUrl(text.trim())}
         alt="Pipeline output"
         loading="lazy"
-        className="rounded-xl max-w-full border border-slate-700/60"
+        className="rounded-card max-w-full border border-pawn-surface-700/60"
         style={compact ? { maxHeight: "300px", objectFit: "contain" } : undefined}
         onError={(e) => {
           const img = e.currentTarget;
@@ -96,7 +96,7 @@ export default memo(function OutputPreview({ text, compact = false }: OutputPrev
   // Plain text fallback
   return (
     <pre
-      className={`text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed ${
+      className={`text-xs text-pawn-surface-300 whitespace-pre-wrap font-mono leading-relaxed ${
         compact ? "max-h-96 overflow-y-auto" : ""
       }`}
     >

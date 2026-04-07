@@ -26,7 +26,7 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
     : step.promptTemplate;
 
   return (
-    <div className="bg-slate-900 border border-slate-700/60 rounded-xl p-4 w-80 shadow-lg">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-card p-4 w-80 shadow-lg">
       {step.stepIndex > 0 && (
         <Handle type="target" position={Position.Top} className="!bg-indigo-500 !w-2 !h-2 !border-0" />
       )}
@@ -54,10 +54,10 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
             </div>
           )}
           {preview && (
-            <div className="text-xs text-slate-500 mt-1.5 font-mono leading-relaxed">{preview}</div>
+            <div className="text-xs text-pawn-surface-500 mt-1.5 font-mono leading-relaxed">{preview}</div>
           )}
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-slate-500 flex items-center gap-1"><Clock size={10} /> {step.timeoutSeconds}s</span>
+            <span className="text-xs text-pawn-surface-500 flex items-center gap-1"><Clock size={10} /> {step.timeoutSeconds}s</span>
             {step.approvalRequired && (
               <span className="text-xs text-amber-400 flex items-center gap-0.5">
                 <CheckSquare size={10} /> approval
@@ -99,7 +99,7 @@ function PipelineDAG({ pipeline }: { pipeline: ApiPipeline }) {
   }));
 
   return (
-    <div className="h-[500px] rounded-xl overflow-hidden border border-slate-800/60">
+    <div className="h-[500px] rounded-card overflow-hidden border border-pawn-surface-800/60">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -116,9 +116,9 @@ function PipelineDAG({ pipeline }: { pipeline: ApiPipeline }) {
         minZoom={0.3}
         maxZoom={1.5}
         proOptions={{ hideAttribution: true }}
-        style={{ background: "#0f172a" }}
+        style={{ background: "#181614" }}
       >
-        <Background color="#1e293b" gap={24} />
+        <Background color="#252220" gap={24} />
       </ReactFlow>
     </div>
   );
@@ -164,20 +164,20 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900 border border-slate-700/60 rounded-xl p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-panel p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
           <Dialog.Title className="text-lg font-semibold text-white mb-4">Run: {pipeline.name}</Dialog.Title>
           {fields.length === 0 ? (
-            <p className="text-sm text-slate-500 mb-4">No inputs required.</p>
+            <p className="text-sm text-pawn-surface-500 mb-4">No inputs required.</p>
           ) : (
             <div className="space-y-4 mb-4">
               {fields.map(([key, prop]) => (
                 <div key={key}>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-pawn-surface-400 mb-1">
                     {key}{required.has(key) && <span className="text-rose-400 ml-1">*</span>}
                   </label>
-                  {prop.description && <p className="text-xs text-slate-500 mb-1">{prop.description}</p>}
+                  {prop.description && <p className="text-xs text-pawn-surface-500 mb-1">{prop.description}</p>}
                   <input
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
                     placeholder={prop.description ?? key}
                     value={values[key] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
@@ -195,12 +195,12 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
               onChange={(e) => setStepByStep(e.target.checked)}
               className="rounded"
             />
-            <label htmlFor="step-by-step" className="text-sm text-slate-400">
-              Step-by-step mode <span className="text-slate-600">(pause after each step)</span>
+            <label htmlFor="step-by-step" className="text-sm text-pawn-surface-400">
+              Step-by-step mode <span className="text-pawn-surface-600">(pause after each step)</span>
             </label>
           </div>
           {hasValidationItems && (
-            <div className="mb-4 border border-amber-800/40 bg-amber-900/10 rounded-xl p-3">
+            <div className="mb-4 border border-amber-800/40 bg-amber-900/10 rounded-card p-3">
               <div className="flex items-center gap-1.5 text-xs font-medium text-amber-400 mb-2">
                 <AlertTriangle size={12} />
                 {validation.errors.length > 0
@@ -218,9 +218,9 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
             {validation && validation.errors.length > 0 && (
               <span className="text-xs text-rose-400 flex-1">Fix validation errors before running.</span>
             )}
-            <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Cancel</button>
+            <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-white" onClick={onClose}>Cancel</button>
             <button
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={trigger.isPending || (validation?.errors.length ?? 0) > 0}
               onClick={() => trigger.mutate()}
             >
@@ -272,11 +272,11 @@ function RecentRuns({ pipelineId }: { pipelineId: string }) {
           <Link
             key={run.id}
             to={`/runs/${run.id}`}
-            className="flex items-center gap-3 px-4 py-2.5 bg-slate-900/50 border border-slate-800/60 rounded-xl hover:border-slate-700 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 bg-pawn-surface-900/50 border border-pawn-surface-800/60 rounded-card hover:border-pawn-surface-700 transition-colors"
           >
             <StatusBadge status={run.status} />
-            <span className="text-xs text-slate-500 capitalize">{run.triggerType}</span>
-            <span className="text-xs text-slate-500 flex-1 text-right">
+            <span className="text-xs text-pawn-surface-500 capitalize">{run.triggerType}</span>
+            <span className="text-xs text-pawn-surface-500 flex-1 text-right">
               {new Date(run.createdAt).toLocaleString()}
               {duration !== null && ` · ${duration}s`}
             </span>
@@ -329,18 +329,18 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900 border border-slate-700/60 rounded-xl p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-panel p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
           <div className="flex items-center justify-between mb-4">
             <Dialog.Title className="text-lg font-semibold text-white">Publish to GitHub</Dialog.Title>
             <Dialog.Close asChild>
-              <button className="text-slate-500 hover:text-slate-300 transition-colors" aria-label="Close"><X size={16} /></button>
+              <button className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors" aria-label="Close"><X size={16} /></button>
             </Dialog.Close>
           </div>
 
           {publishResult ? (
             <div className="space-y-4">
               {publishResult.noChanges ? (
-                <p className="text-sm text-slate-400">No changes detected — the repository is already up to date.</p>
+                <p className="text-sm text-pawn-surface-400">No changes detected — the repository is already up to date.</p>
               ) : publishResult.prUrl ? (
                 <>
                   <p className="text-sm text-emerald-400">Pull request created!</p>
@@ -348,7 +348,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
                     href={publishResult.prUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block text-xs font-mono text-sky-400 hover:text-sky-300 bg-slate-800 rounded-xl px-4 py-3 truncate"
+                    className="block text-xs font-mono text-pawn-gold-400 hover:text-pawn-gold-300 bg-pawn-surface-800 rounded-card px-4 py-3 truncate"
                   >
                     {publishResult.prUrl}
                   </a>
@@ -360,7 +360,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
                     href={publishResult.repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block text-xs font-mono text-sky-400 hover:text-sky-300 bg-slate-800 rounded-xl px-4 py-3 truncate"
+                    className="block text-xs font-mono text-pawn-gold-400 hover:text-pawn-gold-300 bg-pawn-surface-800 rounded-card px-4 py-3 truncate"
                   >
                     {publishResult.repoUrl}
                   </a>
@@ -368,7 +368,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
               )}
               <button
                 onClick={onClose}
-                className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+                className="w-full px-4 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors"
               >
                 Close
               </button>
@@ -376,13 +376,13 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Repository name</label>
+                <label className="block text-sm text-pawn-surface-400 mb-1">Repository name</label>
                 <input
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
                   value={repo}
                   onChange={(e) => setRepo(e.target.value)}
                 />
-                <p className="text-xs text-slate-500 mt-1">Use <code>owner/repo</code> for a specific org, or just <code>repo</code> for your personal account.</p>
+                <p className="text-xs text-pawn-surface-500 mt-1">Use <code>owner/repo</code> for a specific org, or just <code>repo</code> for your personal account.</p>
               </div>
               <div>
                 <div className="flex items-center gap-3">
@@ -393,10 +393,10 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
                     onChange={(e) => setIsPrivate(e.target.checked)}
                     className="rounded"
                   />
-                  <label htmlFor="private-toggle" className="text-sm text-slate-400">Private repository</label>
+                  <label htmlFor="private-toggle" className="text-sm text-pawn-surface-400">Private repository</label>
                 </div>
                 {isPrivate && (
-                  <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-card">
                     <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
                     <p className="text-xs text-amber-300">Private repos won't be discoverable via <code>pawn packages discover</code> and won't appear in the package registry.</p>
                   </div>
@@ -406,9 +406,9 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
                 <p className="text-xs text-rose-400">{(publish.error as Error).message}</p>
               )}
               <div className="flex gap-3 justify-end">
-                <button className="px-4 py-2 text-sm text-slate-400 hover:text-white" onClick={onClose}>Cancel</button>
+                <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-white" onClick={onClose}>Cancel</button>
                 <button
-                  className="flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button disabled:opacity-50"
                   disabled={!repo || publish.isPending}
                   onClick={() => publish.mutate()}
                 >
@@ -443,19 +443,19 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="bg-slate-900 border border-slate-700/60 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl"
+        className="bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-pawn-surface-800">
           <h2 className="text-lg font-semibold text-white">Package Preview</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors">
+          <button onClick={onClose} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
             <X size={16} />
           </button>
         </div>
 
         {loading && (
           <div className="flex-1 flex items-center justify-center">
-            <Loader size={20} className="animate-spin text-slate-500" />
+            <Loader size={20} className="animate-spin text-pawn-surface-500" />
           </div>
         )}
 
@@ -466,11 +466,11 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
         {preview && (
           <>
             {/* Tabs */}
-            <div className="flex gap-1 px-6 pt-3 border-b border-slate-800">
+            <div className="flex gap-1 px-6 pt-3 border-b border-pawn-surface-800">
               {(["yaml", "skills", "validation"] as const).map((t) => (
                 <button
                   key={t}
-                  className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${tab === t ? "text-white border-b-2 border-sky-500" : "text-slate-500 hover:text-slate-300"}`}
+                  className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${tab === t ? "text-white border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
                   onClick={() => setTab(t)}
                 >
                   {t === "validation"
@@ -484,7 +484,7 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
 
             <div className="flex-1 overflow-y-auto p-6">
               {tab === "yaml" && (
-                <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed bg-slate-950 rounded-xl p-4">
+                <pre className="text-xs text-pawn-surface-300 font-mono whitespace-pre-wrap leading-relaxed bg-pawn-surface-950 rounded-card p-4">
                   {preview.pipelineYaml}
                 </pre>
               )}
@@ -492,14 +492,14 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
               {tab === "skills" && (
                 <div className="flex gap-4 h-full">
                   {preview.skills.length === 0 ? (
-                    <p className="text-sm text-slate-500">No skills bundled.</p>
+                    <p className="text-sm text-pawn-surface-500">No skills bundled.</p>
                   ) : (
                     <>
                       <div className="w-40 flex-shrink-0 space-y-1">
                         {preview.skills.map((s, i) => (
                           <button
                             key={i}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${activeSkill === i ? "bg-sky-900/30 text-sky-300" : "text-slate-400 hover:bg-slate-800"}`}
+                            className={`w-full text-left px-3 py-2 rounded-button text-xs transition-colors ${activeSkill === i ? "bg-pawn-gold-900/30 text-pawn-gold-300" : "text-pawn-surface-400 hover:bg-pawn-surface-800"}`}
                             onClick={() => setActiveSkill(i)}
                           >
                             {s.name}
@@ -510,15 +510,15 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
                         {preview.skills[activeSkill] && (
                           <>
                             <div>
-                              <div className="text-xs text-slate-500 mb-1 font-mono">SKILL.md</div>
-                              <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap bg-slate-950 rounded-xl p-4 max-h-48 overflow-y-auto">
+                              <div className="text-xs text-pawn-surface-500 mb-1 font-mono">SKILL.md</div>
+                              <pre className="text-xs text-pawn-surface-300 font-mono whitespace-pre-wrap bg-pawn-surface-950 rounded-card p-4 max-h-48 overflow-y-auto">
                                 {preview.skills[activeSkill].skillMd}
                               </pre>
                             </div>
                             {preview.skills[activeSkill].scripts.map((sc) => (
                               <div key={sc.filename}>
-                                <div className="text-xs text-slate-500 mb-1 font-mono">{sc.filename}</div>
-                                <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap bg-slate-950 rounded-xl p-4 max-h-48 overflow-y-auto">
+                                <div className="text-xs text-pawn-surface-500 mb-1 font-mono">{sc.filename}</div>
+                                <pre className="text-xs text-pawn-surface-300 font-mono whitespace-pre-wrap bg-pawn-surface-950 rounded-card p-4 max-h-48 overflow-y-auto">
                                   {sc.content}
                                 </pre>
                               </div>
@@ -547,7 +547,7 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
                     </div>
                   ))}
                   {[...preview.validation.errors, ...preview.validation.warnings].length === 0 && (
-                    <p className="text-sm text-slate-500">No issues found.</p>
+                    <p className="text-sm text-pawn-surface-500">No issues found.</p>
                   )}
                 </div>
               )}
@@ -571,11 +571,11 @@ function ValidationPanel({ pipelineId }: { pipelineId: string }) {
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Validation</h2>
+        <h2 className="text-sm font-semibold text-pawn-surface-500 uppercase tracking-wide">Validation</h2>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 rounded-button transition-colors disabled:opacity-50"
         >
           {isFetching ? <Loader size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
           {isFetching ? "Checking..." : "Re-validate"}
@@ -583,13 +583,13 @@ function ValidationPanel({ pipelineId }: { pipelineId: string }) {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-xs text-slate-500 px-1">
+        <div className="flex items-center gap-2 text-xs text-pawn-surface-500 px-1">
           <Loader size={12} className="animate-spin" /> Checking pipeline…
         </div>
       )}
 
       {result && (
-        <div className={`border rounded-xl p-4 ${result.valid ? "border-emerald-800/40 bg-emerald-900/10" : "border-rose-800/40 bg-rose-900/10"}`}>
+        <div className={`border rounded-card p-4 ${result.valid ? "border-emerald-800/40 bg-emerald-900/10" : "border-rose-800/40 bg-rose-900/10"}`}>
           <div className={`flex items-center gap-2 text-sm font-medium mb-3 ${result.valid ? "text-emerald-400" : "text-rose-400"}`}>
             {result.valid ? <Check size={14} /> : <AlertCircle size={14} />}
             {result.valid ? "All checks passed" : `${result.errors.length} error${result.errors.length !== 1 ? "s" : ""}`}
@@ -638,7 +638,7 @@ function VersionHistory({ pipelineId }: { pipelineId: string }) {
     <div className="mb-8">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-sm font-semibold text-slate-500 uppercase tracking-wide hover:text-slate-300 transition-colors mb-3"
+        className="flex items-center gap-2 text-sm font-semibold text-pawn-surface-500 uppercase tracking-wide hover:text-pawn-surface-300 transition-colors mb-3"
       >
         {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         <History size={13} />
@@ -647,19 +647,19 @@ function VersionHistory({ pipelineId }: { pipelineId: string }) {
 
       {expanded && (
         <div className="space-y-1.5">
-          {isLoading && <div className="text-slate-500 text-sm">Loading...</div>}
+          {isLoading && <div className="text-pawn-surface-500 text-sm">Loading...</div>}
           {!isLoading && versions.length === 0 && (
-            <div className="text-slate-600 text-sm">No versions saved yet — edit the pipeline to create one.</div>
+            <div className="text-pawn-surface-600 text-sm">No versions saved yet — edit the pipeline to create one.</div>
           )}
           {versions.map((v) => (
-            <div key={v.id} className="flex items-center gap-3 px-3 py-2 bg-slate-900/50 border border-slate-800/60 rounded-xl">
-              <span className="text-xs font-mono text-sky-400 flex-shrink-0">v{v.versionNumber}</span>
-              <span className="text-xs text-slate-500 flex-1 truncate">{v.changeSummary ?? "Snapshot"}</span>
-              <span className="text-xs text-slate-600">{new Date(v.createdAt).toLocaleString()}</span>
+            <div key={v.id} className="flex items-center gap-3 px-3 py-2 bg-pawn-surface-900/50 border border-pawn-surface-800/60 rounded-card">
+              <span className="text-xs font-mono text-pawn-gold-400 flex-shrink-0">v{v.versionNumber}</span>
+              <span className="text-xs text-pawn-surface-500 flex-1 truncate">{v.changeSummary ?? "Snapshot"}</span>
+              <span className="text-xs text-pawn-surface-600">{new Date(v.createdAt).toLocaleString()}</span>
               <button
                 onClick={() => handleRestore(v.versionNumber)}
                 disabled={restoring === v.versionNumber}
-                className="flex items-center gap-1 text-xs text-slate-500 hover:text-sky-400 transition-colors flex-shrink-0 disabled:opacity-50"
+                className="flex items-center gap-1 text-xs text-pawn-surface-500 hover:text-pawn-gold-400 transition-colors flex-shrink-0 disabled:opacity-50"
                 title="Restore this version"
               >
                 <RotateCcw size={11} />
@@ -745,7 +745,7 @@ export default function PipelineDetail() {
     <div className="p-4 sm:p-6 lg:p-10 max-w-5xl pt-14 lg:pt-10">
       {/* Header */}
       <div className="mb-8">
-        <Link to="/pipelines" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
+        <Link to="/pipelines" className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 mb-5 transition-colors">
           <ArrowLeft size={12} /> Pipelines
         </Link>
         <div className="flex flex-col sm:flex-row items-start gap-4">
@@ -753,17 +753,17 @@ export default function PipelineDetail() {
             <div className="flex items-center gap-3">
               <GitBranch size={20} className="text-indigo-400 flex-shrink-0" />
               <h1 className="text-2xl font-semibold font-display text-white tracking-tight truncate">{pipeline.name}</h1>
-              <span className="text-xs text-slate-500 px-2 py-0.5 bg-slate-800 border border-slate-700/50 rounded-full">{pipeline.status}</span>
+              <span className="text-xs text-pawn-surface-500 px-2 py-0.5 bg-pawn-surface-800 border border-pawn-surface-700/50 rounded-full">{pipeline.status}</span>
             </div>
             {pipeline.description && (
-              <p className="text-sm text-slate-500 mt-1 ml-8">{pipeline.description}</p>
+              <p className="text-sm text-pawn-surface-500 mt-1 ml-8">{pipeline.description}</p>
             )}
           </div>
           <div className="flex flex-wrap gap-2 flex-shrink-0">
             <button
               onClick={() => setShowDeleteConfirm(true)}
               disabled={deletePipeline.isPending}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-900/40 hover:text-rose-400 text-slate-500 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-rose-900/40 hover:text-rose-400 text-pawn-surface-500 text-sm font-medium rounded-button transition-colors disabled:opacity-50"
               title="Delete pipeline"
               aria-label="Delete pipeline"
             >
@@ -771,13 +771,13 @@ export default function PipelineDetail() {
             </button>
             <Link
               to={`/pipelines/${id}/edit`}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors"
             >
               <Pencil size={13} />
               Edit
             </Link>
             <button
-              className="flex items-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-xl transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button transition-colors"
               onClick={() => setShowRun(true)}
             >
               <Play size={13} />
@@ -789,7 +789,7 @@ export default function PipelineDetail() {
 
       {/* DAG */}
       <div className="mb-10">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+        <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
           Steps ({pipeline.steps.length})
         </h2>
         {pipeline.steps.length === 0 ? (
@@ -809,13 +809,13 @@ export default function PipelineDetail() {
 
       {/* Export & Publish */}
       <div className="mb-10">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+        <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
           Export & Publish
         </h2>
         <div className="flex flex-wrap items-center gap-3 mb-3">
           <button
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors"
           >
             <Eye size={13} />
             Preview
@@ -823,7 +823,7 @@ export default function PipelineDetail() {
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors disabled:opacity-50"
           >
             <Download size={13} />
             {exporting ? "Exporting..." : "Export as Package"}
@@ -832,7 +832,7 @@ export default function PipelineDetail() {
             onClick={() => ghStatus?.available !== false && setShowPublish(true)}
             disabled={ghStatus?.available === false}
             title={ghStatus?.available === false ? "gh CLI not found — install from https://cli.github.com" : undefined}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload size={13} />
             Publish to GitHub
@@ -847,11 +847,11 @@ export default function PipelineDetail() {
         {exportError && <p className="text-xs text-rose-400 mb-2" role="alert">{exportError}</p>}
         {deleteError && <p className="text-xs text-rose-400 mb-2" role="alert">Delete failed: {deleteError}</p>}
         {!isFromPackage && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex items-center gap-3">
-            <code className="font-mono text-xs text-slate-500 flex-1">{exportCmd}</code>
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card px-4 py-3 flex items-center gap-3">
+            <code className="font-mono text-xs text-pawn-surface-500 flex-1">{exportCmd}</code>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-400 transition-colors flex-shrink-0"
+              className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-400 transition-colors flex-shrink-0"
               title="Copy CLI command"
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
@@ -869,7 +869,7 @@ export default function PipelineDetail() {
 
       {/* Recent runs */}
       <div>
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+        <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
           Recent Runs
         </h2>
         <RecentRuns pipelineId={pipeline.id} />
@@ -883,31 +883,31 @@ export default function PipelineDetail() {
       <Dialog.Root open={showDeleteConfirm} onOpenChange={(open) => { setShowDeleteConfirm(open); if (!open) setDeleteError(""); }}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900 border border-slate-700/60 rounded-xl p-6 w-[calc(100%-2rem)] max-w-sm shadow-lg animate-scale-in">
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-panel p-6 w-[calc(100%-2rem)] max-w-sm shadow-lg animate-scale-in">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-rose-900/40 flex items-center justify-center">
                 <Trash2 size={14} className="text-rose-400" />
               </div>
               <div>
                 <Dialog.Title className="text-base font-semibold text-white">Delete pipeline?</Dialog.Title>
-                <Dialog.Description className="text-sm text-slate-400 mt-1">
+                <Dialog.Description className="text-sm text-pawn-surface-400 mt-1">
                   <span className="text-white font-medium">{pipeline.name}</span> and any skills used only by this pipeline will be permanently removed.
                 </Dialog.Description>
               </div>
             </div>
             {deleteError && (
-              <p className="text-xs text-rose-400 bg-rose-900/20 border border-rose-800/40 rounded-lg px-3 py-2 mb-4">{deleteError}</p>
+              <p className="text-xs text-rose-400 bg-rose-900/20 border border-rose-800/40 rounded-card px-3 py-2 mb-4">{deleteError}</p>
             )}
             <div className="flex justify-end gap-2">
               <Dialog.Close asChild>
-                <button className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors">
+                <button className="px-4 py-2 text-sm font-medium text-pawn-surface-300 bg-pawn-surface-800 hover:bg-pawn-surface-700 rounded-button transition-colors">
                   Cancel
                 </button>
               </Dialog.Close>
               <button
                 onClick={() => deletePipeline.mutate()}
                 disabled={deletePipeline.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-rose-700 hover:bg-rose-600 rounded-xl transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-rose-700 hover:bg-rose-600 rounded-button transition-colors disabled:opacity-50"
               >
                 {deletePipeline.isPending ? "Deleting…" : "Delete"}
               </button>

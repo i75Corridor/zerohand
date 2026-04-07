@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 import Layout from "./components/Layout.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
+import LoadingState from "./components/LoadingState.tsx";
 
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Pipelines = lazy(() => import("./pages/Pipelines.tsx"));
@@ -21,12 +22,12 @@ function NotFound() {
   return (
     <div className="p-8 max-w-lg">
       <h1 className="text-2xl font-semibold text-white mb-2">Page not found</h1>
-      <p className="text-sm text-slate-400 mb-4">
+      <p className="text-sm text-pawn-surface-400 mb-4">
         The page you are looking for does not exist or has been moved.
       </p>
       <Link
         to="/dashboard"
-        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-xl transition-colors inline-block btn-press"
+        className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button transition-colors inline-block btn-press"
       >
         Go to Dashboard
       </Link>
@@ -38,18 +39,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Layout>
-        <Suspense fallback={
-            <div className="p-6 lg:p-10 animate-fade-in" role="status" aria-live="polite">
-              <div className="h-5 w-24 bg-slate-800/60 rounded animate-pulse mb-2" />
-              <div className="h-8 w-48 bg-slate-800/60 rounded animate-pulse mb-8" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="h-24 bg-slate-900/50 border border-slate-800 rounded-xl animate-pulse" />
-                <div className="h-24 bg-slate-900/50 border border-slate-800 rounded-xl animate-pulse" />
-                <div className="h-24 bg-slate-900/50 border border-slate-800 rounded-xl animate-pulse" />
-              </div>
-              <span className="sr-only">Loading page content</span>
-            </div>
-          }>
+        <Suspense fallback={<LoadingState />}>
           <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

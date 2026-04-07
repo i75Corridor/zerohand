@@ -141,15 +141,15 @@ function ScriptEditor({
   const dirty = content !== script.content;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-pawn-surface-800">
         <span className="font-mono text-xs text-violet-300">{script.filename}</span>
         <div className="flex items-center gap-2">
           {dirty && (
             <button
               onClick={() => save.mutate()}
               disabled={save.isPending}
-              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-button transition-colors disabled:opacity-50"
             >
               {saved ? <Check size={12} /> : <Save size={12} />}
               {save.isPending ? "Saving..." : saved ? "Saved" : "Save"}
@@ -158,7 +158,7 @@ function ScriptEditor({
           <button
             onClick={() => del.mutate()}
             disabled={del.isPending}
-            className="flex items-center gap-1 text-xs text-slate-600 hover:text-rose-400 transition-colors"
+            className="flex items-center gap-1 text-xs text-pawn-surface-600 hover:text-rose-400 transition-colors"
             title="Delete script"
             aria-label="Delete script"
           >
@@ -167,7 +167,7 @@ function ScriptEditor({
         </div>
       </div>
       <textarea
-        className="w-full bg-transparent px-4 py-3 text-xs text-slate-300 font-mono leading-relaxed resize-none focus:outline-none"
+        className="w-full bg-transparent px-4 py-3 text-xs text-pawn-surface-300 font-mono leading-relaxed resize-none focus:outline-none"
         rows={Math.max(8, content.split("\n").length + 1)}
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -193,10 +193,10 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
   });
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-800">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-card overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-pawn-surface-800">
         <input
-          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+          className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
           placeholder="filename.py"
           value={filename}
           onChange={(e) => setFilename(e.target.value.toLowerCase())}
@@ -205,16 +205,16 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
         <button
           onClick={() => create.mutate()}
           disabled={!filename || !content || create.isPending}
-          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-button transition-colors disabled:opacity-40"
         >
           <Save size={12} /> Create
         </button>
-        <button onClick={onCancel} className="text-slate-500 hover:text-slate-300 transition-colors">
+        <button onClick={onCancel} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
           <X size={14} />
         </button>
       </div>
       <textarea
-        className="w-full bg-transparent px-4 py-3 text-xs text-slate-300 font-mono leading-relaxed resize-none focus:outline-none"
+        className="w-full bg-transparent px-4 py-3 text-xs text-pawn-surface-300 font-mono leading-relaxed resize-none focus:outline-none"
         rows={12}
         placeholder="# Script content — read JSON from stdin, write results to stdout"
         value={content}
@@ -257,11 +257,11 @@ function TagInput({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</label>
+        <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">{label}</label>
         {!adding && (
           <button
             onClick={() => setAdding(true)}
-            className="text-[10px] text-sky-400 hover:text-sky-300 font-medium transition-colors"
+            className="text-[10px] text-pawn-gold-400 hover:text-pawn-gold-300 font-medium transition-colors"
           >
             {addLabel}
           </button>
@@ -273,13 +273,13 @@ function TagInput({
           {tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 font-mono"
+              className="inline-flex items-center gap-1.5 px-2 py-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button text-xs text-pawn-surface-300 font-mono"
             >
-              <Icon size={10} className="text-slate-500 flex-shrink-0" />
+              <Icon size={10} className="text-pawn-surface-500 flex-shrink-0" />
               {tag}
               <button
                 onClick={() => onChange(tags.filter((t) => t !== tag))}
-                className="text-slate-600 hover:text-rose-400 transition-colors ml-0.5"
+                className="text-pawn-surface-600 hover:text-rose-400 transition-colors ml-0.5"
                 aria-label={`Remove ${tag}`}
               >
                 <X size={11} />
@@ -294,7 +294,7 @@ function TagInput({
           {addOptions ? (
             <select
               autoFocus
-              className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
+              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-surface-200 focus:outline-none focus:border-pawn-gold-500 font-mono"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
             >
@@ -306,7 +306,7 @@ function TagInput({
           ) : (
             <input
               autoFocus
-              className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 font-mono placeholder-slate-600 focus:outline-none focus:border-sky-500"
+              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-surface-300 font-mono placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
               placeholder={placeholder ?? "Enter value…"}
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
@@ -319,18 +319,18 @@ function TagInput({
           <button
             onClick={() => commit(inputVal)}
             disabled={!inputVal.trim()}
-            className="text-xs px-2.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg disabled:opacity-40 transition-colors"
+            className="text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button disabled:opacity-40 transition-colors"
           >
             Add
           </button>
-          <button onClick={() => setAdding(false)} className="text-slate-500 hover:text-slate-300 transition-colors">
+          <button onClick={() => setAdding(false)} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
             <X size={14} />
           </button>
         </div>
       )}
 
       {tags.length === 0 && !adding && (
-        <p className="text-xs text-slate-600 italic">None configured</p>
+        <p className="text-xs text-pawn-surface-600 italic">None configured</p>
       )}
     </div>
   );
@@ -380,15 +380,15 @@ function SplitSkillEditor({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header bar */}
-      <header className="flex-shrink-0 h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-950/80 backdrop-blur-sm z-10">
+      <header className="flex-shrink-0 h-14 border-b border-pawn-surface-800 flex items-center justify-between px-6 bg-pawn-surface-950/80 backdrop-blur-sm z-10">
         <div className="flex items-center gap-4 min-w-0">
           <button
             onClick={onCancel}
-            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors flex-shrink-0"
           >
             <ArrowLeft size={13} /> Skills
           </button>
-          <div className="h-4 w-px bg-slate-800 flex-shrink-0" />
+          <div className="h-4 w-px bg-pawn-surface-800 flex-shrink-0" />
           <div className="flex items-center gap-2 min-w-0">
             <Cpu size={15} className="text-violet-400 flex-shrink-0" />
             <h1 className="text-sm font-mono font-medium text-white tracking-tight truncate">{qualifiedName}</h1>
@@ -397,14 +397,14 @@ function SplitSkillEditor({
         <div className="flex items-center gap-3 flex-shrink-0">
           <button
             onClick={onCancel}
-            className="text-xs text-slate-400 hover:text-slate-200 px-3 py-1.5 transition-colors font-medium"
+            className="text-xs text-pawn-surface-400 hover:text-pawn-surface-200 px-3 py-1.5 transition-colors font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 text-xs px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-xs px-4 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-medium rounded-button transition-colors disabled:opacity-50"
           >
             <Save size={13} />
             {saving ? "Saving…" : "Save Changes"}
@@ -416,18 +416,18 @@ function SplitSkillEditor({
       <div className="flex flex-1 overflow-hidden">
 
         {/* Left panel — Skill Config */}
-        <aside className="w-[360px] flex-shrink-0 border-r border-slate-800 flex flex-col bg-slate-900/20">
-          <div className="px-6 py-3.5 border-b border-slate-800/60">
-            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Skill Config</h2>
+        <aside className="w-[360px] flex-shrink-0 border-r border-pawn-surface-800 flex flex-col bg-pawn-surface-900/20">
+          <div className="px-6 py-3.5 border-b border-pawn-surface-800/60">
+            <h2 className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-[0.15em]">Skill Config</h2>
           </div>
           <div className="flex-1 overflow-y-auto p-6 space-y-7">
 
             {/* Qualified name — readonly */}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Qualified Name</label>
-              <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-800/40 border border-slate-700/40 rounded-lg">
-                <span className="text-xs font-mono text-slate-400 flex-1 truncate">{qualifiedName}</span>
-                <span className="text-slate-600 flex-shrink-0">
+              <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Qualified Name</label>
+              <div className="flex items-center gap-2 px-3.5 py-2 bg-pawn-surface-800/40 border border-pawn-surface-700/40 rounded-button">
+                <span className="text-xs font-mono text-pawn-surface-400 flex-1 truncate">{qualifiedName}</span>
+                <span className="text-pawn-surface-600 flex-shrink-0">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </span>
               </div>
@@ -435,9 +435,9 @@ function SplitSkillEditor({
 
             {/* Description */}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
+              <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Description</label>
               <textarea
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-all resize-none"
+                className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button px-3.5 py-2.5 text-sm text-pawn-surface-200 placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500/20 transition-all resize-none"
                 rows={3}
                 placeholder="What does this skill do?"
                 value={fm.description}
@@ -447,7 +447,7 @@ function SplitSkillEditor({
 
             {/* Model */}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Model Override</label>
+              <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Model Override</label>
               <ModelSelector
                 value={fm.model}
                 onChange={(v) => update({ model: v })}
@@ -459,15 +459,15 @@ function SplitSkillEditor({
             {/* Network toggle */}
             <div className="flex items-center justify-between py-1">
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Network Access</p>
-                <p className="text-[11px] text-slate-600 mt-0.5">Allow scripts to reach external APIs</p>
+                <p className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Network Access</p>
+                <p className="text-[11px] text-pawn-surface-600 mt-0.5">Allow scripts to reach external APIs</p>
               </div>
               <button
                 role="switch"
                 aria-checked={fm.network}
                 onClick={() => update({ network: !fm.network })}
-                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-                  fm.network ? "bg-sky-600" : "bg-slate-700"
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pawn-gold-500 ${
+                  fm.network ? "bg-pawn-gold-600" : "bg-pawn-surface-700"
                 }`}
               >
                 <span
@@ -502,15 +502,15 @@ function SplitSkillEditor({
         </aside>
 
         {/* Right panel — System Prompt */}
-        <section className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
-          <div className="flex-shrink-0 px-6 py-3.5 border-b border-slate-800 flex items-center justify-between">
+        <section className="flex-1 flex flex-col bg-pawn-surface-950 overflow-hidden">
+          <div className="flex-shrink-0 px-6 py-3.5 border-b border-pawn-surface-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">System Prompt</h2>
+              <h2 className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-[0.15em]">System Prompt</h2>
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-slate-600 font-mono">
+            <div className="flex items-center gap-2 text-[10px] text-pawn-surface-600 font-mono">
               <Globe size={10} />
               <span>{lineCount} lines</span>
-              <span className="mx-1 text-slate-700">·</span>
+              <span className="mx-1 text-pawn-surface-700">·</span>
               <span>{body.length} chars</span>
             </div>
           </div>
@@ -520,11 +520,11 @@ function SplitSkillEditor({
             {/* Line numbers */}
             <div
               ref={lineNumsRef}
-              className="flex-shrink-0 w-12 overflow-hidden bg-slate-900/30 border-r border-slate-800/50 py-4 select-none"
+              className="flex-shrink-0 w-12 overflow-hidden bg-pawn-surface-900/30 border-r border-pawn-surface-800/50 py-4 select-none"
               aria-hidden
             >
               {Array.from({ length: lineCount }, (_, i) => (
-                <div key={i} className="text-right pr-3 text-[10px] font-mono text-slate-700 leading-relaxed h-[22px] flex items-center justify-end">
+                <div key={i} className="text-right pr-3 text-[10px] font-mono text-pawn-surface-700 leading-relaxed h-[22px] flex items-center justify-end">
                   {i + 1}
                 </div>
               ))}
@@ -534,7 +534,7 @@ function SplitSkillEditor({
             <textarea
               ref={textareaRef}
               spellCheck={false}
-              className="flex-1 bg-transparent px-5 py-4 text-sm text-slate-300 font-mono leading-relaxed resize-none focus:outline-none"
+              className="flex-1 bg-transparent px-5 py-4 text-sm text-pawn-surface-300 font-mono leading-relaxed resize-none focus:outline-none"
               style={{ lineHeight: "22px" }}
               placeholder="Enter the core instructions for the AI agent…"
               value={body}
@@ -544,9 +544,9 @@ function SplitSkillEditor({
           </div>
 
           {/* Footer bar */}
-          <div className="flex-shrink-0 h-7 border-t border-slate-800 flex items-center px-4 bg-slate-900/20 text-[10px] text-slate-600 font-mono gap-4">
+          <div className="flex-shrink-0 h-7 border-t border-pawn-surface-800 flex items-center px-4 bg-pawn-surface-900/20 text-[10px] text-pawn-surface-600 font-mono gap-4">
             <span>UTF-8</span>
-            <span className="text-slate-700">·</span>
+            <span className="text-pawn-surface-700">·</span>
             <span>Markdown</span>
           </div>
         </section>
@@ -616,8 +616,8 @@ export default function SkillDetail() {
 
   // View mode
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
-      <Link to="/skills" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
+      <Link to="/skills" className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 mb-5 transition-colors">
         <ArrowLeft size={12} /> Skills
       </Link>
 
@@ -625,31 +625,31 @@ export default function SkillDetail() {
         <Cpu size={20} className="text-violet-400 flex-shrink-0 mt-0.5" />
         <div>
           <h1 className="text-2xl font-semibold font-display text-white tracking-tight font-mono">{qualifiedName}</h1>
-          {description && <p className="text-sm text-slate-500 mt-1">{description}</p>}
+          {description && <p className="text-sm text-pawn-surface-500 mt-1">{description}</p>}
         </div>
       </div>
 
       {/* SKILL.md */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">SKILL.md</h2>
+          <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">SKILL.md</h2>
           <div className="flex items-center gap-3">
             <button
               onClick={handleCopyMd}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors"
             >
               {copiedMd ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
               {copiedMd ? "Copied" : "Copy"}
             </button>
             <button
               onClick={handleStartEdit}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors"
             >
               <Pencil size={13} /> Edit
             </button>
           </div>
         </div>
-        <pre className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
+        <pre className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-4 text-xs text-pawn-surface-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
           {skill.skillMd}
         </pre>
       </div>
@@ -657,13 +657,13 @@ export default function SkillDetail() {
       {/* Scripts */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">
             Scripts ({skill.scripts.length})
           </h2>
           {!addingScript && (
             <button
               onClick={() => setAddingScript(true)}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors"
             >
               <Plus size={13} /> Add script
             </button>

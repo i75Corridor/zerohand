@@ -67,7 +67,7 @@ export default function EmptyState({
   if (!Icon && !title && message) {
     return (
       <div
-        className={`text-sm text-slate-500 border border-dashed border-slate-800 rounded-xl p-8 text-center ${className}`}
+        className={`text-sm text-pawn-surface-500 border border-dashed border-pawn-surface-800/40 rounded-card p-8 text-center ${className}`}
       >
         {message}
         {children && <> {children}</>}
@@ -77,22 +77,22 @@ export default function EmptyState({
 
   return (
     <div
-      className={`border border-dashed border-slate-800 rounded-xl text-center ${
+      className={`border border-dashed border-pawn-surface-800/40 rounded-card text-center ${
         compact ? "px-6 py-8" : "px-8 py-14"
       } ${className}`}
     >
       {Icon && (
         <div
-          className={`mx-auto flex items-center justify-center rounded-xl bg-slate-800/40 border border-slate-700/30 ${
+          className={`mx-auto flex items-center justify-center rounded-card bg-pawn-surface-800/40 border border-pawn-surface-700/30 ${
             compact ? "w-10 h-10 mb-3" : "w-12 h-12 mb-4"
           }`}
         >
-          <Icon size={compact ? 18 : 22} className="text-slate-500" />
+          <Icon size={compact ? 18 : 22} className="text-pawn-surface-500" />
         </div>
       )}
       {title && (
         <h3
-          className={`font-medium text-slate-200 ${
+          className={`font-medium text-pawn-surface-200 ${
             compact ? "text-sm mb-1" : "text-base mb-1.5"
           }`}
         >
@@ -101,7 +101,7 @@ export default function EmptyState({
       )}
       {description && (
         <p
-          className={`text-slate-500 max-w-md mx-auto leading-relaxed ${
+          className={`text-pawn-surface-500 max-w-md mx-auto leading-relaxed ${
             compact ? "text-xs" : "text-sm"
           }`}
         >
@@ -113,8 +113,8 @@ export default function EmptyState({
           {actions.map((action) => {
             const isPrimary = action.variant !== "secondary";
             const cls = isPrimary
-              ? "px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium rounded-lg transition-colors"
-              : "px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors";
+              ? "px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-xs font-medium rounded-button transition-colors"
+              : "px-4 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-xs font-medium rounded-button transition-colors";
 
             if (action.to) {
               return (
@@ -132,7 +132,7 @@ export default function EmptyState({
         </div>
       )}
       {hint && (
-        <p className={`text-slate-600 max-w-sm mx-auto ${compact ? "text-caption mt-3" : "text-xs mt-4"}`}>
+        <p className={`text-pawn-surface-400 max-w-sm mx-auto ${compact ? "text-caption mt-3" : "text-xs mt-4"}`}>
           {hint}
         </p>
       )}

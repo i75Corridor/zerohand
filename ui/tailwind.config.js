@@ -3,6 +3,46 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      colors: {
+        pawn: {
+          gold: {
+            50:  'var(--pawn-gold-50)',
+            100: 'var(--pawn-gold-100)',
+            200: 'var(--pawn-gold-200)',
+            300: 'var(--pawn-gold-300)',
+            400: 'var(--pawn-gold-400)',
+            500: 'var(--pawn-gold-500)',
+            600: 'var(--pawn-gold-600)',
+            700: 'var(--pawn-gold-700)',
+            800: 'var(--pawn-gold-800)',
+            900: 'var(--pawn-gold-900)',
+            950: 'var(--pawn-gold-950)',
+          },
+          info: {
+            400: 'var(--pawn-info-400)',
+            500: 'var(--pawn-info-500)',
+          },
+          surface: {
+            50:  'var(--pawn-surface-50)',
+            100: 'var(--pawn-surface-100)',
+            200: 'var(--pawn-surface-200)',
+            300: 'var(--pawn-surface-300)',
+            400: 'var(--pawn-surface-400)',
+            500: 'var(--pawn-surface-500)',
+            600: 'var(--pawn-surface-600)',
+            700: 'var(--pawn-surface-700)',
+            800: 'var(--pawn-surface-800)',
+            900: 'var(--pawn-surface-900)',
+            950: 'var(--pawn-surface-950)',
+          },
+        },
+      },
+      borderRadius: {
+        badge:  'var(--radius-badge)',
+        button: 'var(--radius-button)',
+        card:   'var(--radius-card)',
+        panel:  'var(--radius-panel)',
+      },
       fontFamily: {
         sans: ['Satoshi', 'sans-serif'],
         display: ['Cabinet Grotesk', 'sans-serif'],

@@ -6,12 +6,52 @@
   color-scheme: dark;
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Pawn Brand: Warm Metallic Chess Palette ──────────────── */
+
+  /* Gold — primary brand accent */
+  --pawn-gold-50:  oklch(0.97 0.03 80);   /* #fdf6e3 */
+  --pawn-gold-100: oklch(0.93 0.06 78);   /* #f5e6be */
+  --pawn-gold-200: oklch(0.87 0.10 76);   /* #ebd092 */
+  --pawn-gold-300: oklch(0.80 0.13 74);   /* #d4ac5a */
+  --pawn-gold-400: oklch(0.76 0.14 72);   /* #c99a3e */
+  --pawn-gold-500: oklch(0.70 0.14 70);   /* #b8862d */
+  --pawn-gold-600: oklch(0.62 0.13 68);   /* #9a6e1f */
+  --pawn-gold-700: oklch(0.52 0.11 66);   /* #7a5518 */
+  --pawn-gold-800: oklch(0.42 0.08 64);   /* #5c3f12 */
+  --pawn-gold-900: oklch(0.32 0.06 62);   /* #3d2a0d */
+  --pawn-gold-950: oklch(0.22 0.04 60);   /* #241a08 */
+
+  /* Surface — warm-tinted neutrals (replacing cold slates) */
+  --pawn-surface-50:  oklch(0.97 0.005 70);  /* #f7f5f2 */
+  --pawn-surface-100: oklch(0.92 0.008 68);  /* #e8e4de */
+  --pawn-surface-200: oklch(0.82 0.010 66);  /* #c8c2b8 */
+  --pawn-surface-300: oklch(0.68 0.010 64);  /* #9e9889 */
+  --pawn-surface-400: oklch(0.56 0.010 62);  /* #7d776a */
+  --pawn-surface-500: oklch(0.46 0.010 60);  /* #5e5850 */
+  --pawn-surface-600: oklch(0.36 0.010 58);  /* #45403a */
+  --pawn-surface-700: oklch(0.28 0.010 56);  /* #33302b */
+  --pawn-surface-800: oklch(0.22 0.008 54);  /* #252220 */
+  --pawn-surface-900: oklch(0.16 0.008 52);  /* #181614 */
+  --pawn-surface-950: oklch(0.10 0.006 50);  /* #0d0c0a */
+
+  /* Semantic status — each has a 400 (text), 500 (border/bar), and bg tint */
+  --pawn-info-400:    oklch(0.72 0.10 250);   /* muted blue text */
+  --pawn-info-500:    oklch(0.62 0.12 248);   /* muted blue border/bar */
+
+  /* Shape */
+  --radius-badge:  6px;
+  --radius-button: 8px;
+  --radius-card:   12px;
+  --radius-panel:  16px;
 }
 
 body {
   font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
   font-kerning: normal;
-  @apply bg-slate-950 text-slate-100 antialiased leading-relaxed;
+  background: var(--pawn-surface-950);
+  color: var(--pawn-surface-100);
+  @apply antialiased leading-relaxed;
 }
 
 .font-display {
@@ -25,18 +65,13 @@ body {
 }
 
 .sidebar {
-  background: rgb(15, 23, 42);
-  border-right: 1px solid rgb(30, 41, 59);
+  background: var(--pawn-surface-900);
+  border-right: 1px solid oklch(0.22 0.008 54 / 0.6);
   contain: layout style;
 }
 
-/* GPU-promote sidebar transform for smooth mobile slide-in */
-aside {
-  will-change: transform;
-}
-
 .footer-well {
-  background: rgb(30, 41, 59);
+  background: var(--pawn-surface-800);
 }
 
 /* ── Interactive button feedback ───────────────────────────────── */
@@ -49,12 +84,13 @@ aside {
   transition: border-color 200ms var(--ease-out-quart);
 }
 .card-hover:hover {
-  border-color: rgb(71 85 105 / 0.6);
+  border-color: oklch(0.36 0.010 58 / 0.6);
+  background-color: oklch(0.14 0.008 52 / 0.3);
 }
 
 /* ── Focus ring ──────────────────────────────────────────────── */
 .input-glow:focus {
-  box-shadow: 0 0 0 2px rgb(56 189 248 / 0.08);
+  box-shadow: 0 0 0 2px oklch(0.76 0.14 72 / 0.2);
   transition: box-shadow 200ms var(--ease-out-quart), border-color 200ms var(--ease-out-quart);
 }
 
@@ -108,7 +144,7 @@ html {
 
 /* ── Focus-visible ring for keyboard users ─────────────────────── */
 :focus-visible {
-  outline: 2px solid rgb(56 189 248 / 0.4);
+  outline: 2px solid oklch(0.76 0.14 72 / 0.4);
   outline-offset: 2px;
 }
 
@@ -128,6 +164,41 @@ html {
   button, [role="button"] {
     border: 1px solid ButtonText;
   }
+}
+
+/* ── Board grid motif — subtle chess pattern ────────────────── */
+.board-grid {
+  background-image:
+    repeating-conic-gradient(
+      var(--pawn-surface-900) 0% 25%,
+      transparent 0% 50%
+    );
+  background-size: 48px 48px;
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* ── Alternating row rhythm for data tables ──────────────────── */
+.row-alternate > :nth-child(even) {
+  background: var(--pawn-surface-900);
+}
+
+/* ── Skeleton shimmer ────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--pawn-surface-800) 25%,
+    var(--pawn-surface-700) 50%,
+    var(--pawn-surface-800) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-button);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,11 +1,11 @@
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-  <!-- Pawn chess piece favicon — sky-400 filled -->
+  <!-- Pawn chess piece favicon — pawn-gold-400 filled -->
   <!-- Head -->
-  <circle cx="12" cy="6" r="4" fill="#38bdf8"/>
+  <circle cx="12" cy="6" r="4" fill="#c99a3e"/>
   <!-- Collar bar -->
-  <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#38bdf8"/>
+  <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#c99a3e"/>
   <!-- Body (tapered) -->
-  <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#38bdf8"/>
+  <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#c99a3e"/>
   <!-- Base -->
-  <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#38bdf8"/>
+  <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#c99a3e"/>
 </svg>

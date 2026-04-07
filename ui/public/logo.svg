@@ -2,19 +2,19 @@
   <!--
     Pawn full logo mark
     Filled chess pawn piece + "Pawn" wordmark to the right
-    Sky-400 (#38bdf8) on transparent background
+    Pawn-gold-400 (#c99a3e) on transparent background
   -->
 
   <!-- Pawn icon (filled, scaled from 24x24 viewBox) -->
   <g transform="translate(40, 20) scale(4)">
     <!-- Head -->
-    <circle cx="12" cy="6" r="4" fill="#38bdf8"/>
+    <circle cx="12" cy="6" r="4" fill="#c99a3e"/>
     <!-- Collar bar -->
-    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#38bdf8"/>
+    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#c99a3e"/>
     <!-- Body (tapered) -->
-    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#38bdf8"/>
+    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#c99a3e"/>
     <!-- Base -->
-    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#38bdf8"/>
+    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#c99a3e"/>
   </g>
 
   <!-- "Pawn" wordmark -->

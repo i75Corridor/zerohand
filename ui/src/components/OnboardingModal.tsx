@@ -72,7 +72,7 @@ export default function OnboardingModal({ open, onClose }: OnboardingModalProps)
           <div
             key={i}
             className={`w-2 h-2 rounded-full transition-colors ${
-              i === step ? "bg-sky-500" : "bg-slate-700"
+              i === step ? "bg-pawn-gold-500" : "bg-pawn-surface-700"
             }`}
           />
         ))}
@@ -80,21 +80,21 @@ export default function OnboardingModal({ open, onClose }: OnboardingModalProps)
 
       {/* Step content */}
       <div className="text-center px-2">
-        <div className="mx-auto w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center mb-4">
-          <Icon className="w-6 h-6 text-sky-400" />
+        <div className="mx-auto w-12 h-12 rounded-card bg-pawn-gold-500/10 flex items-center justify-center mb-4">
+          <Icon className="w-6 h-6 text-pawn-gold-400" />
         </div>
         <h2 className="text-xl font-semibold text-white mb-3">{current.title}</h2>
-        <p className="text-sm text-slate-300 leading-relaxed mb-4">{current.description}</p>
+        <p className="text-sm text-pawn-surface-300 leading-relaxed mb-4">{current.description}</p>
         {current.tip && (
-          <p className="text-xs text-slate-500 italic">{current.tip}</p>
+          <p className="text-xs text-pawn-surface-500 italic">{current.tip}</p>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mt-8 pt-4 border-t border-slate-800">
+      <div className="flex items-center justify-between mt-8 pt-4 border-t border-pawn-surface-800">
         <button
           onClick={handleClose}
-          className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+          className="text-xs text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors"
         >
           Skip
         </button>
@@ -102,14 +102,14 @@ export default function OnboardingModal({ open, onClose }: OnboardingModalProps)
           {step > 0 && (
             <button
               onClick={() => setStep(step - 1)}
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-pawn-surface-300 hover:text-white bg-pawn-surface-800 hover:bg-pawn-surface-700 rounded-button transition-colors"
             >
               Back
             </button>
           )}
           <button
             onClick={isLast ? handleClose : () => setStep(step + 1)}
-            className="px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-500 rounded-lg transition-colors btn-press"
+            className="px-4 py-2 text-sm font-medium text-pawn-surface-950 bg-pawn-gold-500 hover:bg-pawn-gold-400 rounded-button transition-colors btn-press"
           >
             {isLast ? "Get Started" : "Next"}
           </button>
