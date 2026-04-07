@@ -6,6 +6,51 @@
   color-scheme: dark;
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Pawn Brand: Warm Metallic Chess Palette ──────────────── */
+
+  /* Gold — primary brand accent */
+  --pawn-gold-50:  oklch(0.97 0.03 80);   /* #fdf6e3 */
+  --pawn-gold-100: oklch(0.93 0.06 78);   /* #f5e6be */
+  --pawn-gold-200: oklch(0.87 0.10 76);   /* #ebd092 */
+  --pawn-gold-300: oklch(0.80 0.13 74);   /* #d4ac5a */
+  --pawn-gold-400: oklch(0.76 0.14 72);   /* #c99a3e */
+  --pawn-gold-500: oklch(0.70 0.14 70);   /* #b8862d */
+  --pawn-gold-600: oklch(0.62 0.13 68);   /* #9a6e1f */
+  --pawn-gold-700: oklch(0.52 0.11 66);   /* #7a5518 */
+  --pawn-gold-800: oklch(0.42 0.08 64);   /* #5c3f12 */
+  --pawn-gold-900: oklch(0.32 0.06 62);   /* #3d2a0d */
+  --pawn-gold-950: oklch(0.22 0.04 60);   /* #241a08 */
+
+  /* Bronze — secondary depth accent */
+  --pawn-bronze-400: oklch(0.68 0.09 55);  /* #b08860 */
+  --pawn-bronze-500: oklch(0.58 0.08 52);  /* #8f6d4a */
+  --pawn-bronze-600: oklch(0.48 0.07 50);  /* #6e5438 */
+
+  /* Surface — warm-tinted neutrals (replacing cold slates) */
+  --pawn-surface-50:  oklch(0.97 0.005 70);  /* #f7f5f2 */
+  --pawn-surface-100: oklch(0.92 0.008 68);  /* #e8e4de */
+  --pawn-surface-200: oklch(0.82 0.010 66);  /* #c8c2b8 */
+  --pawn-surface-300: oklch(0.68 0.010 64);  /* #9e9889 */
+  --pawn-surface-400: oklch(0.56 0.010 62);  /* #7d776a */
+  --pawn-surface-500: oklch(0.46 0.010 60);  /* #5e5850 */
+  --pawn-surface-600: oklch(0.36 0.010 58);  /* #45403a */
+  --pawn-surface-700: oklch(0.28 0.010 56);  /* #33302b */
+  --pawn-surface-800: oklch(0.22 0.008 54);  /* #252220 */
+  --pawn-surface-900: oklch(0.16 0.008 52);  /* #181614 */
+  --pawn-surface-950: oklch(0.10 0.006 50);  /* #0d0c0a */
+
+  /* Semantic status */
+  --pawn-success: oklch(0.75 0.17 155);     /* emerald-ish */
+  --pawn-error:   oklch(0.65 0.20 25);      /* warm red */
+  --pawn-warning: oklch(0.72 0.15 55);      /* deep amber, distinct from gold */
+  --pawn-info:    oklch(0.70 0.10 250);     /* muted blue */
+
+  /* Shape */
+  --radius-badge:  6px;
+  --radius-button: 8px;
+  --radius-card:   12px;
+  --radius-panel:  16px;
 }
 
 body {
