@@ -90,6 +90,7 @@ export function useWebSocket(onMessage: WsHandler) {
           // and the onclose event firing).
           sharedSocket.onerror = () => {};
           sharedSocket.onmessage = null;
+          sharedSocket.onclose = null;
           sharedSocket.close();
           sharedSocket = null;
         }

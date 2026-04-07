@@ -4,6 +4,7 @@ import type { Db } from "@zerohand/db";
 import { mcpServers } from "@zerohand/db";
 import type { ApiMcpServer } from "@zerohand/shared";
 import { McpClientPool } from "../services/mcp-client.js";
+import { detectEnvVars } from "../services/mcp-env-detector.js";
 
 function rowToApi(row: typeof mcpServers.$inferSelect): ApiMcpServer {
   return {
@@ -18,6 +19,7 @@ function rowToApi(row: typeof mcpServers.$inferSelect): ApiMcpServer {
     enabled: row.enabled,
     source: row.source as ApiMcpServer["source"],
     sourcePackageId: row.sourcePackageId ?? undefined,
+    metadata: (row.metadata as ApiMcpServer["metadata"]) ?? undefined,
   };
 }
 
@@ -28,6 +30,47 @@ export function makeMcpServersRouter(db: Db): Router {
   router.get("/mcp-servers", async (_req, res) => {
     const rows = await db.select().from(mcpServers).orderBy(mcpServers.name);
     res.json(rows.map(rowToApi));
+  });
+
+  // POST /api/mcp-servers/detect-env
+  router.post("/mcp-servers/detect-env", async (req, res) => {
+    const { transport, command, args, name } = req.body as {
+      transport?: string;
+      command?: string;
+      args?: string[];
+      name?: string;
+    };
+
+    if (!transport) {
+      res.status(400).json({ error: "transport is required" });
+      return;
+    }
+
+    if (transport === "stdio" && !command) {
+      res.status(400).json({ error: "command is required for stdio transport" });
+      return;
+    }
+
+    const result = await detectEnvVars({ transport, command, args, name });
+
+    if (result.error === "detection busy") {
+      res.status(429).json({ error: "Detection is busy, try again in a moment" });
+      return;
+    }
+
+    // Optionally persist detected env requirements to the server row
+    const id = req.query.id as string | undefined;
+    if (id) {
+      await db
+        .update(mcpServers)
+        .set({
+          metadata: { envRequirements: result.detected },
+          updatedAt: new Date(),
+        })
+        .where(eq(mcpServers.id, id));
+    }
+
+    res.json({ detected: result.detected, error: result.error });
   });
 
   // GET /api/mcp-servers/:id

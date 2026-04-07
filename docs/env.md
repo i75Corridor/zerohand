@@ -29,7 +29,47 @@ All variables are optional unless marked **required**. Defaults assume the serve
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | _(none)_ | External Postgres connection string, e.g. `postgresql://user:pass@host:5432/zerohand`. When set, the embedded Postgres instance is skipped entirely. |
+| `DATABASE_URL` | _(none)_ | External Postgres connection string, e.g. `postgresql://user:pass@host:5432/zerohand`. When set, the embedded Postgres instance is skipped entirely. **Takes precedence over `database.json`.** |
+
+### `database.json` file
+
+As an alternative to `DATABASE_URL`, you can place a `database.json` file in `DATA_DIR` to configure an external Postgres connection. This is useful for deployments where you prefer file-based configuration over environment variables.
+
+**Resolution order:** `DATABASE_URL` env var → `database.json` file → embedded Postgres
+
+**File location:** `$DATA_DIR/database.json`
+
+**Example:**
+
+```json
+{
+  "host": "postgres.example.com",
+  "port": 5432,
+  "database": "zerohand",
+  "username": "zerohand",
+  "password": "${DB_PASSWORD}",
+  "ssl": true,
+  "sslMode": "require"
+}
+```
+
+**Fields:**
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `host` | string | yes | — | Postgres server hostname |
+| `port` | number | no | `5432` | Postgres server port |
+| `database` | string | yes | — | Database name |
+| `username` | string | yes | — | Connection username |
+| `password` | string | no | `""` | Connection password |
+| `ssl` | boolean | no | `false` | Enable SSL |
+| `sslMode` | string | no | — | SSL mode: `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full` |
+
+**Environment variable interpolation:** String fields support `${VAR_NAME}` syntax. At startup, these are replaced with the corresponding `process.env` value. Unresolved refs are left as-is (which will cause a connection error with a descriptive Postgres message).
+
+**Validation:** If `database.json` exists but contains invalid JSON or fails schema validation, the server exits immediately with a descriptive error rather than falling back to embedded Postgres.
+
+**Setting via CLI/API:** You can validate a config via `POST /api/settings/validate` with `{ "key": "database_config", "value": { ... } }`. Note that `database_config` in the settings table is for display/audit only — the actual startup config is read from the `database.json` file. Changes require a server restart.
 
 ---
 

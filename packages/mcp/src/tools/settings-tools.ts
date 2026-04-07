@@ -40,7 +40,11 @@ export function registerSettingsTools(server: McpServer, client: ApiClient): voi
     async ({ key, value }) => {
       try {
         const setting = await client.updateSetting(key, value);
-        return { content: [{ type: "text", text: `Updated: ${formatSetting(setting)}` }] };
+        let text = `Updated: ${formatSetting(setting)}`;
+        if (key === "database_config") {
+          text += "\n\nWarning: Database configuration changes require a server restart to take effect.";
+        }
+        return { content: [{ type: "text", text }] };
       } catch (err) {
         return {
           content: [{ type: "text", text: `Failed to update setting: ${err instanceof Error ? err.message : String(err)}` }],

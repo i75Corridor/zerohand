@@ -34,6 +34,28 @@ interface PoolEntry {
 
 const CONNECT_TIMEOUT_MS = 30_000;
 
+const ENV_REF_PATTERN = /^\$\{[A-Z_][A-Z0-9_]*\}$/;
+
+export function resolveEnvRefs(
+  env: Record<string, string>,
+  processEnv: Record<string, string | undefined>,
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (ENV_REF_PATTERN.test(value)) {
+      const varName = value.slice(2, -1);
+      const resolved = processEnv[varName];
+      if (resolved !== undefined) {
+        result[key] = resolved;
+      }
+      // If not found, omit the key entirely
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 export class McpClientPool {
   private entries = new Map<string, PoolEntry>();
 
@@ -102,7 +124,7 @@ function buildTransport(config: McpServerConfig) {
       return new StdioClientTransport({
         command: config.command,
         args: config.args ?? [],
-        env: { ...process.env, ...config.env } as Record<string, string>,
+        env: { ...process.env, ...resolveEnvRefs(config.env ?? {}, process.env as Record<string, string | undefined>) } as Record<string, string>,
       });
     }
     case "sse": {

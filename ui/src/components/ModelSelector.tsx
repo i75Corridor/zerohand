@@ -11,10 +11,11 @@ const PROVIDER_LABELS: Record<string, string> = {
   groq: "Groq",
   mistral: "Mistral",
   openrouter: "OpenRouter",
+  ollama: "Ollama",
 };
 
 function providerLabel(p: string): string {
-  return PROVIDER_LABELS[p] ?? p;
+  return PROVIDER_LABELS[p] ?? p.charAt(0).toUpperCase() + p.slice(1);
 }
 
 interface ModelSelectorProps {
@@ -73,7 +74,7 @@ export default function ModelSelector({
                 disabled={!m.available}
               >
                 {m.name}
-                {!m.available ? " (no API key)" : ""}
+                {!m.available ? (m.provider === "ollama" ? " (server offline)" : " (no API key)") : ""}
               </option>
             ))}
           </optgroup>

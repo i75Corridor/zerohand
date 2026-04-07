@@ -269,9 +269,16 @@ export const api = {
   testMcpServer: (id: string) =>
     request<{ connected: boolean; tools: ApiMcpTool[]; error?: string }>(`/mcp-servers/${id}/test`, { method: "POST" }),
   listMcpServerTools: (id: string) => request<ApiMcpTool[]>(`/mcp-servers/${id}/tools`),
+  detectMcpEnv: (body: { transport: string; command?: string; args?: string[]; url?: string; name?: string }) =>
+    request<{ detected: Array<{ name: string; required: boolean; description?: string; docsUrl?: string; detectedFrom: string }>; error?: string }>("/mcp-servers/detect-env", { method: "POST", body: JSON.stringify(body) }),
 
   // Models
   listModels: () => request<ApiModelEntry[]>("/models"),
+
+  // Custom Providers
+  getCustomProviders: () => request<{ providers: Record<string, { baseUrl: string; apiKey?: string; models: Array<{ id: string; name?: string; contextWindow?: number; maxTokens?: number }> }> }>("/custom-providers"),
+  updateCustomProviders: (config: { providers: Record<string, { baseUrl: string; apiKey?: string; models: Array<{ id: string; name?: string; contextWindow?: number; maxTokens?: number }> }> }) =>
+    request<typeof config>("/custom-providers", { method: "PUT", body: JSON.stringify(config) }),
 
   // Budgets
   listBudgets: (scopeType?: string, scopeId?: string) => {

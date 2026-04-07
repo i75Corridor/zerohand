@@ -25,6 +25,7 @@ import { importPipelinePackage } from "./pipeline-import.js";
 import { scanPackage, type SecurityReport } from "./security-scanner.js";
 import { loadSkillDef } from "./skill-loader.js";
 import { getEnvApiKey } from "@mariozechner/pi-ai";
+import { isOllamaAvailable } from "./ollama-provider.js";
 
 // ── git helpers ────────────────────────────────────────────────────────────────
 
@@ -167,13 +168,24 @@ export function checkModelAvailability(skillNames: string[], skillsDir: string):
   const warnings: ModelWarning[] = [];
   for (const qualifiedName of skillNames) {
     const skill = loadSkillDef(qualifiedName, skillsDir);
-    if (skill?.modelProvider && !getEnvApiKey(skill.modelProvider)) {
-      warnings.push({
-        skillName: qualifiedName,
-        provider: skill.modelProvider,
-        model: `${skill.modelProvider}/${skill.modelName ?? ""}`,
-        message: `Skill "${qualifiedName}" requires provider "${skill.modelProvider}" but no API key is set.`,
-      });
+    if (skill?.modelProvider) {
+      if (skill.modelProvider === "ollama") {
+        if (!isOllamaAvailable()) {
+          warnings.push({
+            skillName: qualifiedName,
+            provider: skill.modelProvider,
+            model: `${skill.modelProvider}/${skill.modelName ?? ""}`,
+            message: `Skill "${qualifiedName}" uses Ollama but Ollama server not reachable.`,
+          });
+        }
+      } else if (!getEnvApiKey(skill.modelProvider)) {
+        warnings.push({
+          skillName: qualifiedName,
+          provider: skill.modelProvider,
+          model: `${skill.modelProvider}/${skill.modelName ?? ""}`,
+          message: `Skill "${qualifiedName}" requires provider "${skill.modelProvider}" but no API key is set.`,
+        });
+      }
     }
   }
   return warnings;

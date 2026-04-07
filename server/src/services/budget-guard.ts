@@ -56,6 +56,9 @@ export function estimateCostCents(
   inputTokens: number,
   outputTokens: number,
 ): number {
+  // Ollama models are free — short-circuit to avoid the 50/150 fallback
+  if (modelName.startsWith("ollama/")) return 0;
+
   // Look up by bare name, then by any provider/name key ending in /modelName
   const rates =
     costs[modelName] ??

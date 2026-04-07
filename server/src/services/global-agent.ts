@@ -5,7 +5,7 @@ import {
   createExtensionRuntime,
   type AgentSession,
 } from "@mariozechner/pi-coding-agent";
-import { getModel } from "@mariozechner/pi-ai";
+import { resolveModel } from "./ollama-provider.js";
 import { join } from "node:path";
 import { mkdirSync, rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import type { Db } from "@zerohand/db";
@@ -229,8 +229,7 @@ export class GlobalAgentService {
 
   private async _createSession(): Promise<AgentSession> {
     const { provider, modelId } = await readModelSetting(this.db, "agent_model", "google/gemini-2.5-flash");
-    const model = getModel(provider as any, modelId as any);
-    if (!model) throw new Error(`Model not found: ${provider}/${modelId}`);
+    const model = resolveModel(provider, modelId);
 
     const authStorage = makeAuthStorage();
     const modelRegistry = ModelRegistry.inMemory(authStorage);
