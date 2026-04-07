@@ -100,7 +100,7 @@ export default function Approvals() {
   if (isLoading) return <LoadingState />;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
       <PageHeader
         title="Approvals"
         actions={
@@ -113,15 +113,17 @@ export default function Approvals() {
       />
 
       {pending.length === 0 ? (
-        <EmptyState
-          icon={CheckCircle}
-          title="No moves awaiting review"
-          description="When a pipeline step requires human review, it will pause and appear here. You can approve or reject with an optional note."
-          actions={[
-            { label: "View Pipelines", to: "/pipelines", variant: "secondary" },
-          ]}
-          hint="Add an approval gate to any pipeline step to require human review before proceeding."
-        />
+        <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6">
+          <EmptyState
+            icon={CheckCircle}
+            title="No moves awaiting review"
+            description="When a pipeline step requires human review, it will pause and appear here. You can approve or reject with an optional note."
+            actions={[
+              { label: "View Pipelines", to: "/pipelines", variant: "secondary" },
+            ]}
+            hint="Add an approval gate to any pipeline step to require human review before proceeding."
+          />
+        </div>
       ) : (
         <div className="space-y-4">
           {pending.map((a) => (

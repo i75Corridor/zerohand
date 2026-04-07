@@ -24,7 +24,7 @@
 
   /* Surface — warm-tinted neutrals (replacing cold slates) */
   --pawn-surface-50:  oklch(0.97 0.005 70);  /* #f7f5f2 */
-  --pawn-surface-100: oklch(0.92 0.008 68);  /* #e8e4de */
+  --pawn-surface-100: oklch(0.96 0.006 68);  /* #f3f1ed */
   --pawn-surface-200: oklch(0.82 0.010 66);  /* #c8c2b8 */
   --pawn-surface-300: oklch(0.68 0.010 64);  /* #9e9889 */
   --pawn-surface-400: oklch(0.56 0.010 62);  /* #7d776a */
@@ -65,8 +65,8 @@ body {
 }
 
 .sidebar {
-  background: var(--pawn-surface-900);
-  border-right: 1px solid oklch(0.22 0.008 54 / 0.6);
+  background: oklch(0.20 0.008 52);
+  border-right: 1px solid oklch(0.24 0.010 54 / 0.7);
   contain: layout style;
 }
 

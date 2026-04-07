@@ -79,7 +79,7 @@ export default function ChatPanel({ stepRunId, onSend }: ChatPanelProps) {
           onKeyDown={(e) => e.key === "Enter" && send()}
         />
         <button
-          className="px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button transition-colors disabled:opacity-40"
+          className="px-2.5 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 rounded-button transition-colors disabled:opacity-40"
           onClick={send}
           disabled={!input.trim()}
           title="Send"

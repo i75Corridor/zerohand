@@ -149,7 +149,7 @@ function ScriptEditor({
             <button
               onClick={() => save.mutate()}
               disabled={save.isPending}
-              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-button transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 font-semibold rounded-button transition-colors disabled:opacity-50"
             >
               {saved ? <Check size={12} /> : <Save size={12} />}
               {save.isPending ? "Saving..." : saved ? "Saved" : "Save"}
@@ -193,7 +193,7 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
   });
 
   return (
-    <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-card overflow-hidden">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-pawn-surface-800">
         <input
           className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
@@ -205,7 +205,7 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
         <button
           onClick={() => create.mutate()}
           disabled={!filename || !content || create.isPending}
-          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-button transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 font-semibold rounded-button transition-colors disabled:opacity-40"
         >
           <Save size={12} /> Create
         </button>
@@ -319,7 +319,7 @@ function TagInput({
           <button
             onClick={() => commit(inputVal)}
             disabled={!inputVal.trim()}
-            className="text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button disabled:opacity-40 transition-colors"
+            className="text-xs px-2.5 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 rounded-button disabled:opacity-40 transition-colors"
           >
             Add
           </button>
@@ -404,7 +404,7 @@ function SplitSkillEditor({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 text-xs px-4 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-medium rounded-button transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-xs px-4 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 font-medium rounded-button transition-colors disabled:opacity-50"
           >
             <Save size={13} />
             {saving ? "Saving…" : "Save Changes"}
@@ -467,7 +467,7 @@ function SplitSkillEditor({
                 aria-checked={fm.network}
                 onClick={() => update({ network: !fm.network })}
                 className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pawn-gold-500 ${
-                  fm.network ? "bg-pawn-gold-600" : "bg-pawn-surface-700"
+                  fm.network ? "bg-pawn-gold-500" : "bg-pawn-surface-700"
                 }`}
               >
                 <span
