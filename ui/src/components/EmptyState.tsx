@@ -67,7 +67,7 @@ export default function EmptyState({
   if (!Icon && !title && message) {
     return (
       <div
-        className={`text-sm text-pawn-surface-500 border border-dashed border-pawn-surface-800 rounded-card p-8 text-center ${className}`}
+        className={`text-sm text-pawn-surface-500 border border-dashed border-pawn-surface-800/40 rounded-card p-8 text-center ${className}`}
       >
         {message}
         {children && <> {children}</>}
@@ -77,7 +77,7 @@ export default function EmptyState({
 
   return (
     <div
-      className={`border border-dashed border-pawn-surface-800 rounded-card text-center ${
+      className={`border border-dashed border-pawn-surface-800/40 rounded-card text-center ${
         compact ? "px-6 py-8" : "px-8 py-14"
       } ${className}`}
     >
