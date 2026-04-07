@@ -14,7 +14,7 @@
 import { spawn } from "node:child_process";
 import { extname, dirname, basename } from "node:path";
 
-const DOCKER_IMAGE = "zerohand/skill-runner:latest";
+const DOCKER_IMAGE = "pawn/skill-runner:latest";
 let dockerAvailable: boolean | null = null;
 
 export function isDockerAvailable(): boolean {

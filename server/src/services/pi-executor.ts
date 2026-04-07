@@ -17,7 +17,7 @@ import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { skillsDir as getSkillsDir } from "./paths.js";
 
-const AUTH_DIR = "/tmp/zerohand";
+const AUTH_DIR = "/tmp/pawn";
 mkdirSync(AUTH_DIR, { recursive: true });
 
 export function makeAuthStorage(): AuthStorage {
@@ -34,7 +34,7 @@ function loadWorkerSkills(skillNames: string[]): Skill[] {
   if (skillNames.length === 0) return [];
   const skillsDir = getSkillsDir();
   if (!existsSync(skillsDir)) return [];
-  const { skills } = loadSkillsFromDir({ dir: skillsDir, source: "zerohand" });
+  const { skills } = loadSkillsFromDir({ dir: skillsDir, source: "pawn" });
   return skillNames.length > 0
     ? skills.filter((s) => skillNames.includes(s.name))
     : skills;

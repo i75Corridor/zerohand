@@ -1,7 +1,7 @@
 /**
  * GitHub-based package manager for Zerohand.
  *
- * A "package" is a GitHub repository tagged with the `zerohand-package` topic.
+ * A "package" is a GitHub repository tagged with the `pawn-package` topic.
  * It contains a pipeline.yaml at the root and a skills/ directory with all
  * referenced skills bundled.
  *
@@ -484,7 +484,7 @@ export async function discoverPackages(
   query?: string,
 ): Promise<DiscoveredPackage[]> {
   const token = getGithubToken();
-  const q = `topic:zerohand-package${query ? `+${encodeURIComponent(query)}` : ""}`;
+  const q = `topic:pawn-package${query ? `+${encodeURIComponent(query)}` : ""}`;
   const url = `https://api.github.com/search/repositories?q=${q}&sort=stars&per_page=30`;
 
   const headers: Record<string, string> = {

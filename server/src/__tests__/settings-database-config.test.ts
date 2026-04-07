@@ -17,7 +17,7 @@ describe("settings — database_config password masking", () => {
     const config: DatabaseConfig = {
       host: "db.example.com",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "admin",
       password: "supersecret",
       ssl: false,
@@ -32,7 +32,7 @@ describe("settings — database_config password masking", () => {
     const config: DatabaseConfig = {
       host: "db.example.com",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "admin",
       password: "topsecret",
       ssl: true,
@@ -48,7 +48,7 @@ describe("settings — database_config password masking", () => {
     const config: DatabaseConfig = {
       host: "localhost",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "secret",
       ssl: false,
@@ -63,7 +63,7 @@ describe("settings — POST /settings/validate behavior", () => {
     const result = validateDatabaseConfig({
       host: "localhost",
       port: 5432,
-      database: "zerohand",
+      database: "pawn",
       username: "user",
       password: "pass",
     });

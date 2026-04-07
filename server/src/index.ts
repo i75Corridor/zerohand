@@ -39,9 +39,9 @@ import { loadDatabaseConfig } from "./services/database-config.js";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
-const DB_NAME = "zerohand";
-const DB_USER = "zerohand";
-const DB_PASS = "zerohand";
+const DB_NAME = "pawn";
+const DB_USER = "pawn";
+const DB_PASS = "pawn";
 
 mkdirSync(DATA_DIR, { recursive: true });
 

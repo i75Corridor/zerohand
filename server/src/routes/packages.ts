@@ -99,15 +99,15 @@ async function buildPackageDir(
     "## Install",
     "",
     "```bash",
-    `zerohand packages install https://github.com/YOUR_ORG/${slugName}`,
+    `pawn packages install https://github.com/YOUR_ORG/${slugName}`,
     "```",
     "",
     "## Usage",
     "",
     "```bash",
     inputParam
-      ? `zerohand run "${pipeline.name}" --input ${inputParam}="..." --watch`
-      : `zerohand run "${pipeline.name}" --watch`,
+      ? `pawn run "${pipeline.name}" --input ${inputParam}="..." --watch`
+      : `pawn run "${pipeline.name}" --watch`,
     "```",
   ].join("\n");
   writeFileSync(join(outDir, "README.md"), readme + "\n", "utf-8");
@@ -204,7 +204,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
       }
 
       // Clone to a temp directory, scan, then delete
-      tempDir = mkdtempSync(join(tmpdir(), "zerohand-scan-"));
+      tempDir = mkdtempSync(join(tmpdir(), "pawn-scan-"));
       const { spawn } = await import("node:child_process");
       await new Promise<void>((resolve, reject) => {
         const child = spawn("git", ["clone", "--depth", "1", repoUrl, tempDir!], {
@@ -426,7 +426,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
         return;
       }
 
-      tempDir = mkdtempSync(join(tmpdir(), "zerohand-export-"));
+      tempDir = mkdtempSync(join(tmpdir(), "pawn-export-"));
       const result = await buildPackageDir(db, pipelineId, tempDir);
       if (!result) {
         res.status(404).json({ error: "Pipeline not found" });
@@ -482,7 +482,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
         return;
       }
 
-      tempDir = mkdtempSync(join(tmpdir(), "zerohand-publish-"));
+      tempDir = mkdtempSync(join(tmpdir(), "pawn-publish-"));
       const result = await buildPackageDir(db, pipelineId, tempDir);
       if (!result) {
         res.status(404).json({ error: "Pipeline not found" });
@@ -590,7 +590,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
       }
 
       // Add topic
-      spawnSync("gh", ["repo", "edit", repoName, "--add-topic", "zerohand-package"], { stdio: "ignore" });
+      spawnSync("gh", ["repo", "edit", repoName, "--add-topic", "pawn-package"], { stdio: "ignore" });
 
       const repoFullName = repoName;
       const repoUrl = `https://github.com/${repoFullName}`;

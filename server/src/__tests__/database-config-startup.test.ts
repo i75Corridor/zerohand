@@ -47,14 +47,14 @@ describe("database config resolution", () => {
       JSON.stringify({
         host: "db.prod.example.com",
         port: 5432,
-        database: "zerohand",
+        database: "pawn",
         username: "deploy",
         password: "secret",
       }),
     );
     const result = loadDatabaseConfig();
     expect(result).not.toBeNull();
-    expect(result!.url).toBe("postgresql://deploy:secret@db.prod.example.com:5432/zerohand");
+    expect(result!.url).toBe("postgresql://deploy:secret@db.prod.example.com:5432/pawn");
   });
 
   it("fails fast on malformed JSON", () => {
@@ -74,7 +74,7 @@ describe("database config resolution", () => {
       join(tmpDir, "database.json"),
       JSON.stringify({
         host: "${STARTUP_DB_HOST}",
-        database: "zerohand",
+        database: "pawn",
         username: "admin",
         password: "${STARTUP_DB_PASS}",
       }),
@@ -89,7 +89,7 @@ describe("database config resolution", () => {
       join(tmpDir, "database.json"),
       JSON.stringify({
         host: "ssl.db.com",
-        database: "zerohand",
+        database: "pawn",
         username: "user",
         password: "pass",
         ssl: true,

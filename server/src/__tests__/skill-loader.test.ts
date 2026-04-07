@@ -44,7 +44,7 @@ describe("loadSkillDef", () => {
   let skillsDir: string;
 
   beforeEach(() => {
-    skillsDir = mkdtempSync(join(tmpdir(), "zerohand-skill-test-"));
+    skillsDir = mkdtempSync(join(tmpdir(), "pawn-skill-test-"));
   });
 
   // Security: path traversal

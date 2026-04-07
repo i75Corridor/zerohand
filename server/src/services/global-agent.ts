@@ -16,7 +16,7 @@ import { makeAllTools, type AgentToolContext } from "./tools/index.js";
 import { skillsDir as getSkillsDir } from "./paths.js";
 import { buildDashboardContext, formatDashboardContext, type DashboardContext } from "./dashboard-context.js";
 
-const SYSTEM_PROMPT = `You are the Zerohand assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
+const SYSTEM_PROMPT = `You are the Pawn assistant — the operator's AI copilot for managing an agentic workflow orchestration system.
 
 ## Concepts
 - **Pipeline**: an orchestration graph of sequential steps executed in order. Each step references a skill by name. Has a name, input schema, a top-level model, and a system prompt shared across all steps.
