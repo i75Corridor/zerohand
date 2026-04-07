@@ -293,7 +293,7 @@ function DiscoverCard({
       <div className="flex items-center justify-between mt-auto">
         <div className="flex flex-wrap gap-1">
           {pkg.topics
-            .filter((t) => t !== "zerohand-package")
+            .filter((t) => t !== "pawn-package")
             .slice(0, 3)
             .map((t) => (
               <span key={t} className="text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">

@@ -398,7 +398,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
                 {isPrivate && (
                   <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                     <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
-                    <p className="text-xs text-amber-300">Private repos won't be discoverable via <code>zerohand packages discover</code> and won't appear in the package registry.</p>
+                    <p className="text-xs text-amber-300">Private repos won't be discoverable via <code>pawn packages discover</code> and won't appear in the package registry.</p>
                   </div>
                 )}
               </div>
@@ -720,7 +720,7 @@ export default function PipelineDetail() {
   if (error || !pipeline) return <div className="p-8 text-rose-400" role="alert">Pipeline not found.</div>;
 
   const isFromPackage = packages.some((pkg) => pkg.pipelineId === pipeline.id);
-  const exportCmd = `zerohand packages export "${pipeline.name}"`;
+  const exportCmd = `pawn packages export "${pipeline.name}"`;
 
   function handleCopy() {
     navigator.clipboard.writeText(exportCmd).then(() => {

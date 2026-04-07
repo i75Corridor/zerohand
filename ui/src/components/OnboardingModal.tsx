@@ -13,9 +13,9 @@ interface Step {
 const STEPS: Step[] = [
   {
     icon: Rocket,
-    title: "Welcome to Zerohand",
+    title: "Welcome to Pawn",
     description:
-      "Zerohand is an agentic workflow orchestration system. Build pipelines that chain AI skills together, trigger them on schedule or via webhooks, and monitor everything in real time.",
+      "Pawn is an agentic workflow orchestration system. Build pipelines that chain AI skills together, trigger them on schedule or via webhooks, and monitor everything in real time.",
     tip: "Think of it as an automation platform where each step is powered by an AI agent.",
   },
   {

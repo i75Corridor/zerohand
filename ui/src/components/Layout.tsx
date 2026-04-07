@@ -122,7 +122,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem("zerohand_onboarded")) {
+      if (!localStorage.getItem("pawn_onboarded")) {
         setShowOnboarding(true);
       }
     } catch { /* localStorage unavailable — skip onboarding */ }
@@ -187,7 +187,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="px-6 py-6 flex items-center gap-3">
           <FistIcon size={24} className="text-sky-400" />
-          <span className="font-display text-xl text-white tracking-tighter">Zerohand</span>
+          <span className="font-display text-xl text-white tracking-tighter">Pawn</span>
         </div>
 
         {/* Main nav */}
@@ -309,7 +309,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         open={showOnboarding}
         onClose={() => {
           setShowOnboarding(false);
-          try { localStorage.setItem("zerohand_onboarded", "true"); } catch { /* ignore */ }
+          try { localStorage.setItem("pawn_onboarded", "true"); } catch { /* ignore */ }
         }}
       />
     </div>

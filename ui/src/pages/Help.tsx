@@ -88,7 +88,7 @@ export default function Help() {
             </div>
             <div>
               <h2 className="text-base font-semibold text-white">Getting Started</h2>
-              <p className="text-sm text-slate-400">New to Zerohand? Take a quick tour of the key concepts.</p>
+              <p className="text-sm text-slate-400">New to Pawn? Take a quick tour of the key concepts.</p>
             </div>
           </div>
           <button
