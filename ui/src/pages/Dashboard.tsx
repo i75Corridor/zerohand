@@ -161,8 +161,8 @@ export default function Dashboard() {
             <EmptyState
               compact
               icon={GitBranch}
-              title="No pipeline runs yet"
-              description="Pipeline runs will appear here as they execute. Each run shows its status, trigger source, and duration in real time."
+              title="No moves yet"
+              description="Your opening position is clear. Pipeline runs will appear here as they execute, showing status, trigger source, and duration in real time."
               actions={[
                 { label: "Create a Pipeline", to: "/pipelines/new" },
                 { label: "Browse Pipelines", to: "/pipelines", variant: "secondary" },
@@ -175,14 +175,14 @@ export default function Dashboard() {
             <table className="w-full text-left border-collapse">
               <thead className="bg-pawn-surface-900/20">
                 <tr>
-                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Status</th>
-                  <th scope="col" className="px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Pipeline</th>
-                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800 hidden sm:table-cell">Trigger</th>
-                  <th scope="col" className="px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Timestamp</th>
-                  <th scope="col" className="px-6 py-3 text-right text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Duration</th>
+                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-pawn-surface-400 uppercase tracking-wider border-b border-pawn-surface-800/40">Status</th>
+                  <th scope="col" className="px-6 py-3 text-caption font-medium text-pawn-surface-400 uppercase tracking-wider border-b border-pawn-surface-800/40">Pipeline</th>
+                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-pawn-surface-400 uppercase tracking-wider border-b border-pawn-surface-800/40 hidden sm:table-cell">Trigger</th>
+                  <th scope="col" className="px-6 py-3 text-caption font-medium text-pawn-surface-400 uppercase tracking-wider border-b border-pawn-surface-800/40">Timestamp</th>
+                  <th scope="col" className="px-6 py-3 text-right text-caption font-medium text-pawn-surface-400 uppercase tracking-wider border-b border-pawn-surface-800/40">Duration</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-pawn-surface-800/40">
+              <tbody className="divide-y divide-pawn-surface-800/40 row-alternate">
                 {runs.map((run) => (
                   <RunRow key={run.id} run={run} onCancel={(id) => cancelRun.mutate(id)} cancellingId={cancellingId} />
                 ))}

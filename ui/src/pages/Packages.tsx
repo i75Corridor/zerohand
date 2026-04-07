@@ -397,7 +397,7 @@ export default function Packages() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
       <PageHeader
         title="Packages"
         actions={
@@ -423,7 +423,7 @@ export default function Packages() {
           <EmptyState
             compact
             icon={Package}
-            title="No packages installed"
+            title="Your arsenal is empty"
             description="Packages bundle pipelines and skills from GitHub repositories. Search below to discover community packages, or paste a repo URL to install directly."
             actions={[
               { label: "Search Packages", onClick: () => document.querySelector<HTMLInputElement>('[placeholder*="Search GitHub"]')?.focus() },

@@ -660,7 +660,7 @@ export default function Pipelines() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 pt-14 lg:pt-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
       <PageHeader
         title="Pipelines"
         actions={
@@ -676,8 +676,8 @@ export default function Pipelines() {
       {pipelines.length === 0 ? (
         <EmptyState
           icon={GitBranch}
-          title="No pipelines yet"
-          description="Pipelines define multi-step AI agent workflows. Each pipeline chains skills together with configurable inputs, triggers, and approval gates."
+          title="No pipelines on the board"
+          description="Pipelines define multi-step AI agent workflows. Each one chains skills together with configurable inputs, triggers, and approval gates."
           actions={[
             { label: "Create Pipeline", to: "/pipelines/new" },
             { label: "Browse Packages", to: "/packages", variant: "secondary" },

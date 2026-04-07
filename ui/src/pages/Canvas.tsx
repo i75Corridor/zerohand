@@ -144,7 +144,7 @@ export default function Canvas() {
   if (isLoading) return <LoadingState />;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl pt-14 lg:pt-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
       <PageHeader
         title="Canvas"
         actions={
@@ -155,8 +155,8 @@ export default function Canvas() {
       {completedRuns.length === 0 ? (
         <EmptyState
           icon={Layers}
-          title="No completed runs yet"
-          description="The canvas displays artifacts from completed pipeline runs -- images, markdown documents, and other generated output. Run a pipeline to see results here."
+          title="No endgame yet"
+          description="The canvas displays artifacts from completed pipeline runs -- images, markdown, and other generated output. Run a pipeline to see results here."
           actions={[
             { label: "Go to Pipelines", to: "/pipelines" },
           ]}

@@ -66,13 +66,8 @@ body {
 
 .sidebar {
   background: var(--pawn-surface-900);
-  border-right: 1px solid var(--pawn-surface-800);
+  border-right: 1px solid oklch(0.22 0.008 54 / 0.6);
   contain: layout style;
-}
-
-/* GPU-promote sidebar transform only during mobile slide-in transition */
-aside.transitioning {
-  will-change: transform;
 }
 
 .footer-well {
@@ -90,6 +85,7 @@ aside.transitioning {
 }
 .card-hover:hover {
   border-color: oklch(0.36 0.010 58 / 0.6);
+  background-color: oklch(0.14 0.008 52 / 0.3);
 }
 
 /* ── Focus ring ──────────────────────────────────────────────── */
@@ -178,7 +174,7 @@ html {
       transparent 0% 50%
     );
   background-size: 48px 48px;
-  opacity: 0.03;
+  opacity: 0.04;
   pointer-events: none;
 }
 

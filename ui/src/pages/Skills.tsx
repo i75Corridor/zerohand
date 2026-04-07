@@ -104,7 +104,7 @@ export default function Skills() {
   });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
       <PageHeader
         title="Skills"
         actions={
@@ -124,7 +124,7 @@ export default function Skills() {
       {skills.length === 0 ? (
         <EmptyState
           icon={Cpu}
-          title="No skills yet"
+          title="No pieces in play"
           description="Skills are reusable AI capabilities -- prompts, scripts, or tools that pipeline steps can invoke. Create one from scratch or install a package that includes skills."
           actions={[
             { label: "Create a Skill", onClick: () => setCreating(true) },
