@@ -62,7 +62,7 @@ function StepCard({
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          <span className="text-sm font-medium text-pawn-surface-200">
+          <span className="text-sm font-medium text-pawn-text-secondary">
             {name || `Step ${step.stepIndex + 1}`}
           </span>
           <span className={`ml-auto text-xs font-medium ${colorClass}`}>
@@ -272,7 +272,7 @@ export default function RunDetail() {
 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-xl font-semibold font-display text-white tracking-tight">
+          <h1 className="text-xl font-semibold font-display text-pawn-text-primary tracking-tight">
             {run.pipelineName ?? run.pipelineId}
           </h1>
           <span className={`text-sm font-medium ${statusColor}`}>{run.status}</span>
@@ -335,13 +335,13 @@ export default function RunDetail() {
 
       <div className="flex gap-1 mb-4 border-b border-pawn-surface-800">
         <button
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "steps" ? "text-white border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "steps" ? "text-pawn-text-primary border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
           onClick={() => setActiveTab("steps")}
         >
           Steps
         </button>
         <button
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "log" ? "text-white border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "log" ? "text-pawn-text-primary border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
           onClick={() => setActiveTab("log")}
         >
           Debug Log

@@ -86,7 +86,7 @@ function StepForm({
       <div>
         <label className="block text-xs text-pawn-surface-400 mb-1">Step name</label>
         <input
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
           value={step.name}
           onChange={(e) => onChange({ ...step, name: e.target.value })}
           placeholder="Unnamed step"
@@ -96,7 +96,7 @@ function StepForm({
       <div>
         <label className="block text-xs text-pawn-surface-400 mb-1">Skill</label>
         <select
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
           value={step.skillName}
           onChange={(e) => onChange({ ...step, skillName: e.target.value })}
         >
@@ -140,7 +140,7 @@ function StepForm({
           </div>
         )}
         <textarea
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 font-mono leading-relaxed resize-y"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 font-mono leading-relaxed resize-y"
           rows={6}
           value={step.promptTemplate}
           onChange={(e) => onChange({ ...step, promptTemplate: e.target.value })}
@@ -179,7 +179,7 @@ function StepForm({
             type="number"
             min="10"
             max="3600"
-            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
             value={step.timeoutSeconds}
             onChange={(e) => onChange({ ...step, timeoutSeconds: parseInt(e.target.value) || 300 })}
           />
@@ -249,7 +249,7 @@ function StepList({
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-white truncate">{step.name || "Unnamed step"}</div>
+                <div className="text-sm font-medium text-pawn-text-primary truncate">{step.name || "Unnamed step"}</div>
                 {step.skillName && (
                   <div className="text-xs text-violet-400 mt-0.5 truncate">
                     skill: {step.skillName}
@@ -321,13 +321,13 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
           <div className="flex-1 space-y-2">
             <div className="flex gap-2">
               <input
-                className="flex-1 bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                className="flex-1 bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                 placeholder="field_name"
                 value={f.key}
                 onChange={(e) => update(i, { key: e.target.value })}
               />
               <select
-                className="bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pawn-gold-500"
+                className="bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500"
                 value={f.type}
                 onChange={(e) => update(i, { type: e.target.value as "string" | "number" | "boolean" })}
               >
@@ -346,7 +346,7 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
               </label>
             </div>
             <input
-              className="w-full bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
               placeholder="Description (shown as hint)"
               value={f.description}
               onChange={(e) => update(i, { description: e.target.value })}
@@ -614,7 +614,7 @@ export default function PipelineBuilder() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <GitBranch size={20} className="text-indigo-400" />
-            <h1 className="text-2xl font-semibold font-display text-white tracking-tight">{isEdit ? "Edit Pipeline" : "New Pipeline"}</h1>
+            <h1 className="text-2xl font-semibold font-display text-pawn-text-primary tracking-tight">{isEdit ? "Edit Pipeline" : "New Pipeline"}</h1>
           </div>
           <div className="flex items-center gap-3">
             {error && <span className="text-xs text-rose-400">{error}</span>}
@@ -639,7 +639,7 @@ export default function PipelineBuilder() {
             <div>
               <label className="block text-xs text-pawn-surface-400 mb-1">Name <span className="text-rose-400">*</span></label>
               <input
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="My Pipeline"
@@ -648,7 +648,7 @@ export default function PipelineBuilder() {
             <div>
               <label className="block text-xs text-pawn-surface-400 mb-1">Description</label>
               <textarea
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 resize-none"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 resize-none"
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

@@ -22,6 +22,17 @@ export default {
             400: 'var(--pawn-info-400)',
             500: 'var(--pawn-info-500)',
           },
+          text: {
+            primary:   'var(--pawn-text-primary)',
+            secondary: 'var(--pawn-text-secondary)',
+            muted:     'var(--pawn-text-muted)',
+          },
+          chart: {
+            bg:     'var(--pawn-chart-bg)',
+            border: 'var(--pawn-chart-border)',
+            grid:   'var(--pawn-chart-grid)',
+            text:   'var(--pawn-chart-text)',
+          },
           surface: {
             50:  'var(--pawn-surface-50)',
             100: 'var(--pawn-surface-100)',

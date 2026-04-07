@@ -36,7 +36,7 @@ export default function Modal({
         <Dialog.Content
           className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-panel p-6 w-full ${maxWidth} shadow-lg max-h-[90vh] overflow-y-auto animate-scale-in`}
         >
-          <Dialog.Title className="text-lg font-semibold text-white mb-4">
+          <Dialog.Title className="text-lg font-semibold text-pawn-text-primary mb-4">
             {titleIcon && <span className="inline mr-2 align-middle">{titleIcon}</span>}
             {title}
           </Dialog.Title>

@@ -1,10 +1,61 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCircle, Loader, Cable } from "lucide-react";
+import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCircle, Loader, Cable, Sun, Moon, Monitor, Palette } from "lucide-react";
 import { useState } from "react";
 import { api } from "../lib/api.ts";
+import { useTheme } from "../context/ThemeContext.tsx";
 import ModelSelector from "../components/ModelSelector.tsx";
 import PageHeader from "../components/PageHeader.tsx";
 import type { ApiMcpServer, ApiMcpTool } from "@pawn/shared";
+
+// ── Appearance ───────────────────────────────────────────────────────────────
+
+const themeOptions = [
+  { value: "system" as const, label: "System", icon: Monitor },
+  { value: "light" as const, label: "Light", icon: Sun },
+  { value: "dark" as const, label: "Dark", icon: Moon },
+];
+
+function AppearanceSection() {
+  const { theme, resolvedTheme, setTheme } = useTheme();
+
+  return (
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card mb-6 overflow-hidden">
+      <div className="px-6 py-4 border-b border-pawn-surface-800 flex items-center gap-3">
+        <Palette size={14} className="text-pawn-gold-400" />
+        <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Appearance</h2>
+      </div>
+
+      <div className="p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {themeOptions.map(({ value, label, icon: Icon }) => {
+            const isActive = theme === value;
+            return (
+              <button
+                key={value}
+                onClick={() => setTheme(value)}
+                className={`group flex items-center gap-3 px-4 py-3 rounded-card border text-sm font-medium transition-colors text-left ${
+                  isActive
+                    ? "bg-pawn-gold-600/20 border-pawn-gold-500/30 text-pawn-gold-400"
+                    : "bg-pawn-surface-800/40 border-pawn-surface-800 text-pawn-surface-400 hover:text-pawn-text-primary hover:border-pawn-surface-700 hover:bg-pawn-surface-800/60"
+                }`}
+              >
+                <Icon size={16} className={isActive ? "text-pawn-gold-400" : "group-hover:text-pawn-gold-400 transition-colors"} />
+                <div className="flex flex-col">
+                  <span>{label}</span>
+                  {value === "system" && (
+                    <span className="text-xs text-pawn-surface-500 font-normal mt-0.5">
+                      Currently using {resolvedTheme}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Active Models ─────────────────────────────────────────────────────────────
 
@@ -44,7 +95,7 @@ function ActiveModelsSection() {
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           <div>
-            <div className="text-sm font-medium text-pawn-surface-200">Agent Model</div>
+            <div className="text-sm font-medium text-pawn-text-secondary">Agent Model</div>
             <p className="text-xs text-pawn-surface-500 mt-0.5">Used by the global agent in the sidebar chat.</p>
           </div>
           <ModelSelector
@@ -57,7 +108,7 @@ function ActiveModelsSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           <div>
-            <div className="text-sm font-medium text-pawn-surface-200">Default Pipeline Model</div>
+            <div className="text-sm font-medium text-pawn-text-secondary">Default Pipeline Model</div>
             <p className="text-xs text-pawn-surface-500 mt-0.5">Fallback model for pipelines without an explicit model set.</p>
           </div>
           <ModelSelector
@@ -130,7 +181,7 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-mono text-white">{server.name}</span>
+            <span className="text-sm font-mono text-pawn-text-primary">{server.name}</span>
             <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${transportBadgeColor}`}>
               {server.transport}
             </span>
@@ -292,7 +343,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
   return (
     <div className="border border-pawn-surface-700 rounded-card p-4 bg-pawn-surface-900 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-white">Add MCP Server</span>
+        <span className="text-sm font-medium text-pawn-text-primary">Add MCP Server</span>
         <button onClick={onCancel} className="text-pawn-surface-500 hover:text-pawn-surface-300"><X size={14} /></button>
       </div>
       <div className="space-y-3">
@@ -300,7 +351,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           <div>
             <label className="text-xs text-pawn-surface-400 mb-1 block">Name</label>
             <input
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
               placeholder="brave-search"
               value={name}
               onChange={(e) => { setName(e.target.value.toLowerCase()); setError(""); }}
@@ -311,7 +362,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           <div>
             <label className="text-xs text-pawn-surface-400 mb-1 block">Transport</label>
             <select
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-white focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500"
               value={transport}
               onChange={(e) => setTransport(e.target.value as typeof transport)}
             >
@@ -327,7 +378,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
             <div>
               <label className="text-xs text-pawn-surface-400 mb-1 block">Command</label>
               <input
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                 placeholder="npx"
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
@@ -336,7 +387,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
             <div>
               <label className="text-xs text-pawn-surface-400 mb-1 block">Args (space-separated)</label>
               <input
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                 placeholder="-y @anthropic/brave-search-mcp"
                 value={args}
                 onChange={(e) => setArgs(e.target.value)}
@@ -350,7 +401,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
             <div>
               <label className="text-xs text-pawn-surface-400 mb-1 block">URL</label>
               <input
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                 placeholder="https://api.example.com/mcp"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -359,7 +410,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
             <div>
               <label className="text-xs text-pawn-surface-400 mb-1 block">Headers (KEY=VALUE, one per line)</label>
               <textarea
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
                 rows={2}
                 placeholder={"Authorization=Bearer sk-...\nX-Custom-Header=value"}
                 value={headers}
@@ -375,7 +426,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
             {detectedVars.map((v, i) => (
               <div key={v.name} className="bg-pawn-surface-800 border border-pawn-surface-700 rounded-button p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-mono font-medium text-white">{v.name}</span>
+                  <span className="text-xs font-mono font-medium text-pawn-text-primary">{v.name}</span>
                   {v.required && <span className="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded">required</span>}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded ${v.detectedFrom === "registry" || v.detectedFrom === "both" ? "bg-pawn-gold-500/20 text-pawn-gold-400" : "bg-amber-500/20 text-amber-400"}`}>
                     {v.detectedFrom === "registry" || v.detectedFrom === "both" ? "verified" : "detected"}
@@ -384,7 +435,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                 {v.description && <p className="text-xs text-pawn-surface-500 mb-1.5">{v.description}</p>}
                 {v.docsUrl && <a href={v.docsUrl} target="_blank" rel="noreferrer" className="text-xs text-pawn-gold-400 hover:text-pawn-gold-300 mb-1.5 block">Documentation →</a>}
                 <input
-                  className="w-full bg-pawn-surface-900 border border-pawn-surface-600 rounded px-2 py-1 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                  className="w-full bg-pawn-surface-900 border border-pawn-surface-600 rounded px-2 py-1 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                   placeholder={v.required ? `\${${v.name}}` : "optional"}
                   value={v.value}
                   onChange={(e) => {
@@ -407,7 +458,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           <div>
             <label className="text-xs text-pawn-surface-400 mb-1 block">Env Vars (KEY=VALUE, one per line)</label>
             <textarea
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
+              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
               rows={2}
               placeholder={"BRAVE_API_KEY=...\nOTHER_VAR=value"}
               value={envVars}
@@ -422,7 +473,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
             type="button"
             onClick={() => detect.mutate()}
             disabled={detect.isPending || (transport === "stdio" && !command)}
-            className="px-3 py-1.5 bg-pawn-surface-700 hover:bg-pawn-surface-600 text-pawn-surface-200 text-xs font-medium rounded-button transition-colors disabled:opacity-40 flex items-center gap-1.5"
+            className="px-3 py-1.5 bg-pawn-surface-700 hover:bg-pawn-surface-600 text-pawn-text-secondary text-xs font-medium rounded-button transition-colors disabled:opacity-40 flex items-center gap-1.5"
           >
             {detect.isPending ? (
               <><Loader size={12} className="animate-spin" /> Detecting...</>
@@ -435,7 +486,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
         {error && <p className="text-xs text-rose-400">{error}</p>}
 
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-white transition-colors">Cancel</button>
+          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-pawn-text-primary transition-colors">Cancel</button>
           <button
             onClick={() => create.mutate()}
             disabled={!nameValid || create.isPending}
@@ -475,7 +526,7 @@ function McpServersSection() {
       <div className="px-6 py-5 border-b border-pawn-surface-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Server size={14} className="text-pawn-gold-400" />
-          <h2 className="text-sm font-semibold text-white">MCP Servers</h2>
+          <h2 className="text-sm font-semibold text-pawn-text-primary">MCP Servers</h2>
           {servers.length > 0 && (
             <span className="text-xs text-pawn-surface-500">{servers.length} registered</span>
           )}
@@ -550,7 +601,7 @@ function CustomProvidersSection() {
       <div className="px-6 py-5 border-b border-pawn-surface-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Cable size={14} className="text-pawn-gold-400" />
-          <h2 className="text-sm font-semibold text-white">Custom Providers</h2>
+          <h2 className="text-sm font-semibold text-pawn-text-primary">Custom Providers</h2>
           {providerNames.length > 0 && (
             <span className="text-xs text-pawn-surface-500">{providerNames.length} configured</span>
           )}
@@ -599,7 +650,7 @@ function CustomProvidersSection() {
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono text-white">{name}</span>
+                    <span className="text-sm font-mono text-pawn-text-primary">{name}</span>
                     <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
                       {provider.models.length} model{provider.models.length !== 1 ? "s" : ""}
                     </span>
@@ -677,7 +728,7 @@ function AddProviderForm({
   return (
     <div className="border border-pawn-surface-700 rounded-card p-4 bg-pawn-surface-900 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-white">Add Custom Provider</span>
+        <span className="text-sm font-medium text-pawn-text-primary">Add Custom Provider</span>
         <button onClick={onCancel} className="text-pawn-surface-500 hover:text-pawn-surface-300"><X size={14} /></button>
       </div>
       <div className="space-y-3">
@@ -685,7 +736,7 @@ function AddProviderForm({
           <div>
             <label className="text-xs text-pawn-surface-400 mb-1 block">Provider Name</label>
             <input
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
               placeholder="litellm"
               value={name}
               onChange={(e) => { setName(e.target.value.toLowerCase()); setError(""); }}
@@ -700,7 +751,7 @@ function AddProviderForm({
           <div>
             <label className="text-xs text-pawn-surface-400 mb-1 block">Base URL</label>
             <input
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
               placeholder="http://localhost:4000/v1"
               value={baseUrl}
               onChange={(e) => { setBaseUrl(e.target.value); setError(""); }}
@@ -710,7 +761,7 @@ function AddProviderForm({
         <div>
           <label className="text-xs text-pawn-surface-400 mb-1 block">API Key (optional)</label>
           <input
-            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
             placeholder="sk-..."
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
@@ -720,7 +771,7 @@ function AddProviderForm({
         <div>
           <label className="text-xs text-pawn-surface-400 mb-1 block">Model IDs (one per line)</label>
           <textarea
-            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
             rows={3}
             placeholder={"gpt-4o\nclaude-3-opus\nllama-70b"}
             value={modelsText}
@@ -731,7 +782,7 @@ function AddProviderForm({
         {error && <p className="text-xs text-rose-400">{error}</p>}
 
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-white transition-colors">Cancel</button>
+          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-pawn-text-primary transition-colors">Cancel</button>
           <button
             onClick={handleAdd}
             disabled={!nameValid}
@@ -752,6 +803,7 @@ export default function Settings() {
     <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
       <PageHeader title="Settings" />
 
+      <AppearanceSection />
       <ActiveModelsSection />
       <CustomProvidersSection />
       <McpServersSection />

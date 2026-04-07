@@ -175,7 +175,7 @@ function InstalledCard({
               href={`https://github.com/${pkg.repoFullName}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-semibold text-white hover:text-pawn-gold-300 flex items-center gap-1 transition-colors"
+              className="text-sm font-semibold text-pawn-text-primary hover:text-pawn-gold-300 flex items-center gap-1 transition-colors"
             >
               {pkg.repoFullName}
               <ExternalLink size={11} className="text-pawn-surface-500" />
@@ -276,7 +276,7 @@ function DiscoverCard({
             href={pkg.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-semibold text-white hover:text-pawn-gold-300 flex items-center gap-1 transition-colors"
+            className="text-sm font-semibold text-pawn-text-primary hover:text-pawn-gold-300 flex items-center gap-1 transition-colors"
           >
             {pkg.fullName}
             <ExternalLink size={11} className="text-pawn-surface-500" />
@@ -465,7 +465,7 @@ export default function Packages() {
           <div className="relative flex-1">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-pawn-surface-500" />
             <input
-              className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button pl-8 pr-3 py-2 text-sm text-white placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button pl-8 pr-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
               placeholder="Search GitHub for pawn packages..."
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}

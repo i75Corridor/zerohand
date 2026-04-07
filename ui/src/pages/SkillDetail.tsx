@@ -196,7 +196,7 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
     <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-pawn-surface-800">
         <input
-          className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+          className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
           placeholder="filename.py"
           value={filename}
           onChange={(e) => setFilename(e.target.value.toLowerCase())}
@@ -294,7 +294,7 @@ function TagInput({
           {addOptions ? (
             <select
               autoFocus
-              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-surface-200 focus:outline-none focus:border-pawn-gold-500 font-mono"
+              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-text-secondary focus:outline-none focus:border-pawn-gold-500 font-mono"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
             >
@@ -391,7 +391,7 @@ function SplitSkillEditor({
           <div className="h-4 w-px bg-pawn-surface-800 flex-shrink-0" />
           <div className="flex items-center gap-2 min-w-0">
             <Cpu size={15} className="text-violet-400 flex-shrink-0" />
-            <h1 className="text-sm font-mono font-medium text-white tracking-tight truncate">{qualifiedName}</h1>
+            <h1 className="text-sm font-mono font-medium text-pawn-text-primary tracking-tight truncate">{qualifiedName}</h1>
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
@@ -437,7 +437,7 @@ function SplitSkillEditor({
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Description</label>
               <textarea
-                className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button px-3.5 py-2.5 text-sm text-pawn-surface-200 placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500/20 transition-all resize-none"
+                className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button px-3.5 py-2.5 text-sm text-pawn-text-secondary placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500/20 transition-all resize-none"
                 rows={3}
                 placeholder="What does this skill do?"
                 value={fm.description}
@@ -624,7 +624,7 @@ export default function SkillDetail() {
       <div className="flex items-start gap-3 mb-10">
         <Cpu size={20} className="text-violet-400 flex-shrink-0 mt-0.5" />
         <div>
-          <h1 className="text-2xl font-semibold font-display text-white tracking-tight font-mono">{qualifiedName}</h1>
+          <h1 className="text-2xl font-semibold font-display text-pawn-text-primary tracking-tight font-mono">{qualifiedName}</h1>
           {description && <p className="text-sm text-pawn-surface-500 mt-1">{description}</p>}
         </div>
       </div>

@@ -14,9 +14,22 @@
     <meta property="og:description" content="Build, run, and manage AI pipelines with workers, skills, and automated scheduling." />
     <meta property="og:image" content="/favicon.svg" />
 
-    <!-- Theme -->
-    <meta name="theme-color" content="#030712" />
-    <meta name="color-scheme" content="dark" />
+    <!-- Theme — blocking script sets .dark class before first paint -->
+    <script>
+      (function () {
+        var VALID = { system: 1, light: 1, dark: 1 };
+        var pref = "system";
+        try { var s = localStorage.getItem("pawn_theme"); if (s && VALID[s]) pref = s; } catch (e) {}
+        var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+        var cs = document.querySelector('meta[name="color-scheme"]');
+        if (cs) cs.setAttribute("content", dark ? "dark" : "light");
+        var tc = document.querySelector('meta[name="theme-color"]');
+        if (tc) tc.setAttribute("content", dark ? "#0d0c0a" : "#f7f5f2");
+      })();
+    </script>
+    <meta name="theme-color" content="#f7f5f2" />
+    <meta name="color-scheme" content="light" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 

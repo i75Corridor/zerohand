@@ -92,7 +92,7 @@ export default function EmptyState({
       )}
       {title && (
         <h3
-          className={`font-medium text-pawn-surface-200 ${
+          className={`font-medium text-pawn-text-secondary ${
             compact ? "text-sm mb-1" : "text-base mb-1.5"
           }`}
         >

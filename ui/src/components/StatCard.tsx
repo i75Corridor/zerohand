@@ -15,7 +15,7 @@ export default memo(function StatCard({ icon: Icon, label, value, sub, accent = 
       <Icon size={16} className={`${accent} mt-1 flex-shrink-0 opacity-70`} />
       <div className="min-w-0">
         <div className="text-xs text-pawn-surface-300 font-medium uppercase tracking-wider">{label}</div>
-        <div className="text-xl font-display font-semibold text-white mt-1 truncate tabular-nums">{value}</div>
+        <div className="text-xl font-display font-semibold text-pawn-text-primary mt-1 truncate tabular-nums">{value}</div>
         {sub && <div className="text-xs text-pawn-surface-400 mt-0.5">{sub}</div>}
       </div>
     </div>

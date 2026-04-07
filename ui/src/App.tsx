@@ -21,7 +21,7 @@ const Help = lazy(() => import("./pages/Help.tsx"));
 function NotFound() {
   return (
     <div className="p-8 max-w-lg">
-      <h1 className="text-2xl font-semibold text-white mb-2">Page not found</h1>
+      <h1 className="text-2xl font-semibold text-pawn-text-primary mb-2">Page not found</h1>
       <p className="text-sm text-pawn-surface-400 mb-4">
         The page you are looking for does not exist or has been moved.
       </p>

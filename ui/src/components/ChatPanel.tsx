@@ -72,7 +72,7 @@ export default function ChatPanel({ stepRunId, onSend }: ChatPanelProps) {
       <div className="flex gap-2">
         <input
           ref={inputRef}
-          className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-white placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+          className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-pawn-text-primary placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
           placeholder={mode === "steer" ? "Interrupt with a message..." : "Send a follow-up..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}

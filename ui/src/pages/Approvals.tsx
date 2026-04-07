@@ -33,7 +33,7 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             {approval.pipelineName && (
-              <span className="text-sm font-medium text-pawn-surface-100">{approval.pipelineName}</span>
+              <span className="text-sm font-medium text-pawn-text-primary">{approval.pipelineName}</span>
             )}
             {approval.stepName && (
               <span className="bg-pawn-surface-800 text-pawn-surface-400 text-caption font-mono px-2 py-0.5 rounded-badge">

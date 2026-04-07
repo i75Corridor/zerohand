@@ -85,7 +85,7 @@ export default function Help() {
               <Rocket className="w-5 h-5 text-pawn-gold-400" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">Getting Started</h2>
+              <h2 className="text-base font-semibold text-pawn-text-primary">Getting Started</h2>
               <p className="text-sm text-pawn-surface-400">New to Pawn? Take a quick tour of the key concepts.</p>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function Help() {
             >
               <div className="flex items-center gap-2.5 mb-2">
                 <c.icon className="w-4 h-4 text-pawn-surface-400" />
-                <h3 className="text-sm font-semibold text-white">{c.name}</h3>
+                <h3 className="text-sm font-semibold text-pawn-text-primary">{c.name}</h3>
               </div>
               <p className="text-xs text-pawn-surface-400 leading-relaxed">{c.description}</p>
             </div>
@@ -132,7 +132,7 @@ export default function Help() {
               }`}
             >
               <cap.icon className="w-4 h-4 text-pawn-surface-500 shrink-0" />
-              <span className="text-sm font-medium text-pawn-surface-200 w-24 shrink-0">{cap.label}</span>
+              <span className="text-sm font-medium text-pawn-text-secondary w-24 shrink-0">{cap.label}</span>
               <span className="text-xs text-pawn-surface-400">{cap.description}</span>
             </div>
           ))}

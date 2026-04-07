@@ -18,6 +18,7 @@ import PageHeader from "../components/PageHeader.tsx";
 import SectionPanel from "../components/SectionPanel.tsx";
 import EmptyState from "../components/EmptyState.tsx";
 import { formatCost, formatCostShort } from "../lib/format.ts";
+import { useChartTheme, useChartTooltipStyle } from "../hooks/useChartTheme.ts";
 type Range = "7d" | "30d" | "90d";
 
 function getRangeDates(range: Range): { from: string; to: string } {
@@ -32,18 +33,9 @@ function getRangeDates(range: Range): { from: string; to: string } {
   };
 }
 
-const CHART_TOOLTIP_STYLE = {
-  contentStyle: {
-    background: "rgb(24 22 20 / 0.95)",
-    border: "1px solid rgb(37 34 32)",
-    borderRadius: "12px",
-    color: "#f7f5f2",
-    fontSize: 12,
-  },
-  labelStyle: { color: "#9e9889" },
-};
-
 export default function Costs() {
+  const chart = useChartTheme();
+  const tooltipStyle = useChartTooltipStyle();
   const [range, setRange] = useState<Range>("30d");
   const { from, to } = getRangeDates(range);
 
@@ -94,7 +86,7 @@ export default function Costs() {
           {/* Total — hero weight */}
           <div className="mb-5">
             <div className="text-xs text-pawn-surface-500 mb-1">Total this month</div>
-            <span className="text-3xl font-display font-bold text-white tabular-nums tracking-tight">
+            <span className="text-3xl font-display font-bold text-pawn-text-primary tabular-nums tracking-tight">
               {data ? formatCost(data.summary.totalThisMonth) : "\u2014"}
             </span>
           </div>
@@ -108,7 +100,7 @@ export default function Costs() {
                 <TrendingUp size={12} className="text-emerald-400 opacity-70" />
                 <span className="text-xs text-pawn-surface-500">Daily average</span>
               </div>
-              <div className="text-sm font-semibold text-pawn-surface-200 tabular-nums">
+              <div className="text-sm font-semibold text-pawn-text-secondary tabular-nums">
                 {data ? formatCost(data.summary.dailyAverage) : "\u2014"}
               </div>
             </div>
@@ -117,7 +109,7 @@ export default function Costs() {
                 <Calendar size={12} className="text-amber-400 opacity-70" />
                 <span className="text-xs text-pawn-surface-500">Projected month-end</span>
               </div>
-              <div className="text-sm font-semibold text-pawn-surface-200 tabular-nums">
+              <div className="text-sm font-semibold text-pawn-text-secondary tabular-nums">
                 {data ? formatCost(data.summary.projectedMonthEnd) : "\u2014"}
               </div>
             </div>
@@ -126,7 +118,7 @@ export default function Costs() {
                 <Award size={12} className="text-violet-400 opacity-70" />
                 <span className="text-xs text-pawn-surface-500">Top skill</span>
               </div>
-              <div className="text-sm font-medium text-pawn-surface-200 truncate">
+              <div className="text-sm font-medium text-pawn-text-secondary truncate">
                 {data ? (data.summary.topSkill ?? "None") : "\u2014"}
               </div>
             </div>
@@ -135,7 +127,7 @@ export default function Costs() {
                 <GitBranch size={12} className="text-rose-400 opacity-70" />
                 <span className="text-xs text-pawn-surface-500">Top pipeline</span>
               </div>
-              <div className="text-sm font-medium text-pawn-surface-200 truncate">
+              <div className="text-sm font-medium text-pawn-text-secondary truncate">
                 {data ? (data.summary.topPipeline ?? "None") : "\u2014"}
               </div>
             </div>
@@ -162,10 +154,10 @@ export default function Costs() {
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={data.daily} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgb(37 34 32 / 0.6)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fill: "#7d776a", fontSize: 11 }}
+                  tick={{ fill: chart.text, fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: string) => {
@@ -174,22 +166,22 @@ export default function Costs() {
                   }}
                 />
                 <YAxis
-                  tick={{ fill: "#7d776a", fontSize: 11 }}
+                  tick={{ fill: chart.text, fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: number) => formatCostShort(v)}
                 />
                 <Tooltip
-                  {...CHART_TOOLTIP_STYLE}
+                  {...tooltipStyle}
                   formatter={(v) => [formatCost(Number(v ?? 0)), "Cost"]}
                 />
                 <Line
                   type="monotone"
                   dataKey="costCents"
-                  stroke="#c99a3e"
+                  stroke={chart.gold}
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 5, fill: "#c99a3e" }}
+                  activeDot={{ r: 5, fill: chart.gold }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -219,10 +211,10 @@ export default function Costs() {
                   layout="vertical"
                   margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(37 34 32 / 0.6)" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fill: "#7d776a", fontSize: 11 }}
+                    tick={{ fill: chart.text, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v: number) => formatCostShort(v)}
@@ -230,16 +222,16 @@ export default function Costs() {
                   <YAxis
                     type="category"
                     dataKey="skillName"
-                    tick={{ fill: "#9e9889", fontSize: 11 }}
+                    tick={{ fill: chart.textMuted, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     width={100}
                   />
                   <Tooltip
-                    {...CHART_TOOLTIP_STYLE}
+                    {...tooltipStyle}
                     formatter={(v) => [formatCost(Number(v ?? 0)), "Cost"]}
                   />
-                  <Bar dataKey="costCents" fill="#34d399" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="costCents" fill={chart.emerald} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -269,10 +261,10 @@ export default function Costs() {
                   layout="vertical"
                   margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(37 34 32 / 0.6)" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fill: "#7d776a", fontSize: 11 }}
+                    tick={{ fill: chart.text, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v: number) => formatCostShort(v)}
@@ -280,16 +272,16 @@ export default function Costs() {
                   <YAxis
                     type="category"
                     dataKey="pipelineName"
-                    tick={{ fill: "#9e9889", fontSize: 11 }}
+                    tick={{ fill: chart.textMuted, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     width={100}
                   />
                   <Tooltip
-                    {...CHART_TOOLTIP_STYLE}
+                    {...tooltipStyle}
                     formatter={(v) => [formatCost(Number(v ?? 0)), "Cost"]}
                   />
-                  <Bar dataKey="costCents" fill="#818cf8" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="costCents" fill={chart.indigo} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

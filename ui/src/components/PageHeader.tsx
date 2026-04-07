@@ -26,7 +26,7 @@ export default function PageHeader({ title, subtitle, actions, className = "" }:
             {subtitle}
           </p>
         )}
-        <h1 className="text-2xl font-display font-semibold text-white tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-display font-semibold text-pawn-text-primary tracking-tight">{title}</h1>
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>

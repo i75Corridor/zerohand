@@ -30,7 +30,7 @@ function RunRow({ run, onCancel, cancellingId }: { run: ApiPipelineRun; onCancel
         </Link>
       </td>
       <td className="px-6 py-4 max-w-[200px]">
-        <Link to={`/runs/${run.id}`} className="text-sm font-medium text-pawn-surface-100 group-hover:text-pawn-gold-400 transition-colors block truncate" title={run.pipelineName ?? run.pipelineId}>
+        <Link to={`/runs/${run.id}`} className="text-sm font-medium text-pawn-text-primary group-hover:text-pawn-gold-400 transition-colors block truncate" title={run.pipelineName ?? run.pipelineId}>
           {run.pipelineName ?? run.pipelineId}
         </Link>
       </td>
@@ -151,7 +151,7 @@ export default function Dashboard() {
                 <Zap size={12} className="text-pawn-gold-400 opacity-70" />
                 <span className="text-xs text-pawn-surface-500">Runs this month</span>
               </div>
-              <div className="text-2xl font-display font-bold text-white tabular-nums tracking-tight">
+              <div className="text-2xl font-display font-bold text-pawn-text-primary tabular-nums tracking-tight">
                 {stats ? String(stats.runsThisMonth) : "\u2014"}
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function Dashboard() {
                 <Activity size={12} className="text-emerald-400 opacity-70" />
                 <span className="text-xs text-pawn-surface-500">Active</span>
               </div>
-              <div className="text-2xl font-display font-bold text-white tabular-nums tracking-tight">
+              <div className="text-2xl font-display font-bold text-pawn-text-primary tabular-nums tracking-tight">
                 {stats ? String(stats.activeRuns) : "\u2014"}
               </div>
               <span className="text-xs text-pawn-surface-500">{stats?.activeRuns === 0 ? "idle" : "running"}</span>
@@ -170,7 +170,7 @@ export default function Dashboard() {
                 <CreditCard size={12} className="text-amber-400 opacity-70" />
                 <span className="text-xs text-pawn-surface-500">Accrued cost</span>
               </div>
-              <div className="text-2xl font-display font-bold text-white tabular-nums tracking-tight">
+              <div className="text-2xl font-display font-bold text-pawn-text-primary tabular-nums tracking-tight">
                 {stats ? formatCost(stats.costCentsThisMonth) : "\u2014"}
               </div>
               <span className="text-xs text-pawn-surface-500">this month</span>

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { ReactFlow, Background, Handle, Position, type Node, type Edge, type NodeProps } from "@xyflow/react";
+import { useChartTheme } from "../hooks/useChartTheme.ts";
 import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square, Download, Upload, X, Trash2, AlertTriangle, ShieldCheck, History, RotateCcw, ChevronDown, ChevronRight, Loader, AlertCircle, Eye } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -36,7 +37,7 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
           {step.stepIndex + 1}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white">{step.name}</div>
+          <div className="text-sm font-medium text-pawn-text-primary">{step.name}</div>
           {step.skillName ? (
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               <span className="text-xs text-violet-400">{step.skillName}</span>
@@ -79,6 +80,7 @@ const nodeTypes = { stepNode: StepNode };
 // ── DAG component ─────────────────────────────────────────────────────────────
 
 function PipelineDAG({ pipeline }: { pipeline: ApiPipeline }) {
+  const chart = useChartTheme();
   const steps = [...pipeline.steps].sort((a, b) => a.stepIndex - b.stepIndex);
 
   const nodes: Node<StepNodeData>[] = steps.map((step, i) => ({
@@ -94,7 +96,7 @@ function PipelineDAG({ pipeline }: { pipeline: ApiPipeline }) {
     id: `edge-${step.stepIndex}`,
     source: `step-${step.stepIndex}`,
     target: `step-${step.stepIndex + 1}`,
-    style: { stroke: "#4f46e5", strokeWidth: 2 },
+    style: { stroke: chart.violet, strokeWidth: 2 },
     animated: false,
   }));
 
@@ -116,9 +118,9 @@ function PipelineDAG({ pipeline }: { pipeline: ApiPipeline }) {
         minZoom={0.3}
         maxZoom={1.5}
         proOptions={{ hideAttribution: true }}
-        style={{ background: "#181614" }}
+        style={{ background: chart.surface950 }}
       >
-        <Background color="#252220" gap={24} />
+        <Background color={chart.surface800} gap={24} />
       </ReactFlow>
     </div>
   );
@@ -165,7 +167,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-800 rounded-panel p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
-          <Dialog.Title className="text-lg font-semibold text-white mb-4">Run: {pipeline.name}</Dialog.Title>
+          <Dialog.Title className="text-lg font-semibold text-pawn-text-primary mb-4">Run: {pipeline.name}</Dialog.Title>
           {fields.length === 0 ? (
             <p className="text-sm text-pawn-surface-500 mb-4">No inputs required.</p>
           ) : (
@@ -177,7 +179,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
                   </label>
                   {prop.description && <p className="text-xs text-pawn-surface-500 mb-1">{prop.description}</p>}
                   <input
-                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
                     placeholder={prop.description ?? key}
                     value={values[key] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
@@ -218,7 +220,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
             {validation && validation.errors.length > 0 && (
               <span className="text-xs text-rose-400 flex-1">Fix validation errors before running.</span>
             )}
-            <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-white" onClick={onClose}>Cancel</button>
+            <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-pawn-text-primary" onClick={onClose}>Cancel</button>
             <button
               className="px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={trigger.isPending || (validation?.errors.length ?? 0) > 0}
@@ -331,7 +333,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
         <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-800 rounded-panel p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
           <div className="flex items-center justify-between mb-4">
-            <Dialog.Title className="text-lg font-semibold text-white">Publish to GitHub</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold text-pawn-text-primary">Publish to GitHub</Dialog.Title>
             <Dialog.Close asChild>
               <button className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors" aria-label="Close"><X size={16} /></button>
             </Dialog.Close>
@@ -378,7 +380,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
               <div>
                 <label className="block text-sm text-pawn-surface-400 mb-1">Repository name</label>
                 <input
-                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
+                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
                   value={repo}
                   onChange={(e) => setRepo(e.target.value)}
                 />
@@ -406,7 +408,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
                 <p className="text-xs text-rose-400">{(publish.error as Error).message}</p>
               )}
               <div className="flex gap-3 justify-end">
-                <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-white" onClick={onClose}>Cancel</button>
+                <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-pawn-text-primary" onClick={onClose}>Cancel</button>
                 <button
                   className="flex items-center gap-1.5 px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button disabled:opacity-50"
                   disabled={!repo || publish.isPending}
@@ -447,7 +449,7 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-pawn-surface-800">
-          <h2 className="text-lg font-semibold text-white">Package Preview</h2>
+          <h2 className="text-lg font-semibold text-pawn-text-primary">Package Preview</h2>
           <button onClick={onClose} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
             <X size={16} />
           </button>
@@ -470,7 +472,7 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
               {(["yaml", "skills", "validation"] as const).map((t) => (
                 <button
                   key={t}
-                  className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${tab === t ? "text-white border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
+                  className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${tab === t ? "text-pawn-text-primary border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
                   onClick={() => setTab(t)}
                 >
                   {t === "validation"
@@ -754,7 +756,7 @@ export default function PipelineDetail() {
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <GitBranch size={20} className="text-indigo-400 flex-shrink-0" />
-              <h1 className="text-2xl font-semibold font-display text-white tracking-tight truncate">{pipeline.name}</h1>
+              <h1 className="text-2xl font-semibold font-display text-pawn-text-primary tracking-tight truncate">{pipeline.name}</h1>
               <span className="text-xs text-pawn-surface-500 px-2 py-0.5 bg-pawn-surface-800 border border-pawn-surface-700/50 rounded-full">{pipeline.status}</span>
             </div>
             {pipeline.description && (
@@ -903,9 +905,9 @@ export default function PipelineDetail() {
                 <Trash2 size={14} className="text-rose-400" />
               </div>
               <div>
-                <Dialog.Title className="text-base font-semibold text-white">Delete pipeline?</Dialog.Title>
+                <Dialog.Title className="text-base font-semibold text-pawn-text-primary">Delete pipeline?</Dialog.Title>
                 <Dialog.Description className="text-sm text-pawn-surface-400 mt-1">
-                  <span className="text-white font-medium">{pipeline.name}</span> and any skills used only by this pipeline will be permanently removed.
+                  <span className="text-pawn-text-primary font-medium">{pipeline.name}</span> and any skills used only by this pipeline will be permanently removed.
                 </Dialog.Description>
               </div>
             </div>
