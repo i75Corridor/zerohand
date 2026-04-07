@@ -1,7 +1,7 @@
 ---
 title: "feat: Pawn brand refresh - icon and image assets"
 type: feat
-status: active
+status: completed
 date: 2026-04-07
 origin: GitHub issue #73
 ---
