@@ -61,7 +61,7 @@ The global agent can manage pipelines and skills but cannot touch 5 major entity
 
 **Shared types**: `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, `ApiInstalledPackage`, `ApiSetting` all in `packages/shared/src/index.ts`
 
-**DB tables**: `triggers`, `approvals`, `budgetPolicies`, `installedPackages`, `settings` all exported from `@zerohand/db`
+**DB tables**: `triggers`, `approvals`, `budgetPolicies`, `installedPackages`, `settings` all exported from `@pawn/db`
 
 ### Key Constraint: Approvals Require WsManager
 
@@ -383,7 +383,7 @@ graph TB
 
 ## Sources & References
 
-- Related issue: i75Corridor/zerohand#30
+- Related issue: i75Corridor/pawn#30
 - Related plan: `docs/plans/2026-04-03-001-feat-mcp-server-package-plan.md` (completed — established MCP package)
 - In-app tool pattern: `server/src/services/tools/create-pipeline.ts`
 - MCP tool pattern: `packages/mcp/src/tools/pipeline-tools.ts`

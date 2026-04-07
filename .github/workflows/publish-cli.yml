@@ -8,7 +8,7 @@ on:
       - packages/cli/**
 jobs:
   publish:
-    name: Publish @i75corridor/zh-cli to GitHub Packages
+    name: Publish @i75corridor/pawn-cli to GitHub Packages
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,9 +32,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build CLI
-        run: pnpm --filter @i75corridor/zh-cli build
+        run: pnpm --filter @i75corridor/pawn-cli build
 
       - name: Publish
-        run: pnpm --filter @i75corridor/zh-cli publish --no-git-checks
+        run: pnpm --filter @i75corridor/pawn-cli publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

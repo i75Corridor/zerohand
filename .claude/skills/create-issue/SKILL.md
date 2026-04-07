@@ -1,6 +1,6 @@
 ---
 name: create-issue
-description: Interactively draft and file a new GitHub issue for i75Corridor/zerohand. Ask the user questions to understand the problem or feature, explore the codebase in plan mode to fill in technical detail, then create the issue via `gh`. Use this skill whenever the user wants to write a ticket, file a bug, propose a feature, or create any GitHub issue — even if they just say "let's write up an issue for X" or "I want to track this".
+description: Interactively draft and file a new GitHub issue for i75Corridor/pawn. Ask the user questions to understand the problem or feature, explore the codebase in plan mode to fill in technical detail, then create the issue via `gh`. Use this skill whenever the user wants to write a ticket, file a bug, propose a feature, or create any GitHub issue — even if they just say "let's write up an issue for X" or "I want to track this".
 ---
 
 ## What this skill does
@@ -82,7 +82,7 @@ Wait for explicit approval before filing. Incorporate any edits the user request
 
 ```bash
 gh issue create \
-  --repo i75Corridor/zerohand \
+  --repo i75Corridor/pawn \
   --title "<title>" \
   --body "<body>" \
   --label "<label>"

@@ -73,5 +73,5 @@ Users landing on the chat panel see a passive hint ("Ask me about pipelines, run
 
 ## Sources & References
 
-- Related issue: i75Corridor/zerohand#35
+- Related issue: i75Corridor/pawn#35
 - Target file: `ui/src/components/GlobalChatPanel.tsx`

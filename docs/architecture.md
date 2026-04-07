@@ -2,7 +2,7 @@
 
 ## Overview
 
-Zerohand is a monorepo agentic workflow orchestrator. Pipelines are defined as YAML packages, stored in a directory, and seeded into PostgreSQL on startup. The execution engine polls for queued runs, resolves prompt templates, dispatches work to the appropriate worker type, and streams events back to the UI over WebSocket.
+Pawn is a monorepo agentic workflow orchestrator. Pipelines are defined as YAML packages, stored in a directory, and seeded into PostgreSQL on startup. The execution engine polls for queued runs, resolves prompt templates, dispatches work to the appropriate worker type, and streams events back to the UI over WebSocket.
 
 The control plane adds scheduling (cron triggers), human approval gates, and budget enforcement on top of the core execution loop.
 
@@ -223,7 +223,7 @@ Steps reference a worker DB record. Workers have their own model, system prompt,
 
 **Embedded PostgreSQL for local dev** — Zero setup. The server starts its own Postgres process on first boot. Set `DATABASE_URL` to use external Postgres (e.g. Docker Compose).
 
-**Pi.dev as the LLM execution layer** — Handles model routing, auth, session management, skill injection, and tool calling. Zerohand wraps it in `pi-executor.ts` and adds its own tool definitions (web search).
+**Pi.dev as the LLM execution layer** — Handles model routing, auth, session management, skill injection, and tool calling. Pawn wraps it in `pi-executor.ts` and adds its own tool definitions (web search).
 
 **Polling over event-driven scheduling** — The execution engine polls every 2 seconds for queued runs; the trigger manager polls every 30 seconds for due cron triggers. Simple, reliable, easy to debug.
 

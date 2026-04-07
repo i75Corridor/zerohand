@@ -38,7 +38,7 @@ Add 13 new CLI commands across 4 entity groups (triggers, approvals, budgets, se
 
 **Files:** Modify: `packages/cli/src/api-client.ts`
 
-**Approach:** Add typed methods matching REST routes for all 4 groups. Import `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, `ApiSetting` from `@zerohand/shared`.
+**Approach:** Add typed methods matching REST routes for all 4 groups. Import `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, `ApiSetting` from `@pawn/shared`.
 
 - [ ] **Unit 2: Triggers commands**
 
@@ -72,6 +72,6 @@ Add 13 new CLI commands across 4 entity groups (triggers, approvals, budgets, se
 
 ## Sources & References
 
-- Related issue: i75Corridor/zerohand#36
+- Related issue: i75Corridor/pawn#36
 - Pattern: `packages/cli/src/commands/pipelines.ts`
 - Pattern: `packages/cli/src/commands/packages.ts`

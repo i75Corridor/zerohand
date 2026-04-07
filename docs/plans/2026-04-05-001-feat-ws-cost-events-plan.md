@@ -15,7 +15,7 @@ Supplement the Costs page's 60-second polling with real-time WebSocket updates u
 
 The Costs page uses `refetchInterval: 60_000` to poll for cost data. When a run completes and records costs, there's up to a 1-minute delay before the page reflects the change. The rest of the system already uses WebSocket broadcasts for real-time updates — costs is the outlier.
 
-GitHub issue: i75Corridor/zerohand#39
+GitHub issue: i75Corridor/pawn#39
 
 ## Requirements Trace
 
@@ -152,5 +152,5 @@ GitHub issue: i75Corridor/zerohand#39
 
 ## Sources & References
 
-- GitHub issue: i75Corridor/zerohand#39
+- GitHub issue: i75Corridor/pawn#39
 - Related code: `server/src/services/execution-engine.ts`, `ui/src/hooks/useDataChangedListener.ts`, `ui/src/pages/Costs.tsx`

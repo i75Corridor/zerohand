@@ -194,7 +194,7 @@ The approvals route already broadcasts `data_changed` events via `WsManager`, en
 
 ## Sources & References
 
-- Related issue: i75Corridor/zerohand#34
-- Related issue: i75Corridor/zerohand#32 (UI data_changed listener)
-- Related PR: i75Corridor/zerohand#49 (agent tools — extends WsDataChanged)
+- Related issue: i75Corridor/pawn#34
+- Related issue: i75Corridor/pawn#32 (UI data_changed listener)
+- Related PR: i75Corridor/pawn#49 (agent tools — extends WsDataChanged)
 - Pattern: `server/src/routes/approvals.ts` (existing WsManager usage)

@@ -15,7 +15,7 @@ Add a `DashboardContext` system that pre-fetches key system state (active runs, 
 
 The agent-native audit scored Context Injection at 20% (3/15). The global agent only receives page path, pipeline name, and run ID. It has no awareness of system state without making explicit tool calls — meaning it starts every conversation blind to active runs, costs, approvals, and failures. This forces unnecessary tool-call round trips and makes the agent less helpful on first response.
 
-GitHub issue: i75Corridor/zerohand#31
+GitHub issue: i75Corridor/pawn#31
 
 ## Requirements Trace
 
@@ -222,6 +222,6 @@ GitHub issue: i75Corridor/zerohand#31
 
 ## Sources & References
 
-- GitHub issue: i75Corridor/zerohand#31
+- GitHub issue: i75Corridor/pawn#31
 - Related code: `server/src/services/global-agent.ts`, `server/src/services/tools/get-system-stats.ts`, `server/src/services/budget-guard.ts`
 - Institutional learning: `docs/solutions/best-practices/adding-agent-tools-dual-system-architecture-2026-04-04.md`

@@ -9,13 +9,13 @@ date: 2026-04-05
 
 ## Overview
 
-Add a multi-step onboarding modal for first-time users and a persistent Help page listing agent capabilities. The onboarding modal appears once on first visit (localStorage-based detection), walks through 5 steps covering Zerohand's core concepts, and is dismissable. A "Help" nav item in the sidebar provides ongoing access to the capability reference and a "Retake tour" trigger.
+Add a multi-step onboarding modal for first-time users and a persistent Help page listing agent capabilities. The onboarding modal appears once on first visit (localStorage-based detection), walks through 5 steps covering Pawn's core concepts, and is dismissable. A "Help" nav item in the sidebar provides ongoing access to the capability reference and a "Retake tour" trigger.
 
 ## Problem Frame
 
 The agent-native audit scored Capability Discovery at 71%. First-time users see an empty dashboard with minimal guidance — no walkthrough, no capability reference, no "getting started" tutorial. This creates a poor first impression and slows adoption.
 
-GitHub issue: i75Corridor/zerohand#38
+GitHub issue: i75Corridor/pawn#38
 
 ## Requirements Trace
 
@@ -48,7 +48,7 @@ GitHub issue: i75Corridor/zerohand#38
 
 ## Key Technical Decisions
 
-- **localStorage flag rather than API-based detection**: The issue suggests localStorage. It's simpler — no backend changes, no new DB table, instant on page load. The flag `zerohand_onboarded` is set when the user completes or dismisses the modal.
+- **localStorage flag rather than API-based detection**: The issue suggests localStorage. It's simpler — no backend changes, no new DB table, instant on page load. The flag `pawn_onboarded` is set when the user completes or dismisses the modal.
 - **Multi-step modal rather than spotlight tour**: A spotlight tour (highlighting UI elements) requires a tour library and tight coupling to the DOM layout. A multi-step modal with illustrations/icons is self-contained, easier to maintain, and sufficient for 5 conceptual steps.
 - **Reuse existing Modal component**: The `Modal.tsx` wrapper already handles overlay, animation, portal rendering, and close behavior. The onboarding modal extends it with step navigation (prev/next/skip).
 - **Help page as a real route rather than a modal**: The Help page serves as a persistent reference. Making it a route means it's linkable, bookmarkable, and accessible from the sidebar like other pages.
@@ -57,7 +57,7 @@ GitHub issue: i75Corridor/zerohand#38
 
 ### Resolved During Planning
 
-- **First-run detection method**: localStorage flag `zerohand_onboarded`. Set to `"true"` on modal completion or dismiss.
+- **First-run detection method**: localStorage flag `pawn_onboarded`. Set to `"true"` on modal completion or dismiss.
 - **Tour step count and content**: 5 steps per issue acceptance criteria — mapped to core concepts.
 - **Help page content scope**: Agent capabilities (from SYSTEM_PROMPT concepts), skill types, key navigation hints. Keep it static — no API calls needed.
 
@@ -88,7 +88,7 @@ GitHub issue: i75Corridor/zerohand#38
   - Step indicator dots showing progress
   - Use the existing `Modal` component as the base with `maxWidth="max-w-lg"`
   - The 5 steps:
-    1. Welcome to Zerohand — overview of the orchestration system
+    1. Welcome to Pawn — overview of the orchestration system
     2. Pipelines — sequential steps, skills, input schemas
     3. Running pipelines — triggers (cron, webhook, manual), monitoring runs
     4. Agent chat — the copilot sidebar, natural language commands
@@ -159,8 +159,8 @@ GitHub issue: i75Corridor/zerohand#38
   - **Layout.tsx**:
     - Add `HelpCircle` to the `bottomNav` array (alongside Settings) with route `/help`, label "Help", accent color (e.g., amber)
     - Add accent color mappings for the new nav item
-    - Add first-run detection: on mount, check `localStorage.getItem("zerohand_onboarded")`. If null, show the OnboardingModal
-    - When modal closes (complete or skip), set `localStorage.setItem("zerohand_onboarded", "true")`
+    - Add first-run detection: on mount, check `localStorage.getItem("pawn_onboarded")`. If null, show the OnboardingModal
+    - When modal closes (complete or skip), set `localStorage.setItem("pawn_onboarded", "true")`
     - Import and render `OnboardingModal` conditionally
   - **App.tsx**:
     - Add lazy import for Help page
@@ -188,7 +188,7 @@ GitHub issue: i75Corridor/zerohand#38
 
 - **Interaction graph:** The OnboardingModal renders in Layout (root level), so it's available on all pages. No callbacks or middleware affected.
 - **Error propagation:** All changes are UI-only with no API calls. localStorage operations cannot throw in a way that breaks rendering (wrapped in try/catch by convention).
-- **State lifecycle risks:** The localStorage flag is permanent once set. No expiry, no versioning. If onboarding content changes significantly in the future, a versioned key (e.g., `zerohand_onboarded_v2`) could force re-display.
+- **State lifecycle risks:** The localStorage flag is permanent once set. No expiry, no versioning. If onboarding content changes significantly in the future, a versioned key (e.g., `pawn_onboarded_v2`) could force re-display.
 - **API surface parity:** No backend changes. CLI and MCP are unaffected.
 - **Unchanged invariants:** Dashboard empty state, existing modals, sidebar navigation for other items all unchanged.
 
@@ -202,5 +202,5 @@ GitHub issue: i75Corridor/zerohand#38
 
 ## Sources & References
 
-- GitHub issue: i75Corridor/zerohand#38
+- GitHub issue: i75Corridor/pawn#38
 - Related code: `ui/src/components/Modal.tsx`, `ui/src/components/Layout.tsx`, `ui/src/App.tsx`
