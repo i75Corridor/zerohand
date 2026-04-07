@@ -141,7 +141,7 @@ function ScriptEditor({
   const dirty = content !== script.content;
 
   return (
-    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl overflow-hidden">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-pawn-surface-800">
         <span className="font-mono text-xs text-violet-300">{script.filename}</span>
         <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ function ScriptEditor({
             <button
               onClick={() => save.mutate()}
               disabled={save.isPending}
-              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-button transition-colors disabled:opacity-50"
             >
               {saved ? <Check size={12} /> : <Save size={12} />}
               {save.isPending ? "Saving..." : saved ? "Saved" : "Save"}
@@ -193,10 +193,10 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
   });
 
   return (
-    <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-xl overflow-hidden">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-card overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-pawn-surface-800">
         <input
-          className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+          className="flex-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs font-mono text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
           placeholder="filename.py"
           value={filename}
           onChange={(e) => setFilename(e.target.value.toLowerCase())}
@@ -205,7 +205,7 @@ function NewScriptForm({ skillName, onCreated, onCancel }: { skillName: string; 
         <button
           onClick={() => create.mutate()}
           disabled={!filename || !content || create.isPending}
-          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-semibold rounded-button transition-colors disabled:opacity-40"
         >
           <Save size={12} /> Create
         </button>
@@ -273,7 +273,7 @@ function TagInput({
           {tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1.5 px-2 py-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-lg text-xs text-pawn-surface-300 font-mono"
+              className="inline-flex items-center gap-1.5 px-2 py-1 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button text-xs text-pawn-surface-300 font-mono"
             >
               <Icon size={10} className="text-pawn-surface-500 flex-shrink-0" />
               {tag}
@@ -294,7 +294,7 @@ function TagInput({
           {addOptions ? (
             <select
               autoFocus
-              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-lg px-3 py-1.5 text-xs text-pawn-surface-200 focus:outline-none focus:border-pawn-gold-500 font-mono"
+              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-surface-200 focus:outline-none focus:border-pawn-gold-500 font-mono"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
             >
@@ -306,7 +306,7 @@ function TagInput({
           ) : (
             <input
               autoFocus
-              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-lg px-3 py-1.5 text-xs text-pawn-surface-300 font-mono placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
+              className="flex-1 bg-pawn-surface-900 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-surface-300 font-mono placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
               placeholder={placeholder ?? "Enter value…"}
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
@@ -319,7 +319,7 @@ function TagInput({
           <button
             onClick={() => commit(inputVal)}
             disabled={!inputVal.trim()}
-            className="text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-lg disabled:opacity-40 transition-colors"
+            className="text-xs px-2.5 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button disabled:opacity-40 transition-colors"
           >
             Add
           </button>
@@ -404,7 +404,7 @@ function SplitSkillEditor({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 text-xs px-4 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-xs px-4 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white font-medium rounded-button transition-colors disabled:opacity-50"
           >
             <Save size={13} />
             {saving ? "Saving…" : "Save Changes"}
@@ -425,7 +425,7 @@ function SplitSkillEditor({
             {/* Qualified name — readonly */}
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Qualified Name</label>
-              <div className="flex items-center gap-2 px-3.5 py-2 bg-pawn-surface-800/40 border border-pawn-surface-700/40 rounded-lg">
+              <div className="flex items-center gap-2 px-3.5 py-2 bg-pawn-surface-800/40 border border-pawn-surface-700/40 rounded-button">
                 <span className="text-xs font-mono text-pawn-surface-400 flex-1 truncate">{qualifiedName}</span>
                 <span className="text-pawn-surface-600 flex-shrink-0">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -437,7 +437,7 @@ function SplitSkillEditor({
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Description</label>
               <textarea
-                className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-lg px-3.5 py-2.5 text-sm text-pawn-surface-200 placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500/20 transition-all resize-none"
+                className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button px-3.5 py-2.5 text-sm text-pawn-surface-200 placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500/20 transition-all resize-none"
                 rows={3}
                 placeholder="What does this skill do?"
                 value={fm.description}
@@ -649,7 +649,7 @@ export default function SkillDetail() {
             </button>
           </div>
         </div>
-        <pre className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-4 text-xs text-pawn-surface-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
+        <pre className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-4 text-xs text-pawn-surface-300 font-mono overflow-auto whitespace-pre-wrap leading-relaxed">
           {skill.skillMd}
         </pre>
       </div>

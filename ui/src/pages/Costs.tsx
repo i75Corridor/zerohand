@@ -69,7 +69,7 @@ export default function Costs() {
               <button
                 key={r.value}
                 onClick={() => setRange(r.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-button text-xs font-medium transition-colors ${
                   range === r.value
                     ? "bg-pawn-gold-600 text-white"
                     : "bg-pawn-surface-800/60 text-pawn-surface-400 hover:text-pawn-surface-200 hover:bg-pawn-surface-800"
@@ -121,7 +121,7 @@ export default function Costs() {
       </div>
 
       {/* Line chart — spend over time */}
-      <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl overflow-hidden mb-8">
+      <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden mb-8">
         <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
           <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Spend Over Time</h2>
         </div>
@@ -171,7 +171,7 @@ export default function Costs() {
       {/* Bar charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* By skill */}
-        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl overflow-hidden">
+        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden">
           <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
             <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">By Skill</h2>
           </div>
@@ -215,7 +215,7 @@ export default function Costs() {
         </div>
 
         {/* By pipeline */}
-        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl overflow-hidden">
+        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden">
           <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
             <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">By Pipeline</h2>
           </div>

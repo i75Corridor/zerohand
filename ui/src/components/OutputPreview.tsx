@@ -26,7 +26,7 @@ const markdownComponents: Components = {
         src={resolved}
         alt={alt ?? ""}
         loading="lazy"
-        className="rounded-xl max-w-full border border-pawn-surface-700/60 my-4"
+        className="rounded-card max-w-full border border-pawn-surface-700/60 my-4"
       />
     );
   },
@@ -71,7 +71,7 @@ export default memo(function OutputPreview({ text, compact = false }: OutputPrev
         src={fileUrl(text.trim())}
         alt="Pipeline output"
         loading="lazy"
-        className="rounded-xl max-w-full border border-pawn-surface-700/60"
+        className="rounded-card max-w-full border border-pawn-surface-700/60"
         style={compact ? { maxHeight: "300px", objectFit: "contain" } : undefined}
         onError={(e) => {
           const img = e.currentTarget;

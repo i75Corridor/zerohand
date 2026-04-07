@@ -62,7 +62,7 @@ export default function ModelSelector({
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="w-full appearance-none bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 cursor-pointer"
+        className="w-full appearance-none bg-pawn-surface-800 border border-pawn-surface-700 rounded-button pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 cursor-pointer"
       >
         {allowNull && <option value="">{defaultLabel}</option>}
         {providers.map((provider) => (

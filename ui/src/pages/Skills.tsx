@@ -30,7 +30,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   const nameValid = /^[a-z0-9][a-z0-9_-]*$/.test(name);
 
   return (
-    <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-xl p-4 mb-4">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-card p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-white">New Skill</span>
         <button onClick={onCancel} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
@@ -40,7 +40,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
       <div className="space-y-3">
         <div>
           <input
-            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-lg px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
             placeholder="skill-name (lowercase, hyphens ok)"
             value={name}
             onChange={(e) => { setName(e.target.value.toLowerCase()); setError(""); }}
@@ -51,7 +51,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
           )}
         </div>
         <input
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-lg px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
           placeholder="Description (optional)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -64,7 +64,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
           <button
             onClick={() => create.mutate()}
             disabled={!nameValid || create.isPending}
-            className="px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button transition-colors disabled:opacity-40"
           >
             {create.isPending ? "Creating..." : "Create Skill"}
           </button>
@@ -111,7 +111,7 @@ export default function Skills() {
           !creating ? (
             <button
               onClick={() => setCreating(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-xl transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors"
             >
               <Plus size={13} /> New Skill
             </button>
@@ -145,7 +145,7 @@ export default function Skills() {
                   <Link
                     key={`${ns}/${skill.name}`}
                     to={skillDetailPath(skill)}
-                    className="flex items-center gap-4 px-4 py-3 bg-pawn-surface-900/50 border border-pawn-surface-800/60 rounded-xl hover:border-pawn-surface-700 transition-colors"
+                    className="flex items-center gap-4 px-4 py-3 bg-pawn-surface-900/50 border border-pawn-surface-800/60 rounded-card hover:border-pawn-surface-700 transition-colors"
                   >
                     <Cpu size={15} className="text-violet-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">

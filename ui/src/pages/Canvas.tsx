@@ -73,7 +73,7 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
   });
 
   return (
-    <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/60 rounded-xl overflow-hidden">
+    <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/60 rounded-card overflow-hidden">
       {/* Run header */}
       <button
         className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-pawn-surface-800/30 transition-colors text-left"

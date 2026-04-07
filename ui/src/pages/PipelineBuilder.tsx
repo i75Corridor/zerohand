@@ -86,7 +86,7 @@ function StepForm({
       <div>
         <label className="block text-xs text-pawn-surface-400 mb-1">Step name</label>
         <input
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
           value={step.name}
           onChange={(e) => onChange({ ...step, name: e.target.value })}
           placeholder="Unnamed step"
@@ -96,7 +96,7 @@ function StepForm({
       <div>
         <label className="block text-xs text-pawn-surface-400 mb-1">Skill</label>
         <select
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
           value={step.skillName}
           onChange={(e) => onChange({ ...step, skillName: e.target.value })}
         >
@@ -140,7 +140,7 @@ function StepForm({
           </div>
         )}
         <textarea
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 font-mono leading-relaxed resize-y"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 font-mono leading-relaxed resize-y"
           rows={6}
           value={step.promptTemplate}
           onChange={(e) => onChange({ ...step, promptTemplate: e.target.value })}
@@ -179,7 +179,7 @@ function StepForm({
             type="number"
             min="10"
             max="3600"
-            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
             value={step.timeoutSeconds}
             onChange={(e) => onChange({ ...step, timeoutSeconds: parseInt(e.target.value) || 300 })}
           />
@@ -237,7 +237,7 @@ function StepList({
       {steps.map((step, i) => (
         <div key={i} className="relative group">
           <button
-            className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+            className={`w-full text-left px-4 py-3 rounded-button border transition-colors ${
               selectedIndex === i
                 ? "bg-indigo-900/20 border-indigo-500/40"
                 : "bg-pawn-surface-800 border-pawn-surface-700 hover:border-pawn-surface-600"
@@ -297,7 +297,7 @@ function StepList({
       ))}
 
       <button
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-pawn-surface-800 hover:border-indigo-500/40 text-pawn-surface-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors text-sm"
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-pawn-surface-800 hover:border-indigo-500/40 text-pawn-surface-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-button transition-colors text-sm"
         onClick={onAdd}
       >
         <Plus size={14} /> Add step
@@ -317,7 +317,7 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
   return (
     <div className="space-y-2">
       {fields.map((f, i) => (
-        <div key={i} className="flex items-start gap-2 p-3 bg-pawn-surface-800/50 rounded-lg">
+        <div key={i} className="flex items-start gap-2 p-3 bg-pawn-surface-800/50 rounded-button">
           <div className="flex-1 space-y-2">
             <div className="flex gap-2">
               <input
@@ -619,7 +619,7 @@ export default function PipelineBuilder() {
           <div className="flex items-center gap-3">
             {error && <span className="text-xs text-rose-400">{error}</span>}
             <button
-              className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
+              className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button disabled:opacity-50"
               disabled={saving || loading}
               onClick={save}
             >
@@ -634,12 +634,12 @@ export default function PipelineBuilder() {
         {/* Left: step list + metadata */}
         <div className="col-span-2 space-y-6">
           {/* Metadata */}
-          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-5 space-y-4">
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-5 space-y-4">
             <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Pipeline</h2>
             <div>
               <label className="block text-xs text-pawn-surface-400 mb-1">Name <span className="text-rose-400">*</span></label>
               <input
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="My Pipeline"
@@ -648,7 +648,7 @@ export default function PipelineBuilder() {
             <div>
               <label className="block text-xs text-pawn-surface-400 mb-1">Description</label>
               <textarea
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 resize-none"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 resize-none"
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -671,7 +671,7 @@ export default function PipelineBuilder() {
           </div>
 
           {/* Steps */}
-          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-5">
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-5">
             <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
               Steps ({steps.length})
             </h2>
@@ -689,7 +689,7 @@ export default function PipelineBuilder() {
 
         {/* Right: step editor */}
         <div className="col-span-3">
-          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-5 sticky top-6">
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-5 sticky top-6">
             {selectedStep !== null && steps[selectedStep] ? (
               <>
                 <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">

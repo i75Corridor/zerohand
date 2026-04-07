@@ -108,7 +108,7 @@ export default function Dashboard() {
   if (runsError) {
     return (
       <div className="p-8 max-w-lg" role="alert">
-        <div className="flex items-start gap-3 p-4 bg-rose-950/30 border border-rose-900/50 rounded-xl">
+        <div className="flex items-start gap-3 p-4 bg-rose-950/30 border border-rose-900/50 rounded-card">
           <AlertCircle size={16} className="text-rose-400 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium text-rose-300 mb-1">Failed to load dashboard</p>
@@ -128,7 +128,7 @@ export default function Dashboard() {
         actions={
           <Link
             to="/pipelines/new"
-            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-lg text-xs font-medium btn-press"
+            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button text-xs font-medium btn-press"
           >
             New Pipeline
           </Link>
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
       {/* Cancel error banner */}
       {cancelError && (
-        <div className="mb-4 flex items-start gap-2 p-3 bg-rose-950/30 border border-rose-900/50 rounded-xl" role="alert">
+        <div className="mb-4 flex items-start gap-2 p-3 bg-rose-950/30 border border-rose-900/50 rounded-card" role="alert">
           <AlertCircle size={14} className="text-rose-400 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-rose-300">Failed to cancel run: {cancelError}</p>
           <button onClick={() => setCancelError(null)} className="ml-auto text-xs text-pawn-surface-500 hover:text-pawn-surface-300" aria-label="Dismiss error">Dismiss</button>

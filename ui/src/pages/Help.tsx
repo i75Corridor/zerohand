@@ -77,10 +77,10 @@ export default function Help() {
       <PageHeader title="Help & Reference" subtitle="Learn" />
 
       {/* Getting Started */}
-      <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl p-6 mb-8">
+      <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card p-6 mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-pawn-gold-500/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-button bg-pawn-gold-500/10 flex items-center justify-center">
               <Rocket className="w-5 h-5 text-pawn-gold-400" />
             </div>
             <div>
@@ -90,7 +90,7 @@ export default function Help() {
           </div>
           <button
             onClick={() => setShowTour(true)}
-            className="px-4 py-2 text-sm font-medium text-white bg-pawn-gold-600 hover:bg-pawn-gold-500 rounded-lg transition-colors btn-press"
+            className="px-4 py-2 text-sm font-medium text-white bg-pawn-gold-600 hover:bg-pawn-gold-500 rounded-button transition-colors btn-press"
           >
             Take the Tour
           </button>
@@ -104,7 +104,7 @@ export default function Help() {
           {CONCEPTS.map((c) => (
             <div
               key={c.name}
-              className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl p-5"
+              className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card p-5"
             >
               <div className="flex items-center gap-2.5 mb-2">
                 <c.icon className="w-4 h-4 text-pawn-surface-400" />
@@ -122,7 +122,7 @@ export default function Help() {
         <p className="text-sm text-pawn-surface-400 mb-4">
           The AI copilot in the sidebar can perform all of these actions through natural language:
         </p>
-        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl overflow-hidden">
+        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden">
           {CAPABILITIES.map((cap, i) => (
             <div
               key={cap.label}
@@ -141,7 +141,7 @@ export default function Help() {
       {/* Tips */}
       <div>
         <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">Quick Tips</h2>
-        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl p-5">
+        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card p-5">
           <ul className="space-y-2 text-sm text-pawn-surface-400">
             <li className="flex items-start gap-2">
               <MessageSquare className="w-4 h-4 text-pawn-surface-500 mt-0.5 shrink-0" />

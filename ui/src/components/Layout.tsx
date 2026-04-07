@@ -35,7 +35,7 @@ function ApprovalsNavItem() {
           <CheckSquare size={16} className={isActive ? "" : "group-hover:text-emerald-400 transition-colors"} />
           <span className="flex-1">Approvals</span>
           {pending.length > 0 && (
-            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-caption font-bold px-1.5 py-0.5 rounded-md leading-none tabular-nums">
+            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-caption font-bold px-1.5 py-0.5 rounded-badge leading-none tabular-nums">
               {pending.length}
             </span>
           )}

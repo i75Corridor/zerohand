@@ -55,7 +55,7 @@ function StepCard({
   }, [displayText, isRunning]);
 
   return (
-    <div className={`border border-pawn-surface-800 border-l-4 ${leftBorderColor} rounded-xl overflow-hidden`}>
+    <div className={`border border-pawn-surface-800 border-l-4 ${leftBorderColor} rounded-card overflow-hidden`}>
       <div className="flex items-center bg-pawn-surface-900/40 hover:bg-pawn-surface-900/60 transition-colors">
         <button
           className="flex-1 flex items-center gap-3 px-4 py-3 text-left"
@@ -278,7 +278,7 @@ export default function RunDetail() {
           <span className={`text-sm font-medium ${statusColor}`}>{run.status}</span>
           {(run.status === "running" || run.status === "queued") && (
             <button
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-400 border border-rose-800/60 rounded-lg hover:bg-rose-950/40 transition-colors"
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-400 border border-rose-800/60 rounded-button hover:bg-rose-950/40 transition-colors"
               aria-label="Stop run"
               onClick={() => {
                 void api.cancelRun(id!).then(() => {
@@ -309,14 +309,14 @@ export default function RunDetail() {
       </div>
 
       {run.error && (
-        <div className="mb-6 p-4 bg-rose-950/30 border border-rose-900/50 rounded-lg text-sm text-rose-300">
+        <div className="mb-6 p-4 bg-rose-950/30 border border-rose-900/50 rounded-card text-sm text-rose-300">
           {run.error}
         </div>
       )}
 
       {/* Step-by-step pause banner */}
       {run.status === "paused" && (
-        <div className="mb-6 flex items-center gap-3 px-4 py-3 bg-amber-900/20 border border-amber-700/40 rounded-xl">
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 bg-amber-900/20 border border-amber-700/40 rounded-card">
           <span className="text-sm text-amber-300 flex-1">Paused after step — review the output then continue.</span>
           <button
             onClick={() => {
@@ -325,7 +325,7 @@ export default function RunDetail() {
                 queryClient.invalidateQueries({ queryKey: ["run-steps", id] });
               });
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-pawn-surface-950 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-pawn-surface-950 rounded-button transition-colors"
           >
             <SkipForward size={12} />
             Continue to Next Step
@@ -372,7 +372,7 @@ export default function RunDetail() {
             return (
               <div
                 key={ps.stepIndex}
-                className="border border-pawn-surface-800 border-l-4 border-l-pawn-surface-800 rounded-xl overflow-hidden opacity-40"
+                className="border border-pawn-surface-800 border-l-4 border-l-pawn-surface-800 rounded-card overflow-hidden opacity-40"
               >
                 <div className="flex items-center gap-3 px-4 py-3 bg-pawn-surface-900/40">
                   <ChevronRight size={14} className="text-pawn-surface-600" />

@@ -82,7 +82,7 @@ function SecurityErrorPanel({
   };
 
   return (
-    <div className="mb-4 bg-rose-950/20 border border-rose-500/20 rounded-xl p-4">
+    <div className="mb-4 bg-rose-950/20 border border-rose-500/20 rounded-card p-4">
       <div className="flex items-center gap-2 mb-3">
         <ShieldAlert size={14} className="text-rose-400 flex-shrink-0" />
         <span className="text-sm font-semibold text-rose-300">Security check failed</span>
@@ -106,7 +106,7 @@ function SecurityErrorPanel({
         <button
           onClick={onForce}
           disabled={forcing}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-medium rounded-button transition-colors disabled:opacity-50"
         >
           <Download size={11} />
           {forcing ? "Installing..." : "Install anyway"}
@@ -126,7 +126,7 @@ function ModelWarningPanel({
   onDismiss: () => void;
 }) {
   return (
-    <div className="mb-4 bg-amber-950/20 border border-amber-500/20 rounded-xl p-4">
+    <div className="mb-4 bg-amber-950/20 border border-amber-500/20 rounded-card p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <AlertTriangle size={14} className="text-amber-400 flex-shrink-0" />
@@ -167,7 +167,7 @@ function InstalledCard({
   uninstalling: boolean;
 }) {
   return (
-    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-4 flex flex-col gap-3 card-hover">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -181,27 +181,27 @@ function InstalledCard({
               <ExternalLink size={11} className="text-pawn-surface-500" />
             </a>
             {(pkg.metadata as Record<string, unknown> | null)?.origin === "authored" && (
-              <span className="text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-md">
+              <span className="text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-badge">
                 authored
               </span>
             )}
             {(pkg.metadata as Record<string, unknown> | null)?.isLocal === true && (
-              <span className="text-xs font-medium text-pawn-surface-400 bg-pawn-surface-700/40 border border-pawn-surface-700/50 px-1.5 py-0.5 rounded-md">
+              <span className="text-xs font-medium text-pawn-surface-400 bg-pawn-surface-700/40 border border-pawn-surface-700/50 px-1.5 py-0.5 rounded-badge">
                 local
               </span>
             )}
             {pkg.repoNotFound ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-md" title="The GitHub repository could not be found. It may have been deleted, renamed, or made private.">
+              <span className="flex items-center gap-1 text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-badge" title="The GitHub repository could not be found. It may have been deleted, renamed, or made private.">
                 <AlertTriangle size={10} />
                 Repo not found
               </span>
             ) : pkg.updateAvailable ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
+              <span className="flex items-center gap-1 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-badge">
                 <ArrowUpCircle size={10} />
                 Update available
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">
+              <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-badge">
                 <CheckCircle size={10} />
                 Up to date
               </span>
@@ -269,7 +269,7 @@ function DiscoverCard({
   installing: boolean;
 }) {
   return (
-    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-4 flex flex-col gap-3 card-hover">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <a
@@ -305,7 +305,7 @@ function DiscoverCard({
         <button
           onClick={onInstall}
           disabled={pkg.installed || installing}
-          className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-500/10 text-pawn-gold-400 border border-pawn-gold-500/20 hover:bg-pawn-gold-600 hover:text-white hover:border-pawn-gold-600 text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-500/10 text-pawn-gold-400 border border-pawn-gold-500/20 hover:bg-pawn-gold-600 hover:text-white hover:border-pawn-gold-600 text-xs font-medium rounded-button disabled:opacity-40 transition-colors"
         >
           <Download size={11} />
           {pkg.installed ? "Installed" : installing ? "Installing..." : "Install"}
@@ -404,7 +404,7 @@ export default function Packages() {
           <button
             onClick={() => checkUpdates.mutate()}
             disabled={checkUpdates.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-xs font-medium rounded-button transition-colors disabled:opacity-50"
           >
             <RefreshCw size={12} className={checkUpdates.isPending ? "animate-spin" : ""} />
             {checkUpdates.isPending ? "Checking..." : "Check for updates"}
@@ -463,7 +463,7 @@ export default function Packages() {
           <div className="relative flex-1">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-pawn-surface-500" />
             <input
-              className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button pl-8 pr-3 py-2 text-sm text-white placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
               placeholder="Search GitHub for pawn packages..."
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}
@@ -473,7 +473,7 @@ export default function Packages() {
           <button
             onClick={handleDiscover}
             disabled={loadingDiscover}
-            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button transition-colors disabled:opacity-50"
           >
             {loadingDiscover ? "Searching..." : "Search"}
           </button>
@@ -506,7 +506,7 @@ export default function Packages() {
         )}
 
         {/* Manual URL install */}
-        <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-4">
+        <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-4">
           <div className="flex items-center gap-2 mb-2">
             <Link size={13} className="text-pawn-surface-500" />
             <span className="text-xs font-medium text-pawn-surface-400">Install from URL</span>
@@ -516,7 +516,7 @@ export default function Packages() {
           </p>
           <div className="flex gap-2">
             <input
-              className="flex-1 bg-pawn-surface-950 border border-pawn-surface-800 rounded-xl px-3 py-1.5 text-xs text-pawn-gold-500 font-mono placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
+              className="flex-1 bg-pawn-surface-950 border border-pawn-surface-800 rounded-button px-3 py-1.5 text-xs text-pawn-gold-500 font-mono placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
               placeholder="https://github.com/owner/repo"
               value={manualUrl}
               onChange={(e) => setManualUrl(e.target.value)}
@@ -525,7 +525,7 @@ export default function Packages() {
             <button
               onClick={handleInstallManual}
               disabled={!manualUrl.trim() || (install.isPending && installingId === "manual")}
-              className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-xs font-medium rounded-xl disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-xs font-medium rounded-button disabled:opacity-50 transition-colors"
             >
               <Download size={11} />
               {install.isPending && installingId === "manual" ? "Installing..." : "Install"}
