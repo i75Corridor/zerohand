@@ -3,7 +3,7 @@ import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCi
 import { useState } from "react";
 import { api } from "../lib/api.ts";
 import ModelSelector from "../components/ModelSelector.tsx";
-import type { ApiMcpServer, ApiMcpTool } from "@zerohand/shared";
+import type { ApiMcpServer, ApiMcpTool } from "@pawn/shared";
 
 // ── Active Models ─────────────────────────────────────────────────────────────
 

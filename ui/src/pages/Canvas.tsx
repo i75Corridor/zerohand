@@ -6,7 +6,7 @@ import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import OutputPreview from "../components/OutputPreview.tsx";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiStepRun, ApiPipelineRun } from "@zerohand/shared";
+import type { ApiStepRun, ApiPipelineRun } from "@pawn/shared";
 
 function getOutputText(step: ApiStepRun): string {
   return (step.output as { text?: string })?.text ?? "";

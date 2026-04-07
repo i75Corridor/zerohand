@@ -12,7 +12,7 @@ import {
 } from "@mariozechner/pi-coding-agent";
 import { getProviders, getEnvApiKey } from "@mariozechner/pi-ai";
 import { resolveModel } from "./ollama-provider.js";
-import type { StepRunEventType } from "@zerohand/shared";
+import type { StepRunEventType } from "@pawn/shared";
 import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { skillsDir as getSkillsDir } from "./paths.js";

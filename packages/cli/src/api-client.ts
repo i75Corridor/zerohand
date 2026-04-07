@@ -11,7 +11,7 @@ import type {
   ApiSkillBundle,
   ApiStepRun,
   ApiTrigger,
-} from "@zerohand/shared";
+} from "@pawn/shared";
 
 export class ApiError extends Error {
   constructor(

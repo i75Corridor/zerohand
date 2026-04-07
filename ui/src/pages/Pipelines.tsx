@@ -7,7 +7,7 @@ import cronstrue from "cronstrue";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiPipeline, ApiTrigger } from "@zerohand/shared";
+import type { ApiPipeline, ApiTrigger } from "@pawn/shared";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

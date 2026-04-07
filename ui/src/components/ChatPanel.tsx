@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, StopCircle } from "lucide-react";
-import type { WsIncomingChat } from "@zerohand/shared";
+import type { WsIncomingChat } from "@pawn/shared";
 
 interface ChatMessage {
   action: "steer" | "followUp";

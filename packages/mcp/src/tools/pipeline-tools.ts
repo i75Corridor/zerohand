@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../api-client.js";
-import type { ApiPipeline } from "@zerohand/shared";
+import type { ApiPipeline } from "@pawn/shared";
 
 function formatPipeline(p: ApiPipeline): string {
   const lines = [`Pipeline: ${p.name} (${p.id})`];

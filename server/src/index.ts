@@ -7,7 +7,7 @@ import cors from "cors";
 // @ts-ignore - detect-port types
 import detectPort from "detect-port";
 import EmbeddedPostgres from "embedded-postgres";
-import { createDb, ensurePostgresDatabase, applyPendingMigrations } from "@zerohand/db";
+import { createDb, ensurePostgresDatabase, applyPendingMigrations } from "@pawn/db";
 import { WsManager } from "./ws/index.js";
 import { ExecutionEngine } from "./services/execution-engine.js";
 import { TriggerManager } from "./services/trigger-manager.js";

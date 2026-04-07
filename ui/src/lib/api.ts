@@ -18,7 +18,7 @@ import type {
   ApiPipelineVersion,
   ApiPackagePreview,
   ApiModelWarning,
-} from "@zerohand/shared";
+} from "@pawn/shared";
 
 const BASE = "/api";
 
@@ -191,10 +191,10 @@ export const api = {
   },
 
   // Settings
-  getSettings: () => request<import("@zerohand/shared").ApiSetting[]>("/settings"),
-  getSetting: (key: string) => request<import("@zerohand/shared").ApiSetting>(`/settings/${key}`),
+  getSettings: () => request<import("@pawn/shared").ApiSetting[]>("/settings"),
+  getSetting: (key: string) => request<import("@pawn/shared").ApiSetting>(`/settings/${key}`),
   updateSetting: (key: string, value: unknown) =>
-    request<import("@zerohand/shared").ApiSetting>(`/settings/${key}`, {
+    request<import("@pawn/shared").ApiSetting>(`/settings/${key}`, {
       method: "PUT",
       body: JSON.stringify({ value }),
     }),

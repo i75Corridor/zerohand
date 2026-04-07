@@ -2,7 +2,7 @@ import { eq, asc } from "drizzle-orm";
 import type { SnapshotStep } from "./run-factory.js";
 import { join, resolve } from "node:path";
 import { mkdirSync } from "node:fs";
-import type { Db } from "@zerohand/db";
+import type { Db } from "@pawn/db";
 import {
   pipelineRuns,
   stepRuns,
@@ -11,10 +11,10 @@ import {
   pipelines,
   approvals,
   mcpServers,
-} from "@zerohand/db";
+} from "@pawn/db";
 import { McpClientPool } from "./mcp-client.js";
 import { mcpToolsToToolDefinitions } from "./mcp-tool-bridge.js";
-import type { StepRunEventType, WsIncomingChat, RetryConfig } from "@zerohand/shared";
+import type { StepRunEventType, WsIncomingChat, RetryConfig } from "@pawn/shared";
 import type { WsManager } from "../ws/index.js";
 import { runSkillStep } from "./pi-executor.js";
 import { dataDir, skillsDir as getSkillsDir } from "./paths.js";

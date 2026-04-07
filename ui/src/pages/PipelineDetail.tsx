@@ -9,7 +9,7 @@ import { api } from "../lib/api.ts";
 import StatusBadge from "../components/StatusBadge.tsx";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun, ApiValidationResult, ApiPipelineVersion, ApiPackagePreview } from "@zerohand/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun, ApiValidationResult, ApiPipelineVersion, ApiPackagePreview } from "@pawn/shared";
 
 
 // ── Custom reactflow step node ────────────────────────────────────────────────

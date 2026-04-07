@@ -8,8 +8,8 @@ import {
 import { resolveModel } from "./ollama-provider.js";
 import { join } from "node:path";
 import { mkdirSync, rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
-import type { Db } from "@zerohand/db";
-import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange, WsIncomingGlobalChat } from "@pawn/shared";
 import { makeAuthStorage, makeResourceLoader, runSkillStep } from "./pi-executor.js";
 import { readModelSetting } from "./model-utils.js";
 import { makeAllTools, type AgentToolContext } from "./tools/index.js";

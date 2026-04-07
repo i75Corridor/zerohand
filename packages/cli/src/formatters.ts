@@ -1,4 +1,4 @@
-export { pipelineToYaml } from "@zerohand/shared";
+export { pipelineToYaml } from "@pawn/shared";
 
 // ─── Table formatting ────────────────────────────────────────────────────────
 

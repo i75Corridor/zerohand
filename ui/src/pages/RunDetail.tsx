@@ -7,7 +7,7 @@ import { statusColor as getStatusColor, STATUS_BORDER_COLORS, STATUS_TEXT_COLORS
 import LoadingState from "../components/LoadingState.tsx";
 import { useWebSocket } from "../lib/ws.ts";
 import OutputPreview from "../components/OutputPreview.tsx";
-import type { WsMessage, ApiStepRun, RunStepSnapshot } from "@zerohand/shared";
+import type { WsMessage, ApiStepRun, RunStepSnapshot } from "@pawn/shared";
 
 
 

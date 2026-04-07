@@ -18,8 +18,8 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { eq, inArray } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { pipelines, pipelineSteps, mcpServers, installedPackages } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { pipelines, pipelineSteps, mcpServers, installedPackages } from "@pawn/db";
 
 interface StepConfig {
   name: string;

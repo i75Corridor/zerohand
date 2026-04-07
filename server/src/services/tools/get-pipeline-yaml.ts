@@ -1,9 +1,9 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq, asc } from "drizzle-orm";
-import { pipelines, pipelineSteps } from "@zerohand/db";
-import { pipelineToYaml } from "@zerohand/shared";
-import type { ApiPipeline } from "@zerohand/shared";
+import { pipelines, pipelineSteps } from "@pawn/db";
+import { pipelineToYaml } from "@pawn/shared";
+import type { ApiPipeline } from "@pawn/shared";
 import type { AgentToolContext } from "./context.js";
 
 export function makeGetPipelineYaml(ctx: AgentToolContext): ToolDefinition {

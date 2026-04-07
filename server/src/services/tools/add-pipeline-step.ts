@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
-import { pipelineSteps } from "@zerohand/db";
+import { pipelineSteps } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeAddPipelineStep(ctx: AgentToolContext): ToolDefinition {

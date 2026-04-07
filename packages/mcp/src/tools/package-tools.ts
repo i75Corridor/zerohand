@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../api-client.js";
-import type { ApiInstalledPackage } from "@zerohand/shared";
+import type { ApiInstalledPackage } from "@pawn/shared";
 
 function formatPackage(pkg: ApiInstalledPackage): string {
   const lines = [`Package: ${pkg.repoFullName} (${pkg.id})`];

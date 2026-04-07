@@ -2,7 +2,7 @@ import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { existsSync, rmSync } from "node:fs";
 import { eq } from "drizzle-orm";
-import { pipelineSteps } from "@zerohand/db";
+import { pipelineSteps } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 import { safeSkillDir, normalizeSkillName } from "./skill-utils.js";
 

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket } from "../lib/ws.ts";
-import type { WsMessage } from "@zerohand/shared";
+import type { WsMessage } from "@pawn/shared";
 
 /** Listens for data_changed WS events and invalidates React Query caches. */
 export function useDataChangedListener() {

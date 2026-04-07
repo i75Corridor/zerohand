@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { IncomingMessage } from "node:http";
 import type { Server } from "node:http";
-import type { WsMessage, WsIncomingChat, WsIncomingGlobalChat } from "@zerohand/shared";
+import type { WsMessage, WsIncomingChat, WsIncomingGlobalChat } from "@pawn/shared";
 
 export class WsManager {
   private wss: WebSocketServer;

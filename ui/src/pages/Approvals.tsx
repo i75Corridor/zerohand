@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiApproval } from "@zerohand/shared";
+import type { ApiApproval } from "@pawn/shared";
 
 function ApprovalCard({ approval }: { approval: ApiApproval }) {
   const queryClient = useQueryClient();

@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { eq, desc } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { approvals, pipelineRuns, stepRuns, pipelines } from "@zerohand/db";
-import type { ApiApproval } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { approvals, pipelineRuns, stepRuns, pipelines } from "@pawn/db";
+import type { ApiApproval } from "@pawn/shared";
 import type { WsManager } from "../ws/index.js";
 
 function toApi(

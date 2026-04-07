@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../api-client.js";
-import type { ApiSetting } from "@zerohand/shared";
+import type { ApiSetting } from "@pawn/shared";
 
 function formatSetting(s: ApiSetting): string {
   const val = typeof s.value === "string" ? s.value : JSON.stringify(s.value);

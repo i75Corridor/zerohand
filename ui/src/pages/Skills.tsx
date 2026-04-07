@@ -5,7 +5,7 @@ import { useState } from "react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiSkill } from "@zerohand/shared";
+import type { ApiSkill } from "@pawn/shared";
 
 function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   const queryClient = useQueryClient();

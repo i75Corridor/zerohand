@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../api-client.js";
-import type { ApiBudgetPolicy } from "@zerohand/shared";
+import type { ApiBudgetPolicy } from "@pawn/shared";
 
 function formatBudget(b: ApiBudgetPolicy): string {
   const dollars = (b.amountCents / 100).toFixed(2);

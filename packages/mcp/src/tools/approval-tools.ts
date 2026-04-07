@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../api-client.js";
-import type { ApiApproval } from "@zerohand/shared";
+import type { ApiApproval } from "@pawn/shared";
 
 function formatApproval(a: ApiApproval): string {
   const lines = [`Approval: ${a.id}`];

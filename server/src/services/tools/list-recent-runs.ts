@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq, desc } from "drizzle-orm";
-import { pipelineRuns } from "@zerohand/db";
+import { pipelineRuns } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeListRecentRuns(ctx: AgentToolContext): ToolDefinition {

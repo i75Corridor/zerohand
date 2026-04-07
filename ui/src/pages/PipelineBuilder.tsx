@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, GitBranch, CheckSquare } from "lucide-react";
 import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
-import type { ApiPipeline, ApiPipelineStep, ApiSkill, ApiValidationResult, WsMessage } from "@zerohand/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiSkill, ApiValidationResult, WsMessage } from "@pawn/shared";
 import ModelSelector from "../components/ModelSelector.tsx";
 import { useWebSocket } from "../lib/ws.ts";
 

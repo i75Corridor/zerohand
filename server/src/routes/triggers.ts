@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { asc, eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { triggers } from "@zerohand/db";
-import type { ApiTrigger } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { triggers } from "@pawn/db";
+import type { ApiTrigger } from "@pawn/shared";
 import { computeNextRun } from "../services/trigger-manager.js";
 import type { WsManager } from "../ws/index.js";
 

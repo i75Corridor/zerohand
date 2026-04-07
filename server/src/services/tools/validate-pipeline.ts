@@ -2,7 +2,7 @@ import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type, getEnvApiKey } from "@mariozechner/pi-ai";
 import { isOllamaAvailable } from "../ollama-provider.js";
 import { eq, asc } from "drizzle-orm";
-import { pipelines, pipelineSteps, mcpServers } from "@zerohand/db";
+import { pipelines, pipelineSteps, mcpServers } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 import { loadSkillDef } from "../skill-loader.js";
 

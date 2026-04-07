@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../api-client.js";
-import type { ApiTrigger } from "@zerohand/shared";
+import type { ApiTrigger } from "@pawn/shared";
 
 function formatTrigger(t: ApiTrigger): string {
   const lines = [`Trigger: ${t.id}`];

@@ -4,8 +4,8 @@ import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { desc, eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { installedPackages, packageSecurityChecks, pipelines } from "@pawn/db";
 import type { WsManager } from "../ws/index.js";
 import {
   installPackage,
@@ -18,7 +18,7 @@ import { importPipelinePackage } from "../services/pipeline-import.js";
 import { scanPackage } from "../services/security-scanner.js";
 import { packagesDir as getPackagesDir, skillsDir as getSkillsDir } from "../services/paths.js";
 import { loadPipelineWithSteps } from "./pipelines.js";
-import { pipelineToYaml } from "@zerohand/shared";
+import { pipelineToYaml } from "@pawn/shared";
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

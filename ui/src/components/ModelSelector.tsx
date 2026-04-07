@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import { api } from "../lib/api.ts";
-import type { ApiModelEntry } from "@zerohand/shared";
+import type { ApiModelEntry } from "@pawn/shared";
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: "Google",

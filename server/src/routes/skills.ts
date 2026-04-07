@@ -2,7 +2,7 @@ import { Router } from "express";
 import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join, basename, extname, resolve, sep } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import type { ApiSkill } from "@zerohand/shared";
+import type { ApiSkill } from "@pawn/shared";
 import { skillsDir as getSkillsDir } from "../services/paths.js";
 
 const ALLOWED_EXTS = [".js", ".ts", ".py", ".sh"];

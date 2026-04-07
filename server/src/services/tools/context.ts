@@ -1,5 +1,5 @@
-import type { Db } from "@zerohand/db";
-import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import type { WsGlobalAgentEvent, WsDataChanged, WsRunStatusChange } from "@pawn/shared";
 import type { runSkillStep } from "../pi-executor.js";
 
 export interface AgentToolContext {

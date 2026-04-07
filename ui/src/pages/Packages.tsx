@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { api } from "../lib/api.ts";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiInstalledPackage, ApiDiscoveredPackage, ApiModelWarning } from "@zerohand/shared";
+import type { ApiInstalledPackage, ApiDiscoveredPackage, ApiModelWarning } from "@pawn/shared";
 
 // ── Security error parsing ─────────────────────────────────────────────────────
 

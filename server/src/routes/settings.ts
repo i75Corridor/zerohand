@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { settings } from "@zerohand/db";
-import type { ApiSetting } from "@zerohand/shared";
+import type { Db } from "@pawn/db";
+import { settings } from "@pawn/db";
+import type { ApiSetting } from "@pawn/shared";
 import { invalidateModelCostsCache } from "../services/budget-guard.js";
 import { validateDatabaseConfig, maskDatabaseConfig } from "../services/database-config.js";
 import type { DatabaseConfig } from "../services/database-config.js";

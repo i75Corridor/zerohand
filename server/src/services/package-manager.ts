@@ -19,8 +19,8 @@ import {
 } from "node:fs";
 import { join, resolve, sep, basename, dirname } from "node:path";
 import { eq } from "drizzle-orm";
-import type { Db } from "@zerohand/db";
-import { installedPackages, packageSecurityChecks, pipelines } from "@zerohand/db";
+import type { Db } from "@pawn/db";
+import { installedPackages, packageSecurityChecks, pipelines } from "@pawn/db";
 import { importPipelinePackage } from "./pipeline-import.js";
 import { scanPackage, type SecurityReport } from "./security-scanner.js";
 import { loadSkillDef } from "./skill-loader.js";

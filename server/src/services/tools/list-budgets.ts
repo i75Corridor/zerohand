@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
-import { budgetPolicies } from "@zerohand/db";
+import { budgetPolicies } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
 export function makeListBudgets(ctx: AgentToolContext): ToolDefinition {
