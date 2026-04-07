@@ -9,7 +9,7 @@ export function makeInstallPackage(ctx: AgentToolContext): ToolDefinition {
     name: "install_package",
     label: "Install Package",
     description:
-      "Install a zerohand package from a GitHub repository URL. The package must contain a pipeline.yaml at its root. A security scan runs automatically before installation.",
+      "Install a pawn package from a GitHub repository URL. The package must contain a pipeline.yaml at its root. A security scan runs automatically before installation.",
     parameters: Type.Object({
       repoUrl: Type.String({
         description: "GitHub repository URL, e.g. https://github.com/owner/repo",

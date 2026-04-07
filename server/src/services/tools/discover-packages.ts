@@ -8,7 +8,7 @@ export function makeDiscoverPackages(ctx: AgentToolContext): ToolDefinition {
     name: "discover_packages",
     label: "Discover Packages",
     description:
-      "Search GitHub for zerohand packages (repos tagged with the pawn-package topic). Returns name, description, stars, and whether already installed.",
+      "Search GitHub for pawn packages (repos tagged with the pawn-package topic). Returns name, description, stars, and whether already installed.",
     parameters: Type.Object({
       query: Type.Optional(
         Type.String({

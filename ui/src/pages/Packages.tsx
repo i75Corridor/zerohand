@@ -464,7 +464,7 @@ export default function Packages() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-              placeholder="Search GitHub for zerohand packages..."
+              placeholder="Search GitHub for pawn packages..."
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleDiscover()}

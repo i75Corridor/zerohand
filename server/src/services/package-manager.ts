@@ -1,5 +1,5 @@
 /**
- * GitHub-based package manager for Zerohand.
+ * GitHub-based package manager for Pawn.
  *
  * A "package" is a GitHub repository tagged with the `pawn-package` topic.
  * It contains a pipeline.yaml at the root and a skills/ directory with all
