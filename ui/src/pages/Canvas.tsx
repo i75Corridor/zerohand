@@ -30,7 +30,7 @@ function ArtifactViewer({ step }: { step: ApiStepRun }) {
 
   return (
     <div className="flex flex-col gap-2 min-w-0">
-      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</div>
+      <div className="text-xs font-medium text-pawn-surface-500 uppercase tracking-wide">{label}</div>
       <div className="flex-1">
         <OutputPreview text={text} />
       </div>
@@ -72,32 +72,32 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
   });
 
   return (
-    <div className="bg-slate-900/40 border border-slate-800/60 rounded-xl overflow-hidden">
+    <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/60 rounded-xl overflow-hidden">
       {/* Run header */}
       <button
-        className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-800/30 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-pawn-surface-800/30 transition-colors text-left"
         onClick={() => setExpanded((v) => !v)}
       >
         {expanded ? (
-          <ChevronDown size={14} className="text-slate-500 flex-shrink-0" />
+          <ChevronDown size={14} className="text-pawn-surface-500 flex-shrink-0" />
         ) : (
-          <ChevronRight size={14} className="text-slate-500 flex-shrink-0" />
+          <ChevronRight size={14} className="text-pawn-surface-500 flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-white">{run.pipelineName ?? run.pipelineId}</span>
             {topic && (
               <>
-                <span className="text-slate-700">·</span>
-                <span className="text-sm text-slate-400 truncate">{topic}</span>
+                <span className="text-pawn-surface-700">·</span>
+                <span className="text-sm text-pawn-surface-400 truncate">{topic}</span>
               </>
             )}
           </div>
-          <div className="text-xs text-slate-600 mt-0.5">{date} at {time}</div>
+          <div className="text-xs text-pawn-surface-600 mt-0.5">{date} at {time}</div>
         </div>
         <Link
           to={`/runs/${run.id}`}
-          className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-sky-400 transition-colors flex-shrink-0"
+          className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-gold-400 transition-colors flex-shrink-0"
           title="View run detail"
           onClick={(e) => e.stopPropagation()}
         >
@@ -111,9 +111,9 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
         <div
           className={
             isMixed
-              ? "grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-0 md:divide-x divide-y md:divide-y-0 divide-slate-800/60"
+              ? "grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-0 md:divide-x divide-y md:divide-y-0 divide-pawn-surface-800/60"
               : sorted.length > 1
-              ? "grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-y md:divide-y-0 divide-slate-800/60"
+              ? "grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-y md:divide-y-0 divide-pawn-surface-800/60"
               : ""
           }
         >
@@ -147,7 +147,7 @@ export default function Canvas() {
       <div className="flex items-center gap-3 mb-8">
         <Layers size={20} className="text-rose-400" />
         <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Canvas</h1>
-        <span className="text-sm text-slate-500">{completedRuns.length} completed runs</span>
+        <span className="text-sm text-pawn-surface-500">{completedRuns.length} completed runs</span>
       </div>
 
       {completedRuns.length === 0 ? (

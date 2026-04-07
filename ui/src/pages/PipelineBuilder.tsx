@@ -84,9 +84,9 @@ function StepForm({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs text-slate-400 mb-1">Step name</label>
+        <label className="block text-xs text-pawn-surface-400 mb-1">Step name</label>
         <input
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
           value={step.name}
           onChange={(e) => onChange({ ...step, name: e.target.value })}
           placeholder="Unnamed step"
@@ -94,9 +94,9 @@ function StepForm({
       </div>
 
       <div>
-        <label className="block text-xs text-slate-400 mb-1">Skill</label>
+        <label className="block text-xs text-pawn-surface-400 mb-1">Skill</label>
         <select
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
           value={step.skillName}
           onChange={(e) => onChange({ ...step, skillName: e.target.value })}
         >
@@ -124,14 +124,14 @@ function StepForm({
       </div>
 
       <div>
-        <label className="block text-xs text-slate-400 mb-1">Prompt template</label>
+        <label className="block text-xs text-pawn-surface-400 mb-1">Prompt template</label>
         {tokenHints.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {tokenHints.map((t) => (
               <button
                 key={t}
                 type="button"
-                className="text-xs px-2 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 rounded font-mono transition-colors"
+                className="text-xs px-2 py-0.5 bg-pawn-gold-500/10 text-pawn-gold-300 border border-pawn-gold-500/20 hover:bg-pawn-gold-500/20 rounded font-mono transition-colors"
                 onClick={() => insertToken(t)}
               >
                 {t}
@@ -140,7 +140,7 @@ function StepForm({
           </div>
         )}
         <textarea
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 font-mono leading-relaxed resize-y"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 font-mono leading-relaxed resize-y"
           rows={6}
           value={step.promptTemplate}
           onChange={(e) => onChange({ ...step, promptTemplate: e.target.value })}
@@ -174,12 +174,12 @@ function StepForm({
 
       <div className="flex gap-4">
         <div className="flex-1">
-          <label className="block text-xs text-slate-400 mb-1">Timeout (seconds)</label>
+          <label className="block text-xs text-pawn-surface-400 mb-1">Timeout (seconds)</label>
           <input
             type="number"
             min="10"
             max="3600"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
             value={step.timeoutSeconds}
             onChange={(e) => onChange({ ...step, timeoutSeconds: parseInt(e.target.value) || 300 })}
           />
@@ -188,18 +188,18 @@ function StepForm({
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
-              className="w-4 h-4 accent-sky-500"
+              className="w-4 h-4 accent-pawn-gold-500"
               checked={step.approvalRequired}
               onChange={(e) => onChange({ ...step, approvalRequired: e.target.checked })}
             />
-            <span className="text-sm text-slate-300 flex items-center gap-1">
+            <span className="text-sm text-pawn-surface-300 flex items-center gap-1">
               <CheckSquare size={13} className="text-yellow-500" /> Require approval
             </span>
           </label>
         </div>
       </div>
 
-      <p className="text-xs text-slate-600">Step {stepIndex + 1} of {totalSteps}</p>
+      <p className="text-xs text-pawn-surface-600">Step {stepIndex + 1} of {totalSteps}</p>
     </div>
   );
 }
@@ -240,7 +240,7 @@ function StepList({
             className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
               selectedIndex === i
                 ? "bg-indigo-900/20 border-indigo-500/40"
-                : "bg-slate-800 border-slate-700 hover:border-slate-600"
+                : "bg-pawn-surface-800 border-pawn-surface-700 hover:border-pawn-surface-600"
             }`}
             onClick={() => onSelect(i)}
           >
@@ -263,7 +263,7 @@ function StepList({
           {/* Reorder / delete controls */}
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button
-              className="p-1 text-slate-500 hover:text-slate-200 disabled:opacity-30"
+              className="p-1 text-pawn-surface-500 hover:text-pawn-surface-200 disabled:opacity-30"
               disabled={i === 0}
               onClick={(e) => { e.stopPropagation(); onMove(i, i - 1); }}
               aria-label="Move step up"
@@ -271,7 +271,7 @@ function StepList({
               <ChevronUp size={13} />
             </button>
             <button
-              className="p-1 text-slate-500 hover:text-slate-200 disabled:opacity-30"
+              className="p-1 text-pawn-surface-500 hover:text-pawn-surface-200 disabled:opacity-30"
               disabled={i === steps.length - 1}
               onClick={(e) => { e.stopPropagation(); onMove(i, i + 1); }}
               aria-label="Move step down"
@@ -279,7 +279,7 @@ function StepList({
               <ChevronDown size={13} />
             </button>
             <button
-              className="p-1 text-slate-500 hover:text-rose-400"
+              className="p-1 text-pawn-surface-500 hover:text-rose-400"
               onClick={(e) => { e.stopPropagation(); onRemove(i); }}
               aria-label="Remove step"
             >
@@ -297,7 +297,7 @@ function StepList({
       ))}
 
       <button
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-slate-800 hover:border-indigo-500/40 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors text-sm"
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-pawn-surface-800 hover:border-indigo-500/40 text-pawn-surface-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors text-sm"
         onClick={onAdd}
       >
         <Plus size={14} /> Add step
@@ -317,17 +317,17 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
   return (
     <div className="space-y-2">
       {fields.map((f, i) => (
-        <div key={i} className="flex items-start gap-2 p-3 bg-slate-800/50 rounded-lg">
+        <div key={i} className="flex items-start gap-2 p-3 bg-pawn-surface-800/50 rounded-lg">
           <div className="flex-1 space-y-2">
             <div className="flex gap-2">
               <input
-                className="flex-1 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                className="flex-1 bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                 placeholder="field_name"
                 value={f.key}
                 onChange={(e) => update(i, { key: e.target.value })}
               />
               <select
-                className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-sky-500"
+                className="bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pawn-gold-500"
                 value={f.type}
                 onChange={(e) => update(i, { type: e.target.value as "string" | "number" | "boolean" })}
               >
@@ -335,10 +335,10 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
                 <option value="number">number</option>
                 <option value="boolean">boolean</option>
               </select>
-              <label className="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap">
+              <label className="flex items-center gap-1 text-xs text-pawn-surface-400 whitespace-nowrap">
                 <input
                   type="checkbox"
-                  className="accent-sky-500"
+                  className="accent-pawn-gold-500"
                   checked={f.required}
                   onChange={(e) => update(i, { required: e.target.checked })}
                 />
@@ -346,19 +346,19 @@ function SchemaBuilder({ fields, onChange }: { fields: SchemaField[]; onChange: 
               </label>
             </div>
             <input
-              className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              className="w-full bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
               placeholder="Description (shown as hint)"
               value={f.description}
               onChange={(e) => update(i, { description: e.target.value })}
             />
           </div>
-          <button className="text-slate-600 hover:text-rose-400 mt-1" onClick={() => remove(i)} aria-label="Remove field">
+          <button className="text-pawn-surface-600 hover:text-rose-400 mt-1" onClick={() => remove(i)} aria-label="Remove field">
             <Trash2 size={13} />
           </button>
         </div>
       ))}
       <button
-        className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-pawn-gold-400 hover:text-pawn-gold-300 transition-colors"
         onClick={add}
       >
         <Plus size={12} /> Add input field
@@ -607,7 +607,7 @@ export default function PipelineBuilder() {
       <div className="mb-8">
         <Link
           to={isEdit ? `/pipelines/${id}` : "/pipelines"}
-          className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 mb-5 transition-colors"
         >
           <ArrowLeft size={12} /> {isEdit ? "Back to pipeline" : "Pipelines"}
         </Link>
@@ -619,7 +619,7 @@ export default function PipelineBuilder() {
           <div className="flex items-center gap-3">
             {error && <span className="text-xs text-rose-400">{error}</span>}
             <button
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
+              className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-md disabled:opacity-50"
               disabled={saving || loading}
               onClick={save}
             >
@@ -634,21 +634,21 @@ export default function PipelineBuilder() {
         {/* Left: step list + metadata */}
         <div className="col-span-2 space-y-6">
           {/* Metadata */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pipeline</h2>
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-5 space-y-4">
+            <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Pipeline</h2>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Name <span className="text-rose-400">*</span></label>
+              <label className="block text-xs text-pawn-surface-400 mb-1">Name <span className="text-rose-400">*</span></label>
               <input
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="My Pipeline"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Description</label>
+              <label className="block text-xs text-pawn-surface-400 mb-1">Description</label>
               <textarea
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 resize-none"
+                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 resize-none"
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -656,7 +656,7 @@ export default function PipelineBuilder() {
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5">Model</label>
+              <label className="block text-xs text-pawn-surface-400 mb-1.5">Model</label>
               <ModelSelector
                 value={modelFullId}
                 onChange={setModelFullId}
@@ -665,14 +665,14 @@ export default function PipelineBuilder() {
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-2">Input schema</label>
+              <label className="block text-xs text-pawn-surface-400 mb-2">Input schema</label>
               <SchemaBuilder fields={schemaFields} onChange={setSchemaFields} />
             </div>
           </div>
 
           {/* Steps */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
               Steps ({steps.length})
             </h2>
             <StepList
@@ -689,10 +689,10 @@ export default function PipelineBuilder() {
 
         {/* Right: step editor */}
         <div className="col-span-3">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 sticky top-6">
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-5 sticky top-6">
             {selectedStep !== null && steps[selectedStep] ? (
               <>
-                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+                <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
                   Edit Step {selectedStep + 1}
                 </h2>
                 <StepForm
@@ -707,9 +707,9 @@ export default function PipelineBuilder() {
               </>
             ) : (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <GitBranch size={32} className="text-slate-700 mb-3" />
-                <p className="text-sm text-slate-500">Select a step to edit it,</p>
-                <p className="text-sm text-slate-500">or add a new step to get started.</p>
+                <GitBranch size={32} className="text-pawn-surface-700 mb-3" />
+                <p className="text-sm text-pawn-surface-500">Select a step to edit it,</p>
+                <p className="text-sm text-pawn-surface-500">or add a new step to get started.</p>
               </div>
             )}
           </div>

@@ -29,17 +29,17 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   const nameValid = /^[a-z0-9][a-z0-9_-]*$/.test(name);
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 mb-4">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-xl p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-white">New Skill</span>
-        <button onClick={onCancel} className="text-slate-500 hover:text-slate-300 transition-colors">
+        <button onClick={onCancel} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
           <X size={14} />
         </button>
       </div>
       <div className="space-y-3">
         <div>
           <input
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-lg px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
             placeholder="skill-name (lowercase, hyphens ok)"
             value={name}
             onChange={(e) => { setName(e.target.value.toLowerCase()); setError(""); }}
@@ -50,20 +50,20 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
           )}
         </div>
         <input
-          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-lg px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
           placeholder="Description (optional)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
         {error && <p className="text-xs text-rose-400">{error}</p>}
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-slate-400 hover:text-white transition-colors">
+          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-white transition-colors">
             Cancel
           </button>
           <button
             onClick={() => create.mutate()}
             disabled={!nameValid || create.isPending}
-            className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40"
           >
             {create.isPending ? "Creating..." : "Create Skill"}
           </button>
@@ -107,14 +107,14 @@ export default function Skills() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold font-display text-white tracking-tight">Skills</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-pawn-surface-500 mt-1">
             Skills are installed from packages or created in-app.
           </p>
         </div>
         {!creating && (
           <button
             onClick={() => setCreating(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-xl transition-colors"
           >
             <Plus size={13} /> New Skill
           </button>
@@ -139,26 +139,26 @@ export default function Skills() {
           {namespaces.map((ns) => (
             <div key={ns}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{ns}</span>
-                <div className="flex-1 h-px bg-slate-800" />
+                <span className="text-xs font-semibold text-pawn-surface-500 uppercase tracking-widest">{ns}</span>
+                <div className="flex-1 h-px bg-pawn-surface-800" />
               </div>
               <div className="space-y-2">
                 {byNamespace.get(ns)!.map((skill) => (
                   <Link
                     key={`${ns}/${skill.name}`}
                     to={skillDetailPath(skill)}
-                    className="flex items-center gap-4 px-4 py-3 bg-slate-900/50 border border-slate-800/60 rounded-xl hover:border-slate-700 transition-colors"
+                    className="flex items-center gap-4 px-4 py-3 bg-pawn-surface-900/50 border border-pawn-surface-800/60 rounded-xl hover:border-pawn-surface-700 transition-colors"
                   >
                     <Cpu size={15} className="text-violet-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-white font-mono">{ns}/{skill.name}</div>
                       {skill.description && (
-                        <div className="text-xs text-slate-500 mt-0.5 truncate">{skill.description}</div>
+                        <div className="text-xs text-pawn-surface-500 mt-0.5 truncate">{skill.description}</div>
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {skill.scripts.length > 0 && (
-                        <span className="text-xs text-slate-600">{skill.scripts.length} script{skill.scripts.length !== 1 ? "s" : ""}</span>
+                        <span className="text-xs text-pawn-surface-600">{skill.scripts.length} script{skill.scripts.length !== 1 ? "s" : ""}</span>
                       )}
                     </div>
                   </Link>

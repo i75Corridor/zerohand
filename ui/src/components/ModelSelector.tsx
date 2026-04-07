@@ -62,7 +62,7 @@ export default function ModelSelector({
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 cursor-pointer"
+        className="w-full appearance-none bg-pawn-surface-800 border border-pawn-surface-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500 cursor-pointer"
       >
         {allowNull && <option value="">{defaultLabel}</option>}
         {providers.map((provider) => (
@@ -82,10 +82,10 @@ export default function ModelSelector({
       </select>
       <ChevronDown
         size={14}
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-pawn-surface-400"
       />
       {selectedModel && (
-        <div className="mt-1 flex gap-3 text-xs text-slate-500">
+        <div className="mt-1 flex gap-3 text-xs text-pawn-surface-500">
           <span>{(selectedModel.contextWindow / 1000).toFixed(0)}k ctx</span>
           {selectedModel.costInputPerM > 0 && (
             <span>
@@ -93,7 +93,7 @@ export default function ModelSelector({
             </span>
           )}
           {selectedModel.reasoning && (
-            <span className="text-sky-400">reasoning</span>
+            <span className="text-pawn-gold-400">reasoning</span>
           )}
         </div>
       )}

@@ -32,13 +32,13 @@ function getRangeDates(range: Range): { from: string; to: string } {
 
 const CHART_TOOLTIP_STYLE = {
   contentStyle: {
-    background: "rgb(15 23 42 / 0.95)",
-    border: "1px solid rgb(30 41 59)",
+    background: "rgb(24 22 20 / 0.95)",
+    border: "1px solid rgb(37 34 32)",
     borderRadius: "12px",
-    color: "#f1f5f9",
+    color: "#f7f5f2",
     fontSize: 12,
   },
-  labelStyle: { color: "#94a3b8" },
+  labelStyle: { color: "#9e9889" },
 };
 
 export default function Costs() {
@@ -72,8 +72,8 @@ export default function Costs() {
               onClick={() => setRange(r.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 range === r.value
-                  ? "bg-sky-600 text-white"
-                  : "bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                  ? "bg-pawn-gold-600 text-white"
+                  : "bg-pawn-surface-800/60 text-pawn-surface-400 hover:text-pawn-surface-200 hover:bg-pawn-surface-800"
               }`}
             >
               {r.label}
@@ -88,7 +88,7 @@ export default function Costs() {
           icon={DollarSign}
           label="Total this month"
           value={data ? formatCost(data.summary.totalThisMonth) : "—"}
-          accent="text-sky-400"
+          accent="text-pawn-gold-400"
         />
         <StatCard
           icon={TrendingUp}
@@ -121,22 +121,22 @@ export default function Costs() {
       </div>
 
       {/* Line chart — spend over time */}
-      <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden mb-8">
-        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/60">
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Spend Over Time</h2>
+      <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
+          <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Spend Over Time</h2>
         </div>
         <div className="p-6">
           {isLoading ? (
-            <div className="h-48 flex items-center justify-center text-slate-400 text-sm" role="status" aria-live="polite">Loading...</div>
+            <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm" role="status" aria-live="polite">Loading...</div>
           ) : !data || data.daily.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No cost data for this period.</div>
+            <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm">No cost data for this period.</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={data.daily} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgb(30 41 59 / 0.6)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgb(37 34 32 / 0.6)" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fill: "#64748b", fontSize: 11 }}
+                  tick={{ fill: "#7d776a", fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: string) => {
@@ -145,7 +145,7 @@ export default function Costs() {
                   }}
                 />
                 <YAxis
-                  tick={{ fill: "#64748b", fontSize: 11 }}
+                  tick={{ fill: "#7d776a", fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: number) => formatCostShort(v)}
@@ -157,10 +157,10 @@ export default function Costs() {
                 <Line
                   type="monotone"
                   dataKey="costCents"
-                  stroke="#38bdf8"
+                  stroke="#c99a3e"
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 5, fill: "#38bdf8" }}
+                  activeDot={{ r: 5, fill: "#c99a3e" }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -171,15 +171,15 @@ export default function Costs() {
       {/* Bar charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* By skill */}
-        <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/60">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">By Skill</h2>
+        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
+            <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">By Skill</h2>
           </div>
           <div className="p-6">
             {isLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm" role="status" aria-live="polite">Loading...</div>
+              <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm" role="status" aria-live="polite">Loading...</div>
             ) : !data || data.bySkill.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No data.</div>
+              <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm">No data.</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart
@@ -187,10 +187,10 @@ export default function Costs() {
                   layout="vertical"
                   margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(30 41 59 / 0.6)" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(37 34 32 / 0.6)" horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fill: "#64748b", fontSize: 11 }}
+                    tick={{ fill: "#7d776a", fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v: number) => formatCostShort(v)}
@@ -198,7 +198,7 @@ export default function Costs() {
                   <YAxis
                     type="category"
                     dataKey="skillName"
-                    tick={{ fill: "#94a3b8", fontSize: 11 }}
+                    tick={{ fill: "#9e9889", fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     width={100}
@@ -215,15 +215,15 @@ export default function Costs() {
         </div>
 
         {/* By pipeline */}
-        <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/60">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">By Pipeline</h2>
+        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
+            <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">By Pipeline</h2>
           </div>
           <div className="p-6">
             {isLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm" role="status" aria-live="polite">Loading...</div>
+              <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm" role="status" aria-live="polite">Loading...</div>
             ) : !data || data.byPipeline.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No data.</div>
+              <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm">No data.</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart
@@ -231,10 +231,10 @@ export default function Costs() {
                   layout="vertical"
                   margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(30 41 59 / 0.6)" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(37 34 32 / 0.6)" horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fill: "#64748b", fontSize: 11 }}
+                    tick={{ fill: "#7d776a", fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v: number) => formatCostShort(v)}
@@ -242,7 +242,7 @@ export default function Costs() {
                   <YAxis
                     type="category"
                     dataKey="pipelineName"
-                    tick={{ fill: "#94a3b8", fontSize: 11 }}
+                    tick={{ fill: "#9e9889", fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     width={100}

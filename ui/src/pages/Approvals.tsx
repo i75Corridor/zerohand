@@ -26,41 +26,41 @@ function ApprovalCard({ approval }: { approval: ApiApproval }) {
   });
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-5">
       <div className="flex items-start gap-3 mb-3">
         <Clock size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             {approval.pipelineName && (
-              <span className="text-sm font-medium text-slate-100">{approval.pipelineName}</span>
+              <span className="text-sm font-medium text-pawn-surface-100">{approval.pipelineName}</span>
             )}
             {approval.stepName && (
-              <span className="bg-slate-800 text-slate-400 text-caption font-mono px-2 py-0.5 rounded-md">
+              <span className="bg-pawn-surface-800 text-pawn-surface-400 text-caption font-mono px-2 py-0.5 rounded-md">
                 {approval.stepName}
               </span>
             )}
             <Link
               to={`/runs/${approval.pipelineRunId}`}
-              className="ml-auto flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300"
+              className="ml-auto flex items-center gap-1 text-xs text-pawn-gold-400 hover:text-pawn-gold-300"
             >
               View run <ExternalLink size={10} />
             </Link>
           </div>
-          <div className="text-xs text-slate-600 mt-1">
+          <div className="text-xs text-pawn-surface-600 mt-1">
             Requested {new Date(approval.createdAt).toLocaleString()}
           </div>
         </div>
       </div>
 
       {Object.keys(approval.payload).length > 0 && (
-        <div className="mb-3 bg-slate-800/80 rounded-lg p-3 font-mono text-xs text-slate-300 border border-slate-700/50">
+        <div className="mb-3 bg-pawn-surface-800/80 rounded-lg p-3 font-mono text-xs text-pawn-surface-300 border border-pawn-surface-700/50">
           {JSON.stringify(approval.payload, null, 2)}
         </div>
       )}
 
       <div className="mb-3">
         <input
-          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-sky-500/40 input-glow"
+          className="w-full bg-pawn-surface-950 border border-pawn-surface-800 rounded-lg px-4 py-2.5 text-sm text-pawn-surface-300 placeholder:text-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500/40 input-glow"
           placeholder="Add a note (optional)"
           value={note}
           onChange={(e) => setNote(e.target.value)}

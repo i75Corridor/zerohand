@@ -24,24 +24,24 @@ function RunRow({ run, onCancel, cancellingId }: { run: ApiPipelineRun; onCancel
   const isCancelling = cancellingId === run.id;
 
   return (
-    <tr className="hover:bg-slate-800/30 transition-colors cursor-pointer group">
+    <tr className="hover:bg-pawn-surface-800/30 transition-colors cursor-pointer group">
       <td className="px-3 sm:px-6 py-3 sm:py-4">
         <Link to={`/runs/${run.id}`} className="contents">
           <StatusBadge status={run.status} />
         </Link>
       </td>
       <td className="px-6 py-4 max-w-[200px]">
-        <Link to={`/runs/${run.id}`} className="text-sm font-medium text-slate-100 group-hover:text-sky-400 transition-colors block truncate" title={run.pipelineName ?? run.pipelineId}>
+        <Link to={`/runs/${run.id}`} className="text-sm font-medium text-pawn-surface-100 group-hover:text-pawn-gold-400 transition-colors block truncate" title={run.pipelineName ?? run.pipelineId}>
           {run.pipelineName ?? run.pipelineId}
         </Link>
       </td>
       <td className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
-        <span className="text-xs text-slate-400">{run.triggerType}</span>
+        <span className="text-xs text-pawn-surface-400">{run.triggerType}</span>
       </td>
-      <td className="px-6 py-4 text-xs text-slate-500 whitespace-nowrap">
+      <td className="px-6 py-4 text-xs text-pawn-surface-500 whitespace-nowrap">
         {new Date(run.createdAt).toLocaleString()}
       </td>
-      <td className="px-6 py-4 text-right text-xs font-mono text-slate-400">
+      <td className="px-6 py-4 text-right text-xs font-mono text-pawn-surface-400">
         {isActive ? (
           <button
             className="inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 transition-colors disabled:opacity-50"
@@ -112,7 +112,7 @@ export default function Dashboard() {
           <AlertCircle size={16} className="text-rose-400 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium text-rose-300 mb-1">Failed to load dashboard</p>
-            <p className="text-xs text-slate-400">{(runsError as Error).message}</p>
+            <p className="text-xs text-pawn-surface-400">{(runsError as Error).message}</p>
           </div>
         </div>
       </div>
@@ -128,7 +128,7 @@ export default function Dashboard() {
         actions={
           <Link
             to="/pipelines/new"
-            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-medium btn-press"
+            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-lg text-xs font-medium btn-press"
           >
             New Pipeline
           </Link>
@@ -137,7 +137,7 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-        <StatCard icon={Zap} label="Runs this month" value={stats ? String(stats.runsThisMonth) : "\u2014"} accent="text-sky-400" />
+        <StatCard icon={Zap} label="Runs this month" value={stats ? String(stats.runsThisMonth) : "\u2014"} accent="text-pawn-gold-400" />
         <StatCard icon={Activity} label="Active instances" value={stats ? String(stats.activeRuns) : "\u2014"} sub={stats?.activeRuns === 0 ? "idle" : "running or queued"} accent="text-emerald-400" />
         <StatCard icon={CreditCard} label="Accrued cost" value={stats ? formatCost(stats.costCentsThisMonth) : "\u2014"} sub="estimated monthly total" accent="text-amber-400" />
       </div>
@@ -147,14 +147,14 @@ export default function Dashboard() {
         <div className="mb-4 flex items-start gap-2 p-3 bg-rose-950/30 border border-rose-900/50 rounded-xl" role="alert">
           <AlertCircle size={14} className="text-rose-400 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-rose-300">Failed to cancel run: {cancelError}</p>
-          <button onClick={() => setCancelError(null)} className="ml-auto text-xs text-slate-500 hover:text-slate-300" aria-label="Dismiss error">Dismiss</button>
+          <button onClick={() => setCancelError(null)} className="ml-auto text-xs text-pawn-surface-500 hover:text-pawn-surface-300" aria-label="Dismiss error">Dismiss</button>
         </div>
       )}
 
       {/* Recent runs */}
       <SectionPanel
         title="Recent Pipeline Runs"
-        action={<Link to="/pipelines" className="text-xs text-sky-400 hover:text-sky-300 font-medium transition-colors">View All</Link>}
+        action={<Link to="/pipelines" className="text-xs text-pawn-gold-400 hover:text-pawn-gold-300 font-medium transition-colors">View All</Link>}
       >
         {runs.length === 0 ? (
           <div className="px-3 sm:px-6 py-3 sm:py-4">
@@ -173,16 +173,16 @@ export default function Dashboard() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-900/20">
+              <thead className="bg-pawn-surface-900/20">
                 <tr>
-                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-slate-500 uppercase tracking-wider border-b border-slate-800">Status</th>
-                  <th scope="col" className="px-6 py-3 text-caption font-medium text-slate-500 uppercase tracking-wider border-b border-slate-800">Pipeline</th>
-                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-slate-500 uppercase tracking-wider border-b border-slate-800 hidden sm:table-cell">Trigger</th>
-                  <th scope="col" className="px-6 py-3 text-caption font-medium text-slate-500 uppercase tracking-wider border-b border-slate-800">Timestamp</th>
-                  <th scope="col" className="px-6 py-3 text-right text-caption font-medium text-slate-500 uppercase tracking-wider border-b border-slate-800">Duration</th>
+                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Status</th>
+                  <th scope="col" className="px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Pipeline</th>
+                  <th scope="col" className="px-3 sm:px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800 hidden sm:table-cell">Trigger</th>
+                  <th scope="col" className="px-6 py-3 text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Timestamp</th>
+                  <th scope="col" className="px-6 py-3 text-right text-caption font-medium text-pawn-surface-500 uppercase tracking-wider border-b border-pawn-surface-800">Duration</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40">
+              <tbody className="divide-y divide-pawn-surface-800/40">
                 {runs.map((run) => (
                   <RunRow key={run.id} run={run} onCancel={(id) => cancelRun.mutate(id)} cancellingId={cancellingId} />
                 ))}

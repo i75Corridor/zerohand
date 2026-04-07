@@ -33,8 +33,8 @@ function StepCard({
 }) {
   const [expanded, setExpanded] = useState(step.status === "running" || step.status === "failed");
   const prevStatus = useRef(step.status);
-  const colorClass = STATUS_TEXT_COLORS[step.status] ?? "text-slate-400";
-  const leftBorderColor = STATUS_BORDER_COLORS[step.status] ?? "border-l-slate-700";
+  const colorClass = STATUS_TEXT_COLORS[step.status] ?? "text-pawn-surface-400";
+  const leftBorderColor = STATUS_BORDER_COLORS[step.status] ?? "border-l-pawn-surface-700";
   const textRef = useRef<HTMLDivElement>(null);
 
   const displayText = liveData?.text ?? (step.output as { text?: string })?.text ?? step.error ?? "";
@@ -55,21 +55,21 @@ function StepCard({
   }, [displayText, isRunning]);
 
   return (
-    <div className={`border border-slate-800 border-l-4 ${leftBorderColor} rounded-xl overflow-hidden`}>
-      <div className="flex items-center bg-slate-900/40 hover:bg-slate-900/60 transition-colors">
+    <div className={`border border-pawn-surface-800 border-l-4 ${leftBorderColor} rounded-xl overflow-hidden`}>
+      <div className="flex items-center bg-pawn-surface-900/40 hover:bg-pawn-surface-900/60 transition-colors">
         <button
           className="flex-1 flex items-center gap-3 px-4 py-3 text-left"
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          <span className="text-sm font-medium text-slate-200">
+          <span className="text-sm font-medium text-pawn-surface-200">
             {name || `Step ${step.stepIndex + 1}`}
           </span>
           <span className={`ml-auto text-xs font-medium ${colorClass}`}>
             {step.status.replace(/_/g, " ")}
           </span>
           {step.startedAt && step.finishedAt && (
-            <span className="text-xs text-slate-500 ml-2">
+            <span className="text-xs text-pawn-surface-500 ml-2">
               {Math.round(
                 (new Date(step.finishedAt).getTime() - new Date(step.startedAt).getTime()) / 1000,
               )}s
@@ -79,7 +79,7 @@ function StepCard({
         {onRerun && step.status === "completed" && (
           <button
             onClick={onRerun}
-            className="flex items-center gap-1 text-xs text-slate-600 hover:text-sky-400 transition-colors px-3 py-3"
+            className="flex items-center gap-1 text-xs text-pawn-surface-600 hover:text-pawn-gold-400 transition-colors px-3 py-3"
             title="Re-run this step"
           >
             <RotateCcw size={11} />
@@ -88,17 +88,17 @@ function StepCard({
       </div>
 
       {expanded && (
-        <div className="bg-slate-950 p-4" ref={textRef}>
+        <div className="bg-pawn-surface-950 p-4" ref={textRef}>
           {displayText ? (
             isRunning ? (
-              <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed">
+              <pre className="text-xs text-pawn-surface-300 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed">
                 {displayText}
               </pre>
             ) : (
               <OutputPreview text={displayText} compact />
             )
           ) : (
-            <span className="text-xs text-slate-600 italic">
+            <span className="text-xs text-pawn-surface-600 italic">
               {step.status === "queued" ? "Waiting to start..." : "No output yet"}
             </span>
           )}
@@ -109,14 +109,14 @@ function StepCard({
 }
 
 const EVENT_COLORS: Record<string, string> = {
-  run_start: "text-slate-400",
-  run_end: "text-slate-400",
-  step_start: "text-sky-400",
+  run_start: "text-pawn-surface-400",
+  run_end: "text-pawn-surface-400",
+  step_start: "text-pawn-gold-400",
   step_end: "text-emerald-400",
   prompt: "text-violet-400",
   tool_call: "text-amber-400",
   tool_result: "text-amber-300",
-  llm_delta: "text-slate-500",
+  llm_delta: "text-pawn-surface-500",
   llm_output: "text-emerald-300",
   error: "text-rose-400",
 };
@@ -124,27 +124,27 @@ const EVENT_COLORS: Record<string, string> = {
 function LogEntry({ entry, index }: { entry: Record<string, unknown>; index: number }) {
   const [expanded, setExpanded] = useState(false);
   const { ts, event, ...rest } = entry;
-  const color = EVENT_COLORS[event as string] ?? "text-slate-400";
+  const color = EVENT_COLORS[event as string] ?? "text-pawn-surface-400";
   const tsStr = typeof ts === "string"
     ? new Date(ts).toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
     : "";
   const hasPayload = Object.keys(rest).length > 0;
 
   return (
-    <div key={index} className="border-b border-slate-900">
+    <div key={index} className="border-b border-pawn-surface-900">
       <button
-        className="w-full flex gap-3 py-1 text-left hover:bg-slate-900/40 transition-colors px-1 rounded"
+        className="w-full flex gap-3 py-1 text-left hover:bg-pawn-surface-900/40 transition-colors px-1 rounded"
         onClick={() => hasPayload && setExpanded((v) => !v)}
       >
-        <span className="text-slate-600 shrink-0 w-28">{tsStr}</span>
+        <span className="text-pawn-surface-600 shrink-0 w-28">{tsStr}</span>
         <span className={`shrink-0 w-28 ${color}`}>{String(event)}</span>
-        <span className="text-slate-400 truncate flex-1 min-w-0">{JSON.stringify(rest)}</span>
+        <span className="text-pawn-surface-400 truncate flex-1 min-w-0">{JSON.stringify(rest)}</span>
         {hasPayload && (
-          <span className="text-slate-700 shrink-0">{expanded ? "▲" : "▼"}</span>
+          <span className="text-pawn-surface-700 shrink-0">{expanded ? "▲" : "▼"}</span>
         )}
       </button>
       {expanded && hasPayload && (
-        <pre className="text-xs text-slate-300 bg-slate-900/60 rounded p-3 mb-1 overflow-x-auto whitespace-pre-wrap break-words">
+        <pre className="text-xs text-pawn-surface-300 bg-pawn-surface-900/60 rounded p-3 mb-1 overflow-x-auto whitespace-pre-wrap break-words">
           {JSON.stringify(rest, null, 2)}
         </pre>
       )}
@@ -161,8 +161,8 @@ function DebugLogTab({ runId, isActive }: { runId: string; isActive: boolean }) 
 
   if (entries.length === 0) {
     return (
-      <div className="text-sm text-slate-500 italic">
-        No log entries. Set <code className="bg-slate-900 px-1 rounded">LOG_LEVEL=info</code> or <code className="bg-slate-900 px-1 rounded">LOG_LEVEL=debug</code> to enable logging.
+      <div className="text-sm text-pawn-surface-500 italic">
+        No log entries. Set <code className="bg-pawn-surface-900 px-1 rounded">LOG_LEVEL=info</code> or <code className="bg-pawn-surface-900 px-1 rounded">LOG_LEVEL=debug</code> to enable logging.
       </div>
     );
   }
@@ -265,7 +265,7 @@ export default function RunDetail() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
-      <Link to={`/pipelines/${run.pipelineId}`} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors">
+      <Link to={`/pipelines/${run.pipelineId}`} className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 mb-5 transition-colors">
         <ArrowLeft size={12} />
         Back to Pipeline
       </Link>
@@ -292,7 +292,7 @@ export default function RunDetail() {
             </button>
           )}
         </div>
-        <div className="text-xs text-slate-500 tabular-nums">
+        <div className="text-xs text-pawn-surface-500 tabular-nums">
           {run.triggerType} · {new Date(run.createdAt).toLocaleString()}
           {run.finishedAt && (
             <> · {Math.round((new Date(run.finishedAt).getTime() - new Date(run.startedAt ?? run.createdAt).getTime()) / 1000)}s total</>
@@ -300,8 +300,8 @@ export default function RunDetail() {
         </div>
         {Object.keys(run.inputParams).length > 0 && (
           <div className="mt-3 text-xs">
-            <span className="text-slate-500 mr-2">Inputs:</span>
-            <code className="text-slate-300 bg-slate-900 px-2 py-1 rounded">
+            <span className="text-pawn-surface-500 mr-2">Inputs:</span>
+            <code className="text-pawn-surface-300 bg-pawn-surface-900 px-2 py-1 rounded">
               {JSON.stringify(run.inputParams)}
             </code>
           </div>
@@ -325,7 +325,7 @@ export default function RunDetail() {
                 queryClient.invalidateQueries({ queryKey: ["run-steps", id] });
               });
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-pawn-surface-950 rounded-lg transition-colors"
           >
             <SkipForward size={12} />
             Continue to Next Step
@@ -333,15 +333,15 @@ export default function RunDetail() {
         </div>
       )}
 
-      <div className="flex gap-1 mb-4 border-b border-slate-800">
+      <div className="flex gap-1 mb-4 border-b border-pawn-surface-800">
         <button
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "steps" ? "text-white border-b-2 border-sky-500" : "text-slate-500 hover:text-slate-300"}`}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "steps" ? "text-white border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
           onClick={() => setActiveTab("steps")}
         >
           Steps
         </button>
         <button
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "log" ? "text-white border-b-2 border-sky-500" : "text-slate-500 hover:text-slate-300"}`}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "log" ? "text-white border-b-2 border-pawn-gold-500" : "text-pawn-surface-500 hover:text-pawn-surface-300"}`}
           onClick={() => setActiveTab("log")}
         >
           Debug Log
@@ -372,18 +372,18 @@ export default function RunDetail() {
             return (
               <div
                 key={ps.stepIndex}
-                className="border border-slate-800 border-l-4 border-l-slate-800 rounded-xl overflow-hidden opacity-40"
+                className="border border-pawn-surface-800 border-l-4 border-l-pawn-surface-800 rounded-xl overflow-hidden opacity-40"
               >
-                <div className="flex items-center gap-3 px-4 py-3 bg-slate-900/40">
-                  <ChevronRight size={14} className="text-slate-600" />
-                  <span className="text-sm font-medium text-slate-400">{ps.name || `Step ${ps.stepIndex + 1}`}</span>
-                  <span className="ml-auto text-xs font-medium text-slate-600">pending</span>
+                <div className="flex items-center gap-3 px-4 py-3 bg-pawn-surface-900/40">
+                  <ChevronRight size={14} className="text-pawn-surface-600" />
+                  <span className="text-sm font-medium text-pawn-surface-400">{ps.name || `Step ${ps.stepIndex + 1}`}</span>
+                  <span className="ml-auto text-xs font-medium text-pawn-surface-600">pending</span>
                 </div>
               </div>
             );
           })}
           {pipelineSteps.length === 0 && steps.length === 0 && run.status === "queued" && (
-            <div className="text-sm text-slate-500">Waiting to start...</div>
+            <div className="text-sm text-pawn-surface-500">Waiting to start...</div>
           )}
         </div>
       )}

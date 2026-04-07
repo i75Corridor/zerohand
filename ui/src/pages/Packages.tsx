@@ -77,7 +77,7 @@ function SecurityErrorPanel({
   const levelStyle: Record<SecurityFinding["level"], string> = {
     HIGH: "text-rose-400 bg-rose-500/10 border-rose-500/20",
     MEDIUM: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    LOW: "text-slate-400 bg-slate-500/10 border-slate-500/20",
+    LOW: "text-pawn-surface-400 bg-pawn-surface-500/10 border-pawn-surface-500/20",
   };
 
   return (
@@ -85,7 +85,7 @@ function SecurityErrorPanel({
       <div className="flex items-center gap-2 mb-3">
         <ShieldAlert size={14} className="text-rose-400 flex-shrink-0" />
         <span className="text-sm font-semibold text-rose-300">Security check failed</span>
-        <span className="text-xs text-slate-500">{parsed.repoName}</span>
+        <span className="text-xs text-pawn-surface-500">{parsed.repoName}</span>
       </div>
       <div className="flex flex-col gap-2 mb-4">
         {parsed.findings.map((f, i) => (
@@ -94,14 +94,14 @@ function SecurityErrorPanel({
               {f.level}
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-mono text-slate-400 truncate">{f.file}</p>
-              <p className="text-xs text-slate-300">{f.description}</p>
+              <p className="text-xs font-mono text-pawn-surface-400 truncate">{f.file}</p>
+              <p className="text-xs text-pawn-surface-300">{f.description}</p>
             </div>
           </div>
         ))}
       </div>
       <div className="flex items-center justify-between pt-3 border-t border-rose-500/10">
-        <p className="text-xs text-slate-500">Only install if you trust this source.</p>
+        <p className="text-xs text-pawn-surface-500">Only install if you trust this source.</p>
         <button
           onClick={onForce}
           disabled={forcing}
@@ -131,7 +131,7 @@ function ModelWarningPanel({
           <AlertTriangle size={14} className="text-amber-400 flex-shrink-0" />
           <span className="text-sm font-semibold text-amber-300">Model API keys missing</span>
         </div>
-        <button onClick={onDismiss} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+        <button onClick={onDismiss} className="text-xs text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
           Dismiss
         </button>
       </div>
@@ -142,8 +142,8 @@ function ModelWarningPanel({
           </div>
         ))}
       </div>
-      <p className="text-xs text-slate-500">
-        Add the required API keys in <a href="/settings" className="text-sky-400 hover:underline">Settings</a> to use these skills.
+      <p className="text-xs text-pawn-surface-500">
+        Add the required API keys in <a href="/settings" className="text-pawn-gold-400 hover:underline">Settings</a> to use these skills.
         The pipeline was installed successfully and can run using the pipeline-level model instead.
       </p>
     </div>
@@ -166,7 +166,7 @@ function InstalledCard({
   uninstalling: boolean;
 }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -174,10 +174,10 @@ function InstalledCard({
               href={`https://github.com/${pkg.repoFullName}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-semibold text-white hover:text-sky-300 flex items-center gap-1 transition-colors"
+              className="text-sm font-semibold text-white hover:text-pawn-gold-300 flex items-center gap-1 transition-colors"
             >
               {pkg.repoFullName}
-              <ExternalLink size={11} className="text-slate-500" />
+              <ExternalLink size={11} className="text-pawn-surface-500" />
             </a>
             {(pkg.metadata as Record<string, unknown> | null)?.origin === "authored" && (
               <span className="text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-md">
@@ -185,7 +185,7 @@ function InstalledCard({
               </span>
             )}
             {(pkg.metadata as Record<string, unknown> | null)?.isLocal === true && (
-              <span className="text-xs font-medium text-slate-400 bg-slate-700/40 border border-slate-700/50 px-1.5 py-0.5 rounded-md">
+              <span className="text-xs font-medium text-pawn-surface-400 bg-pawn-surface-700/40 border border-pawn-surface-700/50 px-1.5 py-0.5 rounded-md">
                 local
               </span>
             )}
@@ -207,7 +207,7 @@ function InstalledCard({
             )}
           </div>
           {pkg.pipelineName && (
-            <p className="text-xs text-slate-500 mt-0.5">Pipeline: {pkg.pipelineName}</p>
+            <p className="text-xs text-pawn-surface-500 mt-0.5">Pipeline: {pkg.pipelineName}</p>
           )}
         </div>
       </div>
@@ -225,8 +225,8 @@ function InstalledCard({
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
-        <p className="text-xs text-slate-600">
+      <div className="flex items-center justify-between pt-1 border-t border-pawn-surface-800/60">
+        <p className="text-xs text-pawn-surface-600">
           {pkg.installedAt
             ? `Installed ${new Date(pkg.installedAt).toLocaleDateString()}`
             : ""}
@@ -245,7 +245,7 @@ function InstalledCard({
           <button
             onClick={onUninstall}
             disabled={uninstalling}
-            className="text-slate-600 hover:text-rose-400 disabled:opacity-50 transition-colors"
+            className="text-pawn-surface-600 hover:text-rose-400 disabled:opacity-50 transition-colors"
             aria-label="Uninstall package"
           >
             <Trash2 size={13} />
@@ -268,23 +268,23 @@ function DiscoverCard({
   installing: boolean;
 }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-4 flex flex-col gap-3 card-hover">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <a
             href={pkg.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-semibold text-white hover:text-sky-300 flex items-center gap-1 transition-colors"
+            className="text-sm font-semibold text-white hover:text-pawn-gold-300 flex items-center gap-1 transition-colors"
           >
             {pkg.fullName}
-            <ExternalLink size={11} className="text-slate-500" />
+            <ExternalLink size={11} className="text-pawn-surface-500" />
           </a>
           {pkg.description && (
-            <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{pkg.description}</p>
+            <p className="text-xs text-pawn-surface-400 mt-0.5 line-clamp-2">{pkg.description}</p>
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0">
+        <div className="flex items-center gap-1 text-xs text-pawn-surface-500 flex-shrink-0">
           <Star size={11} />
           {pkg.stars}
         </div>
@@ -296,7 +296,7 @@ function DiscoverCard({
             .filter((t) => t !== "pawn-package")
             .slice(0, 3)
             .map((t) => (
-              <span key={t} className="text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
+              <span key={t} className="text-xs text-pawn-surface-400 bg-pawn-surface-800 px-1.5 py-0.5 rounded">
                 {t}
               </span>
             ))}
@@ -304,7 +304,7 @@ function DiscoverCard({
         <button
           onClick={onInstall}
           disabled={pkg.installed || installing}
-          className="flex items-center gap-1 px-3 py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-600 hover:text-white hover:border-sky-600 text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-500/10 text-pawn-gold-400 border border-pawn-gold-500/20 hover:bg-pawn-gold-600 hover:text-white hover:border-pawn-gold-600 text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
         >
           <Download size={11} />
           {pkg.installed ? "Installed" : installing ? "Installing..." : "Install"}
@@ -405,7 +405,7 @@ export default function Packages() {
         <button
           onClick={() => checkUpdates.mutate()}
           disabled={checkUpdates.isPending}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
         >
           <RefreshCw size={12} className={checkUpdates.isPending ? "animate-spin" : ""} />
           {checkUpdates.isPending ? "Checking..." : "Check for updates"}
@@ -414,11 +414,11 @@ export default function Packages() {
 
       {/* Installed packages */}
       <section className="mb-10">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+        <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
           Installed
         </h2>
         {loadingInstalled ? (
-          <p className="text-xs text-slate-600">Loading...</p>
+          <p className="text-xs text-pawn-surface-600">Loading...</p>
         ) : installed.length === 0 ? (
           <EmptyState
             compact
@@ -455,15 +455,15 @@ export default function Packages() {
 
       {/* Discover */}
       <section>
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+        <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
           Discover
         </h2>
 
         <div className="flex gap-2 mb-4">
           <div className="relative flex-1">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-pawn-surface-500" />
             <input
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+              className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
               placeholder="Search GitHub for pawn packages..."
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}
@@ -473,7 +473,7 @@ export default function Packages() {
           <button
             onClick={handleDiscover}
             disabled={loadingDiscover}
-            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
           >
             {loadingDiscover ? "Searching..." : "Search"}
           </button>
@@ -506,17 +506,17 @@ export default function Packages() {
         )}
 
         {/* Manual URL install */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Link size={13} className="text-slate-500" />
-            <span className="text-xs font-medium text-slate-400">Install from URL</span>
+            <Link size={13} className="text-pawn-surface-500" />
+            <span className="text-xs font-medium text-pawn-surface-400">Install from URL</span>
           </div>
-          <p className="text-xs text-slate-600 mb-3">
+          <p className="text-xs text-pawn-surface-600 mb-3">
             For private or unlisted repos. Use the full GitHub URL.
           </p>
           <div className="flex gap-2">
             <input
-              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-sky-500 font-mono placeholder-slate-600 focus:outline-none focus:border-sky-500"
+              className="flex-1 bg-pawn-surface-950 border border-pawn-surface-800 rounded-xl px-3 py-1.5 text-xs text-pawn-gold-500 font-mono placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
               placeholder="https://github.com/owner/repo"
               value={manualUrl}
               onChange={(e) => setManualUrl(e.target.value)}
@@ -525,7 +525,7 @@ export default function Packages() {
             <button
               onClick={handleInstallManual}
               disabled={!manualUrl.trim() || (install.isPending && installingId === "manual")}
-              className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium rounded-xl disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-xs font-medium rounded-xl disabled:opacity-50 transition-colors"
             >
               <Download size={11} />
               {install.isPending && installingId === "manual" ? "Installing..." : "Install"}

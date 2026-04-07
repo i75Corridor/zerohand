@@ -38,12 +38,12 @@ export default class ErrorBoundary extends Component<Props, State> {
           <h2 className="text-lg font-semibold text-rose-300 mb-2">
             Something went wrong
           </h2>
-          <p className="text-sm text-slate-400 mb-4">
+          <p className="text-sm text-pawn-surface-400 mb-4">
             An unexpected error occurred while rendering this section. Try
             refreshing the page.
           </p>
           {this.state.error && (
-            <pre className="text-xs text-rose-400/80 font-mono bg-slate-950 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words mb-4">
+            <pre className="text-xs text-rose-400/80 font-mono bg-pawn-surface-950 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words mb-4">
               {this.state.error.message}
             </pre>
           )}
