@@ -37,7 +37,7 @@ export function registerPackageTools(server: McpServer, client: ApiClient): void
 
   server.tool(
     "install_package",
-    "Install a zerohand package from a GitHub repository URL",
+    "Install a pawn package from a GitHub repository URL",
     {
       repoUrl: z.string().describe("GitHub repository URL, e.g. https://github.com/owner/repo"),
       force: z.boolean().optional().describe("If true, install even when security scan reports high risk"),
@@ -102,7 +102,7 @@ export function registerPackageTools(server: McpServer, client: ApiClient): void
 
   server.tool(
     "discover_packages",
-    "Search GitHub for zerohand packages (repos with the zerohand-package topic)",
+    "Search GitHub for pawn packages (repos with the pawn-package topic)",
     {
       query: z.string().optional().describe("Optional search query to filter packages by keyword"),
     },

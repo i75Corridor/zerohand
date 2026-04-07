@@ -6,7 +6,7 @@ export function registerResources(server: McpServer, client: ApiClient): void {
   // Static: all pipelines
   server.resource(
     "pipelines",
-    "zerohand://pipelines",
+    "pawn://pipelines",
     { description: "All pipelines with metadata", mimeType: "application/json" },
     async (uri) => {
       const pipelines = await client.listPipelines();
@@ -19,12 +19,12 @@ export function registerResources(server: McpServer, client: ApiClient): void {
   // Dynamic: single pipeline
   server.resource(
     "pipeline",
-    new ResourceTemplate("zerohand://pipelines/{id}", {
+    new ResourceTemplate("pawn://pipelines/{id}", {
       list: async () => {
         const pipelines = await client.listPipelines();
         return {
           resources: pipelines.map((p) => ({
-            uri: `zerohand://pipelines/${p.id}`,
+            uri: `pawn://pipelines/${p.id}`,
             name: p.name,
           })),
         };
@@ -42,7 +42,7 @@ export function registerResources(server: McpServer, client: ApiClient): void {
   // Static: all skills
   server.resource(
     "skills",
-    "zerohand://skills",
+    "pawn://skills",
     { description: "Skill catalog", mimeType: "application/json" },
     async (uri) => {
       const skills = await client.listSkills();
@@ -55,12 +55,12 @@ export function registerResources(server: McpServer, client: ApiClient): void {
   // Dynamic: single skill
   server.resource(
     "skill",
-    new ResourceTemplate("zerohand://skills/{name}", {
+    new ResourceTemplate("pawn://skills/{name}", {
       list: async () => {
         const skills = await client.listSkills();
         return {
           resources: skills.map((s) => ({
-            uri: `zerohand://skills/${s.name}`,
+            uri: `pawn://skills/${s.name}`,
             name: s.name,
           })),
         };
@@ -78,12 +78,12 @@ export function registerResources(server: McpServer, client: ApiClient): void {
   // Dynamic: run result
   server.resource(
     "run",
-    new ResourceTemplate("zerohand://runs/{id}", {
+    new ResourceTemplate("pawn://runs/{id}", {
       list: async () => {
         const runs = await client.listRuns();
         return {
           resources: runs.slice(0, 20).map((r) => ({
-            uri: `zerohand://runs/${r.id}`,
+            uri: `pawn://runs/${r.id}`,
             name: `Run ${r.id} (${r.status})`,
           })),
         };

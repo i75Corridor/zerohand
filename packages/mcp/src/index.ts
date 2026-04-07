@@ -19,7 +19,7 @@ function validateUrl(raw: string): string {
     }
     return url.origin;
   } catch {
-    console.error(`[zerohand-mcp] Invalid ZEROHAND_URL: ${raw}`);
+    console.error(`[pawn-mcp] Invalid PAWN_URL: ${raw}`);
     process.exit(1);
   }
 }
@@ -44,7 +44,7 @@ async function runStdio(client: ApiClient) {
   const server = buildServer(client);
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[zerohand-mcp] Server running via stdio");
+  console.error("[pawn-mcp] Server running via stdio");
 }
 
 async function runHttp(client: ApiClient) {
@@ -67,7 +67,7 @@ async function runHttp(client: ApiClient) {
       }
       next();
     });
-    console.error("[zerohand-mcp] API key authentication enabled");
+    console.error("[pawn-mcp] API key authentication enabled");
   }
 
   // Stateless: new server + transport per request
@@ -96,14 +96,14 @@ async function runHttp(client: ApiClient) {
   const host = process.env.MCP_HOST ?? "127.0.0.1";
   const port = parseInt(process.env.MCP_PORT ?? "3100", 10);
   app.listen(port, host, () => {
-    console.error(`[zerohand-mcp] Server running via HTTP at http://${host}:${port}/mcp`);
+    console.error(`[pawn-mcp] Server running via HTTP at http://${host}:${port}/mcp`);
   });
 }
 
 async function main() {
-  const rawUrl = process.env.ZEROHAND_URL ?? "http://localhost:3009";
+  const rawUrl = process.env.PAWN_URL ?? "http://localhost:3009";
   const serverUrl = validateUrl(rawUrl);
-  const apiKey = process.env.ZEROHAND_API_KEY;
+  const apiKey = process.env.PAWN_API_KEY;
   const client = new ApiClient(serverUrl, apiKey);
 
   const transport = process.env.TRANSPORT ?? "stdio";
@@ -116,6 +116,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("[zerohand-mcp] Fatal error:", err);
+  console.error("[pawn-mcp] Fatal error:", err);
   process.exit(1);
 });

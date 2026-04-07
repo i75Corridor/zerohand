@@ -110,7 +110,7 @@ function createMockClient(): ApiClient {
 
 async function createTestServer() {
   const mockClient = createMockClient();
-  const server = new McpServer({ name: "zerohand-test", version: "0.1.0" });
+  const server = new McpServer({ name: "pawn-test", version: "0.1.0" });
 
   registerPipelineTools(server, mockClient);
   registerRunTools(server, mockClient);
@@ -150,17 +150,17 @@ describe("MCP Server Integration", () => {
     const { client } = await createTestServer();
     const result = await client.listResources();
     const uris = result.resources.map((r) => r.uri).sort();
-    expect(uris).toContain("zerohand://pipelines");
-    expect(uris).toContain("zerohand://skills");
+    expect(uris).toContain("pawn://pipelines");
+    expect(uris).toContain("pawn://skills");
   });
 
   it("lists resource templates", async () => {
     const { client } = await createTestServer();
     const result = await client.listResourceTemplates();
     const templates = result.resourceTemplates.map((t) => t.uriTemplate).sort();
-    expect(templates).toContain("zerohand://pipelines/{id}");
-    expect(templates).toContain("zerohand://skills/{name}");
-    expect(templates).toContain("zerohand://runs/{id}");
+    expect(templates).toContain("pawn://pipelines/{id}");
+    expect(templates).toContain("pawn://skills/{name}");
+    expect(templates).toContain("pawn://runs/{id}");
   });
 
   it("lists both registered prompts", async () => {
@@ -241,7 +241,7 @@ describe("MCP Server Integration", () => {
 
   it("reads pipeline resource", async () => {
     const { client } = await createTestServer();
-    const result = await client.readResource({ uri: "zerohand://pipelines" });
+    const result = await client.readResource({ uri: "pawn://pipelines" });
     const content = result.contents[0];
     const text = "text" in content ? content.text : "";
     const data = JSON.parse(text);
