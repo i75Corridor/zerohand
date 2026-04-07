@@ -154,7 +154,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Backdrop overlay for mobile sidebar */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden animate-overlay-in" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-pawn-surface-950/70 z-40 lg:hidden animate-overlay-in" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
@@ -241,9 +241,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Main content + Agent panel */}
       <div className="flex flex-1 min-w-0 overflow-hidden">
-        <main id="main-content" className="flex-1 min-w-0 overflow-y-auto bg-slate-950 relative">
+        <main id="main-content" className="flex-1 min-w-0 overflow-y-auto bg-pawn-surface-950 relative">
           <button
-            className="lg:hidden fixed top-3 left-3 z-30 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-slate-800 rounded-lg text-slate-400 hover:text-white active:bg-slate-700 transition-colors"
+            className="lg:hidden fixed top-3 left-3 z-30 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-pawn-surface-800 rounded-button text-pawn-surface-400 hover:text-white active:bg-pawn-surface-700 transition-colors"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open menu"
           >
