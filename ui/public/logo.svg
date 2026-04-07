@@ -1,40 +1,41 @@
 <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
   <!--
     Pawn full logo mark
-    Fist (palm toward viewer) · "Pawn" on the palm · tagline below
+    Chess pawn piece · "Pawn" wordmark · tagline below
     Sky-400 (#38bdf8) on transparent background
   -->
 
-  <!-- Thumb (left, angled) -->
-  <rect x="50" y="36" width="32" height="76" rx="16" fill="#38bdf8" transform="rotate(-6 66 74)"/>
+  <!-- Crown (sphere) -->
+  <circle cx="140" cy="24" r="18" fill="#38bdf8"/>
 
-  <!-- Four knuckle bumps: pinky → index (left to right) -->
-  <rect x="80"  y="20" width="26" height="52" rx="13" fill="#38bdf8"/>
-  <rect x="110" y="13" width="28" height="58" rx="14" fill="#38bdf8"/>
-  <rect x="142" y="9"  width="28" height="63" rx="14" fill="#38bdf8"/>
-  <rect x="174" y="16" width="24" height="57" rx="12" fill="#38bdf8"/>
+  <!-- Neck -->
+  <rect x="130" y="40" width="20" height="12" rx="4" fill="#38bdf8"/>
 
-  <!-- Main palm / fist body -->
-  <rect x="74" y="60" width="150" height="90" rx="24" fill="#38bdf8"/>
+  <!-- Collar / crossbar -->
+  <rect x="114" y="50" width="52" height="10" rx="5" fill="#38bdf8"/>
 
-  <!-- Knuckle crease (subtle) -->
-  <path d="M 82 65 Q 149 56 222 65"
-        stroke="#0f172a" stroke-width="3" fill="none"
-        stroke-linecap="round" opacity="0.15"/>
+  <!-- Body (tapered column) -->
+  <path d="M 118 60 L 124 104 L 156 104 L 162 60 Z" fill="#38bdf8"/>
 
-  <!-- "Pawn" on the palm -->
+  <!-- Base platform -->
+  <rect x="106" y="104" width="68" height="14" rx="7" fill="#38bdf8"/>
+
+  <!-- Base foot -->
+  <rect x="96" y="116" width="88" height="16" rx="8" fill="#38bdf8"/>
+
+  <!-- "Pawn" wordmark -->
   <text
-    x="149" y="115"
+    x="140" y="158"
     text-anchor="middle"
     font-family="'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
     font-size="22" font-weight="700"
-    fill="#0f172a"
+    fill="#38bdf8"
     letter-spacing="-0.4"
   >Pawn</text>
 
   <!-- Tagline -->
   <text
-    x="140" y="172"
+    x="140" y="178"
     text-anchor="middle"
     font-family="'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
     font-size="11.5" font-weight="500"

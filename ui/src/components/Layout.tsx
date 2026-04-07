@@ -1,31 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu, DollarSign, Menu, HelpCircle } from "lucide-react";
-
-function FistIcon({ size = 24, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 100 110"
-      width={size}
-      height={size}
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      {/* Thumb */}
-      <rect x="3" y="28" width="22" height="56" rx="11" fill="currentColor" transform="rotate(-6 14 56)" />
-      {/* Knuckles: pinky → index */}
-      <rect x="22" y="17" width="17" height="38" rx="8"  fill="currentColor" />
-      <rect x="42" y="11" width="18" height="44" rx="9"  fill="currentColor" />
-      <rect x="63" y="7"  width="18" height="48" rx="9"  fill="currentColor" />
-      <rect x="83" y="13" width="15" height="43" rx="7"  fill="currentColor" />
-      {/* Main fist body */}
-      <rect x="18" y="47" width="80" height="58" rx="17" fill="currentColor" />
-      {/* Knuckle crease */}
-      <path d="M 24 51 Q 58 44 96 51" stroke="rgba(15,23,42,0.18)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
-
+import { ChessPawnIcon } from "./Icons/ChessPawnIcon.tsx";
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -186,7 +161,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-out lg:relative lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex-shrink-0 sidebar flex flex-col`}>
         {/* Logo */}
         <div className="px-6 py-6 flex items-center gap-3">
-          <FistIcon size={24} className="text-sky-400" />
+          <ChessPawnIcon size={24} className="text-sky-400" />
           <span className="font-display text-xl text-white tracking-tighter">Pawn</span>
         </div>
 

@@ -44,6 +44,10 @@ export default {
           from: { opacity: '0' },
           to: { opacity: '1' },
         },
+        'pawn-hero-float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 300ms cubic-bezier(0.25, 1, 0.5, 1)',
@@ -51,6 +55,7 @@ export default {
         'scale-in': 'scale-in 250ms cubic-bezier(0.25, 1, 0.5, 1) both',
         'slide-in-right': 'slide-in-right 300ms cubic-bezier(0.25, 1, 0.5, 1) both',
         'overlay-in': 'overlay-in 200ms ease-out',
+        'pawn-hero-float': 'pawn-hero-float 3s ease-in-out infinite',
       },
     },
   },
