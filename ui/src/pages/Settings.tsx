@@ -496,7 +496,7 @@ function McpServersSection() {
         {isLoading && <div className="text-pawn-surface-500 text-sm">Loading...</div>}
 
         {!isLoading && servers.length === 0 && !adding && (
-          <div className="text-pawn-surface-600 text-sm border border-dashed border-pawn-surface-800 rounded-card p-6 text-center">
+          <div className="text-pawn-surface-600 text-sm bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6 text-center">
             No MCP servers registered. Add one to enable skills to call external tools.
           </div>
         )}
@@ -580,7 +580,7 @@ function CustomProvidersSection() {
         {isLoading && <div className="text-pawn-surface-500 text-sm">Loading...</div>}
 
         {!isLoading && providerNames.length === 0 && !adding && (
-          <div className="text-pawn-surface-600 text-sm border border-dashed border-pawn-surface-800 rounded-card p-6 text-center">
+          <div className="text-pawn-surface-600 text-sm bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6 text-center">
             No custom providers configured. Add one to use OpenAI-compatible endpoints (Ollama, LiteLLM, vLLM, etc.).
           </div>
         )}

@@ -16,14 +16,19 @@ interface SectionPanelProps {
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** @deprecated No longer used; all panels are solid. Kept for backward compat. */
+  variant?: "solid";
 }
 
 export default function SectionPanel({ title, action, children, className = "" }: SectionPanelProps) {
+  const borderClass = "border border-pawn-surface-800";
+  const bgClass = "bg-pawn-surface-900";
+
   return (
-    <div className={`bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden ${className}`}>
+    <div className={`${bgClass} ${borderClass} rounded-card overflow-hidden ${className}`}>
       {title && (
-        <div className="px-6 py-4 border-b border-pawn-surface-800/40 flex items-center justify-between bg-pawn-surface-900/60">
-          <h2 className="text-xs font-semibold text-pawn-surface-300 uppercase tracking-wider">{title}</h2>
+        <div className="px-6 py-4 border-b border-pawn-surface-800 flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">{title}</h2>
           {action}
         </div>
       )}

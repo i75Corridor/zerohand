@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { Zap, Activity, CreditCard, Square, AlertCircle, GitBranch } from "lucide-react";
 import { api } from "../lib/api.ts";
 import { useWebSocket } from "../lib/ws.ts";
-import StatCard from "../components/StatCard.tsx";
 import StatusBadge from "../components/StatusBadge.tsx";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
@@ -128,18 +127,56 @@ export default function Dashboard() {
         actions={
           <Link
             to="/pipelines/new"
-            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button text-xs font-medium btn-press"
+            className={`px-4 py-2 rounded-button text-xs font-bold btn-press ${
+              runs.length === 0
+                ? "bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300"
+                : "bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950"
+            }`}
           >
             New Pipeline
           </Link>
         }
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-        <StatCard icon={Zap} label="Runs this month" value={stats ? String(stats.runsThisMonth) : "\u2014"} accent="text-pawn-gold-400" />
-        <StatCard icon={Activity} label="Active instances" value={stats ? String(stats.activeRuns) : "\u2014"} sub={stats?.activeRuns === 0 ? "idle" : "running or queued"} accent="text-emerald-400" />
-        <StatCard icon={CreditCard} label="Accrued cost" value={stats ? formatCost(stats.costCentsThisMonth) : "\u2014"} sub="estimated monthly total" accent="text-amber-400" />
+      {/* Summary card — Settings-style */}
+      <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card mb-8 overflow-hidden">
+        <div className="px-6 py-4 border-b border-pawn-surface-800 flex items-center gap-3">
+          <Zap size={14} className="text-pawn-gold-400" />
+          <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Overview</h2>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Zap size={12} className="text-pawn-gold-400 opacity-70" />
+                <span className="text-xs text-pawn-surface-500">Runs this month</span>
+              </div>
+              <div className="text-2xl font-display font-bold text-white tabular-nums tracking-tight">
+                {stats ? String(stats.runsThisMonth) : "\u2014"}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Activity size={12} className="text-emerald-400 opacity-70" />
+                <span className="text-xs text-pawn-surface-500">Active</span>
+              </div>
+              <div className="text-2xl font-display font-bold text-white tabular-nums tracking-tight">
+                {stats ? String(stats.activeRuns) : "\u2014"}
+              </div>
+              <span className="text-xs text-pawn-surface-500">{stats?.activeRuns === 0 ? "idle" : "running"}</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <CreditCard size={12} className="text-amber-400 opacity-70" />
+                <span className="text-xs text-pawn-surface-500">Accrued cost</span>
+              </div>
+              <div className="text-2xl font-display font-bold text-white tabular-nums tracking-tight">
+                {stats ? formatCost(stats.costCentsThisMonth) : "\u2014"}
+              </div>
+              <span className="text-xs text-pawn-surface-500">this month</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Cancel error banner */}
@@ -154,7 +191,8 @@ export default function Dashboard() {
       {/* Recent runs */}
       <SectionPanel
         title="Recent Pipeline Runs"
-        action={<Link to="/pipelines" className="text-xs text-pawn-gold-400 hover:text-pawn-gold-300 font-medium transition-colors">View All</Link>}
+        variant="solid"
+        action={runs.length > 0 ? <Link to="/pipelines" className="text-xs text-pawn-gold-400 hover:text-pawn-gold-300 font-medium transition-colors">View All</Link> : undefined}
       >
         {runs.length === 0 ? (
           <div className="px-3 sm:px-6 py-3 sm:py-4">

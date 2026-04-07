@@ -297,7 +297,7 @@ function StepList({
       ))}
 
       <button
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-pawn-surface-800 hover:border-indigo-500/40 text-pawn-surface-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-button transition-colors text-sm"
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-pawn-surface-900 border border-pawn-surface-800 hover:border-indigo-500/40 text-pawn-surface-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-button transition-colors text-sm"
         onClick={onAdd}
       >
         <Plus size={14} /> Add step
@@ -619,7 +619,7 @@ export default function PipelineBuilder() {
           <div className="flex items-center gap-3">
             {error && <span className="text-xs text-rose-400">{error}</span>}
             <button
-              className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button disabled:opacity-50"
+              className="px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button disabled:opacity-50"
               disabled={saving || loading}
               onClick={save}
             >
