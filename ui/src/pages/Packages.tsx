@@ -226,7 +226,7 @@ function InstalledCard({
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-1 border-t border-pawn-surface-800/60">
+      <div className="flex items-center justify-between pt-1 border-t border-pawn-surface-800">
         <p className="text-xs text-pawn-surface-600">
           {pkg.installedAt
             ? `Installed ${new Date(pkg.installedAt).toLocaleDateString()}`
@@ -305,7 +305,7 @@ function DiscoverCard({
         <button
           onClick={onInstall}
           disabled={pkg.installed || installing}
-          className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-500/10 text-pawn-gold-400 border border-pawn-gold-500/20 hover:bg-pawn-gold-600 hover:text-white hover:border-pawn-gold-600 text-xs font-medium rounded-button disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-500/10 text-pawn-gold-400 border border-pawn-gold-500/20 hover:bg-pawn-gold-500 hover:text-pawn-surface-950 hover:border-pawn-gold-500 text-xs font-medium rounded-button disabled:opacity-40 transition-colors"
         >
           <Download size={11} />
           {pkg.installed ? "Installed" : installing ? "Installing..." : "Install"}
@@ -397,7 +397,7 @@ export default function Packages() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
       <PageHeader
         title="Packages"
         actions={
@@ -420,16 +420,18 @@ export default function Packages() {
         {loadingInstalled ? (
           <p className="text-xs text-pawn-surface-600">Loading...</p>
         ) : installed.length === 0 ? (
-          <EmptyState
-            compact
-            icon={Package}
-            title="Your arsenal is empty"
-            description="Packages bundle pipelines and skills from GitHub repositories. Search below to discover community packages, or paste a repo URL to install directly."
-            actions={[
-              { label: "Search Packages", onClick: () => document.querySelector<HTMLInputElement>('[placeholder*="Search GitHub"]')?.focus() },
-            ]}
-            hint="Packages are version-tracked and can be updated from here."
-          />
+          <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6">
+            <EmptyState
+              compact
+              icon={Package}
+              title="Your arsenal is empty"
+              description="Packages bundle pipelines and skills from GitHub repositories. Search below to discover community packages, or paste a repo URL to install directly."
+              actions={[
+                { label: "Search Packages", onClick: () => document.querySelector<HTMLInputElement>('[placeholder*="Search GitHub"]')?.focus() },
+              ]}
+              hint="Packages are version-tracked and can be updated from here."
+            />
+          </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {installed.map((pkg) => (
@@ -473,7 +475,7 @@ export default function Packages() {
           <button
             onClick={handleDiscover}
             disabled={loadingDiscover}
-            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button transition-colors disabled:opacity-50"
           >
             {loadingDiscover ? "Searching..." : "Search"}
           </button>
@@ -525,7 +527,7 @@ export default function Packages() {
             <button
               onClick={handleInstallManual}
               disabled={!manualUrl.trim() || (install.isPending && installingId === "manual")}
-              className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-xs font-medium rounded-button disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-xs font-medium rounded-button disabled:opacity-50 transition-colors"
             >
               <Download size={11} />
               {install.isPending && installingId === "manual" ? "Installing..." : "Install"}

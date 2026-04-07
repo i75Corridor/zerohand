@@ -85,7 +85,7 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
   };
 
   return (
-    <div className="border border-dashed border-pawn-surface-800 hover:border-pawn-gold-500/40 rounded-button p-4 bg-pawn-surface-800/50 space-y-4">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-4 space-y-4">
       {/* Presets */}
       <div>
         <div className="text-xs text-pawn-surface-500 mb-2 uppercase tracking-wide">Presets</div>
@@ -129,7 +129,7 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
                 key={d.value}
                 className={`text-xs px-2.5 py-2 sm:px-1.5 sm:py-1 rounded transition-colors ${
                   selectedDays.has(d.value)
-                    ? "bg-pawn-gold-600 text-white"
+                    ? "bg-pawn-gold-500 text-pawn-surface-950"
                     : "bg-pawn-surface-700 text-pawn-surface-400 hover:bg-pawn-surface-600"
                 }`}
                 onClick={() => toggleDay(d.value)}
@@ -143,7 +143,7 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
         </div>
         <div className="text-xs text-pawn-surface-500 mb-2 italic">{parseCron(customCron)}</div>
         <button
-          className="text-xs px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white rounded-button transition-colors"
+          className="text-xs px-3 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 rounded-button transition-colors"
           onClick={() => onSelect(customCron)}
         >
           Use this schedule
@@ -217,7 +217,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
         <div className="flex gap-3 justify-end">
           <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-white transition-colors" onClick={onClose}>Cancel</button>
           <button
-            className="px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button disabled:opacity-50 transition-colors"
             disabled={trigger.isPending}
             onClick={() => trigger.mutate()}
           >
@@ -404,7 +404,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                 role="tab"
                 aria-selected={tab === t}
                 className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors ${
-                  tab === t ? "bg-pawn-gold-600 text-white" : "bg-pawn-surface-800 text-pawn-surface-400 hover:bg-pawn-surface-700"
+                  tab === t ? "bg-pawn-gold-500 text-pawn-surface-950" : "bg-pawn-surface-800 text-pawn-surface-400 hover:bg-pawn-surface-700"
                 }`}
                 onClick={() => setTab(t)}
               >
@@ -471,7 +471,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                   <button
                     key={ct}
                     className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors capitalize ${
-                      channelType === ct ? "bg-pawn-gold-600 text-white" : "bg-pawn-surface-800 text-pawn-surface-400 hover:bg-pawn-surface-700"
+                      channelType === ct ? "bg-pawn-gold-500 text-pawn-surface-950" : "bg-pawn-surface-800 text-pawn-surface-400 hover:bg-pawn-surface-700"
                     }`}
                     onClick={() => setChannelType(ct)}
                     aria-pressed={channelType === ct}
@@ -567,7 +567,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
           )}
 
           <button
-            className="mt-3 flex items-center gap-1.5 px-3 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button disabled:opacity-50 transition-colors"
+            className="mt-3 flex items-center gap-1.5 px-3 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button disabled:opacity-50 transition-colors"
             disabled={!canSubmit}
             onClick={() => create.mutate()}
           >
@@ -620,7 +620,7 @@ function PipelineRow({ pipeline }: { pipeline: ApiPipeline }) {
             Triggers
           </button>
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-xs font-medium rounded-button transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-xs font-medium rounded-button transition-colors"
             onClick={() => setShowRun(true)}
             aria-label={`Run ${pipeline.name}`}
           >
@@ -666,7 +666,7 @@ export default function Pipelines() {
         actions={
           <Link
             to="/pipelines/new"
-            className="flex items-center gap-1.5 px-3 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-bold rounded-button transition-colors"
           >
             <Plus size={14} />
             New Pipeline
@@ -674,16 +674,18 @@ export default function Pipelines() {
         }
       />
       {pipelines.length === 0 ? (
-        <EmptyState
-          icon={GitBranch}
-          title="No pipelines on the board"
-          description="Pipelines define multi-step AI agent workflows. Each one chains skills together with configurable inputs, triggers, and approval gates."
-          actions={[
-            { label: "Create Pipeline", to: "/pipelines/new" },
-            { label: "Browse Packages", to: "/packages", variant: "secondary" },
-          ]}
-          hint="Pipelines can be triggered manually, on a cron schedule, or via webhook."
-        />
+        <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6">
+          <EmptyState
+            icon={GitBranch}
+            title="No pipelines on the board"
+            description="Pipelines define multi-step AI agent workflows. Each one chains skills together with configurable inputs, triggers, and approval gates."
+            actions={[
+              { label: "Create Pipeline", to: "/pipelines/new" },
+              { label: "Browse Packages", to: "/packages", variant: "secondary" },
+            ]}
+            hint="Pipelines can be triggered manually, on a cron schedule, or via webhook."
+          />
+        </div>
       ) : (
         <div className="space-y-3">
           {pipelines.map((p) => (

@@ -64,7 +64,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
           <button
             onClick={() => create.mutate()}
             disabled={!nameValid || create.isPending}
-            className="px-3 py-1.5 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-sm font-medium rounded-button transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button transition-colors disabled:opacity-40"
           >
             {create.isPending ? "Creating..." : "Create Skill"}
           </button>
@@ -104,14 +104,14 @@ export default function Skills() {
   });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
       <PageHeader
         title="Skills"
         actions={
           !creating ? (
             <button
               onClick={() => setCreating(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-bold rounded-button transition-colors"
             >
               <Plus size={13} /> New Skill
             </button>
@@ -122,16 +122,18 @@ export default function Skills() {
       {creating && <NewSkillForm onCancel={() => setCreating(false)} />}
 
       {skills.length === 0 ? (
-        <EmptyState
-          icon={Cpu}
-          title="No pieces in play"
-          description="Skills are reusable AI capabilities -- prompts, scripts, or tools that pipeline steps can invoke. Create one from scratch or install a package that includes skills."
-          actions={[
-            { label: "Create a Skill", onClick: () => setCreating(true) },
-            { label: "Browse Packages", to: "/packages", variant: "secondary" },
-          ]}
-          hint="Skills installed from packages appear here automatically."
-        />
+        <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6">
+          <EmptyState
+            icon={Cpu}
+            title="No pieces in play"
+            description="Skills are reusable AI capabilities -- prompts, scripts, or tools that pipeline steps can invoke. Create one from scratch or install a package that includes skills."
+            actions={[
+              { label: "Create a Skill", onClick: () => setCreating(true) },
+              { label: "Browse Packages", to: "/packages", variant: "secondary" },
+            ]}
+            hint="Skills installed from packages appear here automatically."
+          />
+        </div>
       ) : (
         <div className="space-y-6">
           {namespaces.map((ns) => (
@@ -145,7 +147,7 @@ export default function Skills() {
                   <Link
                     key={`${ns}/${skill.name}`}
                     to={skillDetailPath(skill)}
-                    className="flex items-center gap-4 px-4 py-3 bg-pawn-surface-900/50 border border-pawn-surface-800/60 rounded-card hover:border-pawn-surface-700 transition-colors"
+                    className="flex items-center gap-4 px-4 py-3 bg-pawn-surface-900 border border-pawn-surface-800 rounded-card hover:border-pawn-surface-700 transition-colors"
                   >
                     <Cpu size={15} className="text-violet-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">

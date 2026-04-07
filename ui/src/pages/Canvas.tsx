@@ -73,7 +73,7 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
   });
 
   return (
-    <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/60 rounded-card overflow-hidden">
+    <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card overflow-hidden">
       {/* Run header */}
       <button
         className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-pawn-surface-800/30 transition-colors text-left"
@@ -112,9 +112,9 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
         <div
           className={
             isMixed
-              ? "grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-0 md:divide-x divide-y md:divide-y-0 divide-pawn-surface-800/60"
+              ? "grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-0 md:divide-x divide-y md:divide-y-0 divide-pawn-surface-800"
               : sorted.length > 1
-              ? "grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-y md:divide-y-0 divide-pawn-surface-800/60"
+              ? "grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-y md:divide-y-0 divide-pawn-surface-800"
               : ""
           }
         >
@@ -153,15 +153,17 @@ export default function Canvas() {
       />
 
       {completedRuns.length === 0 ? (
-        <EmptyState
-          icon={Layers}
-          title="No endgame yet"
-          description="The canvas displays artifacts from completed pipeline runs -- images, markdown, and other generated output. Run a pipeline to see results here."
-          actions={[
-            { label: "Go to Pipelines", to: "/pipelines" },
-          ]}
-          hint="Only runs that produce file outputs (images, markdown) appear on the canvas."
-        />
+        <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6">
+          <EmptyState
+            icon={Layers}
+            title="No endgame yet"
+            description="The canvas displays artifacts from completed pipeline runs -- images, markdown, and other generated output. Run a pipeline to see results here."
+            actions={[
+              { label: "Go to Pipelines", to: "/pipelines" },
+            ]}
+            hint="Only runs that produce file outputs (images, markdown) appear on the canvas."
+          />
+        </div>
       ) : (
         <div className="space-y-6">
           {completedRuns.map((run, i) => (
