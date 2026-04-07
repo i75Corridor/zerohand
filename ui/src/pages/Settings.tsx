@@ -749,7 +749,7 @@ function AddProviderForm({
 
 export default function Settings() {
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl pt-14 lg:pt-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
       <PageHeader title="Settings" />
 
       <ActiveModelsSection />

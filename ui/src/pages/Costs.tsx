@@ -16,6 +16,7 @@ import { api } from "../lib/api.ts";
 import StatCard from "../components/StatCard.tsx";
 import LoadingState from "../components/LoadingState.tsx";
 import PageHeader from "../components/PageHeader.tsx";
+import SectionPanel from "../components/SectionPanel.tsx";
 import { formatCost, formatCostShort } from "../lib/format.ts";
 type Range = "7d" | "30d" | "90d";
 
@@ -121,10 +122,7 @@ export default function Costs() {
       </div>
 
       {/* Line chart — spend over time */}
-      <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden mb-8">
-        <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
-          <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Spend Over Time</h2>
-        </div>
+      <SectionPanel title="Spend Over Time" className="mb-8">
         <div className="p-6">
           {isLoading ? (
             <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm" role="status" aria-live="polite">Loading...</div>
@@ -166,15 +164,12 @@ export default function Costs() {
             </ResponsiveContainer>
           )}
         </div>
-      </div>
+      </SectionPanel>
 
       {/* Bar charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* By skill */}
-        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden">
-          <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
-            <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">By Skill</h2>
-          </div>
+        <SectionPanel title="By Skill">
           <div className="p-6">
             {isLoading ? (
               <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm" role="status" aria-live="polite">Loading...</div>
@@ -212,13 +207,10 @@ export default function Costs() {
               </ResponsiveContainer>
             )}
           </div>
-        </div>
+        </SectionPanel>
 
         {/* By pipeline */}
-        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden">
-          <div className="px-6 py-4 border-b border-pawn-surface-800 bg-pawn-surface-900/60">
-            <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">By Pipeline</h2>
-          </div>
+        <SectionPanel title="By Pipeline">
           <div className="p-6">
             {isLoading ? (
               <div className="h-48 flex items-center justify-center text-pawn-surface-400 text-sm" role="status" aria-live="polite">Loading...</div>
@@ -256,7 +248,7 @@ export default function Costs() {
               </ResponsiveContainer>
             )}
           </div>
-        </div>
+        </SectionPanel>
       </div>
     </div>
   );

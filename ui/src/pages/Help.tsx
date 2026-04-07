@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import OnboardingModal from "../components/OnboardingModal.tsx";
 import PageHeader from "../components/PageHeader.tsx";
+import SectionPanel from "../components/SectionPanel.tsx";
 
 const CONCEPTS = [
   {
@@ -122,7 +123,7 @@ export default function Help() {
         <p className="text-sm text-pawn-surface-400 mb-4">
           The AI copilot in the sidebar can perform all of these actions through natural language:
         </p>
-        <div className="bg-pawn-surface-900/40 border border-pawn-surface-800/50 rounded-card overflow-hidden">
+        <SectionPanel>
           {CAPABILITIES.map((cap, i) => (
             <div
               key={cap.label}
@@ -135,7 +136,7 @@ export default function Help() {
               <span className="text-xs text-pawn-surface-400">{cap.description}</span>
             </div>
           ))}
-        </div>
+        </SectionPanel>
       </div>
 
       {/* Tips */}

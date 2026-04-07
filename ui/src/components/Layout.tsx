@@ -8,6 +8,7 @@ import { api } from "../lib/api.ts";
 const GlobalChatPanel = lazy(() => import("./GlobalChatPanel.tsx"));
 import { useDataChangedListener } from "../hooks/useDataChangedListener.ts";
 import OnboardingModal from "./OnboardingModal.tsx";
+import LoadingState from "./LoadingState.tsx";
 
 function ApprovalsNavItem() {
   const { data: pending = [] } = useQuery({
@@ -264,14 +265,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onMouseDown={onDragStart}
               />
               <div className="flex-shrink-0" style={{ width: agentWidth }}>
-                <Suspense fallback={<div className="flex items-center justify-center h-full text-pawn-surface-500 text-sm">Loading...</div>}>
+                <Suspense fallback={<LoadingState variant="inline" />}>
                   <GlobalChatPanel onClose={() => setAgentOpen(false)} />
                 </Suspense>
               </div>
             </div>
           ) : (
             <div className="fixed inset-0 z-50 animate-fade-in">
-              <Suspense fallback={<div className="flex items-center justify-center h-full text-pawn-surface-500 text-sm">Loading...</div>}>
+              <Suspense fallback={<LoadingState variant="inline" />}>
                 <GlobalChatPanel onClose={() => setAgentOpen(false)} />
               </Suspense>
             </div>

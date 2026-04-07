@@ -616,7 +616,7 @@ export default function SkillDetail() {
 
   // View mode
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl pt-14 lg:pt-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
       <Link to="/skills" className="flex items-center gap-1.5 text-xs text-pawn-surface-500 hover:text-pawn-surface-300 mb-5 transition-colors">
         <ArrowLeft size={12} /> Skills
       </Link>
