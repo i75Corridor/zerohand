@@ -1,20 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
   <defs>
-    <!-- Background: deep slate gradient -->
     <linearGradient id="bg5" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#0a1628"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
 
-    <!-- Fist glow halo -->
     <radialGradient id="halo5" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.18"/>
       <stop offset="60%" stop-color="#0ea5e9" stop-opacity="0.06"/>
       <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Crisp edge glow on fist -->
-    <filter id="fistEdge5" x="-20%" y="-20%" width="140%" height="140%">
+    <filter id="pawnEdge5" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="3.5" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
@@ -22,12 +19,10 @@
       </feMerge>
     </filter>
 
-    <!-- Soft bloom behind fist -->
     <filter id="bloom5" x="-60%" y="-60%" width="220%" height="220%">
       <feGaussianBlur stdDeviation="22"/>
     </filter>
 
-    <!-- Wordmark glow -->
     <filter id="textGlow5" x="-10%" y="-40%" width="120%" height="180%">
       <feGaussianBlur stdDeviation="5" result="blur"/>
       <feMerge>
@@ -37,84 +32,65 @@
     </filter>
   </defs>
 
-  <!-- ── Background ── -->
+  <!-- Background -->
   <rect width="400" height="400" fill="url(#bg5)"/>
 
-  <!-- Subtle dot grid -->
+  <!-- Dot grid -->
   <g fill="#1e293b" opacity="0.45">
-    <!-- row 1 -->
-    <circle cx="40"  cy="40"  r="1"/><circle cx="80"  cy="40"  r="1"/><circle cx="120" cy="40"  r="1"/>
-    <circle cx="160" cy="40"  r="1"/><circle cx="200" cy="40"  r="1"/><circle cx="240" cy="40"  r="1"/>
-    <circle cx="280" cy="40"  r="1"/><circle cx="320" cy="40"  r="1"/><circle cx="360" cy="40"  r="1"/>
-    <!-- row 2 -->
-    <circle cx="40"  cy="80"  r="1"/><circle cx="80"  cy="80"  r="1"/><circle cx="120" cy="80"  r="1"/>
-    <circle cx="160" cy="80"  r="1"/><circle cx="200" cy="80"  r="1"/><circle cx="240" cy="80"  r="1"/>
-    <circle cx="280" cy="80"  r="1"/><circle cx="320" cy="80"  r="1"/><circle cx="360" cy="80"  r="1"/>
-    <!-- row 3 -->
-    <circle cx="40"  cy="120" r="1"/><circle cx="80"  cy="120" r="1"/><circle cx="120" cy="120" r="1"/>
+    <circle cx="40" cy="40" r="1"/><circle cx="80" cy="40" r="1"/><circle cx="120" cy="40" r="1"/>
+    <circle cx="160" cy="40" r="1"/><circle cx="200" cy="40" r="1"/><circle cx="240" cy="40" r="1"/>
+    <circle cx="280" cy="40" r="1"/><circle cx="320" cy="40" r="1"/><circle cx="360" cy="40" r="1"/>
+    <circle cx="40" cy="80" r="1"/><circle cx="80" cy="80" r="1"/><circle cx="120" cy="80" r="1"/>
+    <circle cx="160" cy="80" r="1"/><circle cx="200" cy="80" r="1"/><circle cx="240" cy="80" r="1"/>
+    <circle cx="280" cy="80" r="1"/><circle cx="320" cy="80" r="1"/><circle cx="360" cy="80" r="1"/>
+    <circle cx="40" cy="120" r="1"/><circle cx="80" cy="120" r="1"/><circle cx="120" cy="120" r="1"/>
     <circle cx="160" cy="120" r="1"/><circle cx="200" cy="120" r="1"/><circle cx="240" cy="120" r="1"/>
     <circle cx="280" cy="120" r="1"/><circle cx="320" cy="120" r="1"/><circle cx="360" cy="120" r="1"/>
-    <!-- row 4 -->
-    <circle cx="40"  cy="160" r="1"/><circle cx="80"  cy="160" r="1"/><circle cx="120" cy="160" r="1"/>
+    <circle cx="40" cy="160" r="1"/><circle cx="80" cy="160" r="1"/><circle cx="120" cy="160" r="1"/>
     <circle cx="160" cy="160" r="1"/><circle cx="200" cy="160" r="1"/><circle cx="240" cy="160" r="1"/>
     <circle cx="280" cy="160" r="1"/><circle cx="320" cy="160" r="1"/><circle cx="360" cy="160" r="1"/>
-    <!-- row 5 -->
-    <circle cx="40"  cy="200" r="1"/><circle cx="80"  cy="200" r="1"/><circle cx="120" cy="200" r="1"/>
+    <circle cx="40" cy="200" r="1"/><circle cx="80" cy="200" r="1"/><circle cx="120" cy="200" r="1"/>
     <circle cx="160" cy="200" r="1"/><circle cx="200" cy="200" r="1"/><circle cx="240" cy="200" r="1"/>
     <circle cx="280" cy="200" r="1"/><circle cx="320" cy="200" r="1"/><circle cx="360" cy="200" r="1"/>
-    <!-- row 6 -->
-    <circle cx="40"  cy="240" r="1"/><circle cx="80"  cy="240" r="1"/><circle cx="120" cy="240" r="1"/>
+    <circle cx="40" cy="240" r="1"/><circle cx="80" cy="240" r="1"/><circle cx="120" cy="240" r="1"/>
     <circle cx="160" cy="240" r="1"/><circle cx="200" cy="240" r="1"/><circle cx="240" cy="240" r="1"/>
     <circle cx="280" cy="240" r="1"/><circle cx="320" cy="240" r="1"/><circle cx="360" cy="240" r="1"/>
-    <!-- row 7 -->
-    <circle cx="40"  cy="280" r="1"/><circle cx="80"  cy="280" r="1"/><circle cx="120" cy="280" r="1"/>
+    <circle cx="40" cy="280" r="1"/><circle cx="80" cy="280" r="1"/><circle cx="120" cy="280" r="1"/>
     <circle cx="160" cy="280" r="1"/><circle cx="200" cy="280" r="1"/><circle cx="240" cy="280" r="1"/>
     <circle cx="280" cy="280" r="1"/><circle cx="320" cy="280" r="1"/><circle cx="360" cy="280" r="1"/>
-    <!-- row 8 -->
-    <circle cx="40"  cy="320" r="1"/><circle cx="80"  cy="320" r="1"/><circle cx="120" cy="320" r="1"/>
+    <circle cx="40" cy="320" r="1"/><circle cx="80" cy="320" r="1"/><circle cx="120" cy="320" r="1"/>
     <circle cx="160" cy="320" r="1"/><circle cx="200" cy="320" r="1"/><circle cx="240" cy="320" r="1"/>
     <circle cx="280" cy="320" r="1"/><circle cx="320" cy="320" r="1"/><circle cx="360" cy="320" r="1"/>
-    <!-- row 9 -->
-    <circle cx="40"  cy="360" r="1"/><circle cx="80"  cy="360" r="1"/><circle cx="120" cy="360" r="1"/>
+    <circle cx="40" cy="360" r="1"/><circle cx="80" cy="360" r="1"/><circle cx="120" cy="360" r="1"/>
     <circle cx="160" cy="360" r="1"/><circle cx="200" cy="360" r="1"/><circle cx="240" cy="360" r="1"/>
     <circle cx="280" cy="360" r="1"/><circle cx="320" cy="360" r="1"/><circle cx="360" cy="360" r="1"/>
   </g>
 
-  <!-- ── Central ambient halo ── -->
-  <ellipse cx="200" cy="168" rx="140" ry="120" fill="url(#halo5)"/>
+  <!-- Ambient halo -->
+  <ellipse cx="200" cy="155" rx="140" ry="120" fill="url(#halo5)"/>
 
-  <!-- ── Fist: bloom layer (sky glow behind) ── -->
-  <g transform="translate(110, 60) scale(1.8)" filter="url(#bloom5)" opacity="0.55">
-    <rect x="3"  y="28" width="22" height="56" rx="11" fill="#38bdf8" transform="rotate(-6 14 56)"/>
-    <rect x="22" y="17" width="17" height="38" rx="8"  fill="#38bdf8"/>
-    <rect x="42" y="11" width="18" height="44" rx="9"  fill="#38bdf8"/>
-    <rect x="63" y="7"  width="18" height="48" rx="9"  fill="#38bdf8"/>
-    <rect x="83" y="13" width="15" height="43" rx="7"  fill="#38bdf8"/>
-    <rect x="18" y="47" width="80" height="58" rx="17" fill="#38bdf8"/>
+  <!-- Pawn bloom layer -->
+  <g transform="translate(128, 48) scale(6)" filter="url(#bloom5)" opacity="0.55">
+    <circle cx="12" cy="6" r="4" fill="#38bdf8"/>
+    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#38bdf8"/>
+    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#38bdf8"/>
+    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#38bdf8"/>
   </g>
 
-  <!-- ── Fist: crisp main render ── -->
-  <g transform="translate(110, 60) scale(1.8)" filter="url(#fistEdge5)">
-    <!-- Thumb -->
-    <rect x="3"  y="28" width="22" height="56" rx="11" fill="#38bdf8" transform="rotate(-6 14 56)"/>
-    <!-- Knuckles: pinky → index -->
-    <rect x="22" y="17" width="17" height="38" rx="8"  fill="#38bdf8"/>
-    <rect x="42" y="11" width="18" height="44" rx="9"  fill="#38bdf8"/>
-    <rect x="63" y="7"  width="18" height="48" rx="9"  fill="#38bdf8"/>
-    <rect x="83" y="13" width="15" height="43" rx="7"  fill="#38bdf8"/>
-    <!-- Palm body -->
-    <rect x="18" y="47" width="80" height="58" rx="17" fill="#38bdf8"/>
-    <!-- Knuckle crease -->
-    <path d="M 24 51 Q 58 44 96 51"
-          stroke="rgba(15,23,42,0.22)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <!-- Subtle inner highlight on top of palm face -->
-    <rect x="22" y="48" width="72" height="18" rx="10" fill="rgba(255,255,255,0.07)"/>
+  <!-- Pawn crisp render -->
+  <g transform="translate(128, 48) scale(6)" filter="url(#pawnEdge5)">
+    <circle cx="12" cy="6" r="4" fill="#38bdf8"/>
+    <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#38bdf8"/>
+    <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#38bdf8"/>
+    <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#38bdf8"/>
+    <!-- Subtle highlight -->
+    <rect x="8" y="11.5" width="8" height="3" rx="1" fill="rgba(255,255,255,0.07)"/>
   </g>
 
-  <!-- ── Divider ── -->
+  <!-- Divider -->
   <line x1="140" y1="282" x2="260" y2="282" stroke="#0ea5e9" stroke-width="0.75" opacity="0.25"/>
 
-  <!-- ── Wordmark ── -->
+  <!-- Wordmark -->
   <g filter="url(#textGlow5)">
     <text
       x="200" y="318"
@@ -123,14 +99,14 @@
       text-anchor="middle" fill="#f8fafc">Pawn</text>
   </g>
 
-  <!-- ── Tagline ── -->
+  <!-- Tagline -->
   <text
     x="200" y="342"
     font-family="'Helvetica Neue', Arial, sans-serif"
     font-size="11.5" letter-spacing="0.4"
     text-anchor="middle" fill="#475569">Agentic workflows for engineers</text>
 
-  <!-- ── Corner L-brackets ── -->
+  <!-- Corner L-brackets -->
   <g stroke="#0ea5e9" stroke-width="1.2" opacity="0.22" fill="none" stroke-linecap="square">
     <polyline points="14,34 14,14 34,14"/>
     <polyline points="366,14 386,14 386,34"/>
