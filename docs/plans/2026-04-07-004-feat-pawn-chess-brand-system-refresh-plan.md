@@ -1,7 +1,7 @@
 ---
 title: "feat: Pawn chess brand system refresh — colors, design language, and component consistency"
 type: feat
-status: active
+status: completed
 date: 2026-04-07
 origin: GitHub issue i75Corridor/pawn#71
 ---
