@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 import Layout from "./components/Layout.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
+import LoadingState from "./components/LoadingState.tsx";
 
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Pipelines = lazy(() => import("./pages/Pipelines.tsx"));
@@ -38,18 +39,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Layout>
-        <Suspense fallback={
-            <div className="p-6 lg:p-10 animate-fade-in" role="status" aria-live="polite">
-              <div className="h-5 w-24 bg-pawn-surface-800/60 rounded animate-pulse mb-2" />
-              <div className="h-8 w-48 bg-pawn-surface-800/60 rounded animate-pulse mb-8" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="h-24 bg-pawn-surface-900/50 border border-pawn-surface-800 rounded-card animate-pulse" />
-                <div className="h-24 bg-pawn-surface-900/50 border border-pawn-surface-800 rounded-card animate-pulse" />
-                <div className="h-24 bg-pawn-surface-900/50 border border-pawn-surface-800 rounded-card animate-pulse" />
-              </div>
-              <span className="sr-only">Loading page content</span>
-            </div>
-          }>
+        <Suspense fallback={<LoadingState />}>
           <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
