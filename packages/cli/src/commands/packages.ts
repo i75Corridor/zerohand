@@ -108,7 +108,7 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
 
   cmd
     .command("discover [query]")
-    .description("search GitHub for zerohand packages")
+    .description("search GitHub for pawn packages")
     .action(async (query?: string) => {
       const results = await client.discoverPackages(query);
       if (results.length === 0) {
@@ -195,15 +195,15 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
         "## Install",
         "",
         "```bash",
-        `zerohand packages install https://github.com/YOUR_ORG/${dirName}`,
+        `pawn packages install https://github.com/YOUR_ORG/${dirName}`,
         "```",
         "",
         "## Usage",
         "",
         "```bash",
         inputParam
-          ? `zerohand run "${full.name}" --input ${inputParam}="..." --watch`
-          : `zerohand run "${full.name}" --watch`,
+          ? `pawn run "${full.name}" --input ${inputParam}="..." --watch`
+          : `pawn run "${full.name}" --watch`,
         "```",
       ].join("\n");
       writeFileSync(join(outDir, "README.md"), readme + "\n", "utf-8");
@@ -215,14 +215,14 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
       console.log(`\nNext steps:`);
       console.log(`  cd ${dirName}`);
       console.log(`  git init && git add . && git commit -m "Export ${full.name}"`);
-      console.log(`  zerohand packages publish . --repo YOUR_ORG/${dirName}`);
+      console.log(`  pawn packages publish . --repo YOUR_ORG/${dirName}`);
     });
 
   // ── publish ───────────────────────────────────────────────────────────────
 
   cmd
     .command("publish <path>")
-    .description("publish a local package to GitHub and tag it as a zerohand-package")
+    .description("publish a local package to GitHub and tag it as a pawn-package")
     .option("--repo <owner/repo>", "GitHub repository to publish to (required if no git remote)")
     .option("--private", "create the GitHub repo as private (default: public)")
     .option("--description <text>", "GitHub repo description (defaults to pipeline description)")
@@ -235,7 +235,7 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
       }
       if (!existsSync(join(absPath, "pipeline.yaml"))) {
         console.error(`No pipeline.yaml found at ${absPath}`);
-        console.error("Run 'zerohand packages export <name>' first.");
+        console.error("Run 'pawn packages export <name>' first.");
         process.exit(1);
       }
 
@@ -314,19 +314,19 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
         }
       }
 
-      // 6. Add zerohand-package topic
-      console.log("Adding zerohand-package topic...");
+      // 6. Add pawn-package topic
+      console.log("Adding pawn-package topic...");
       const topicResult = spawnSync(
-        "gh", ["repo", "edit", repoFullName, "--add-topic", "zerohand-package"],
+        "gh", ["repo", "edit", repoFullName, "--add-topic", "pawn-package"],
         { stdio: "inherit" },
       );
       if (topicResult.status !== 0) {
-        console.warn("Warning: could not add zerohand-package topic automatically.");
+        console.warn("Warning: could not add pawn-package topic automatically.");
         console.warn(`Add it manually at: https://github.com/${repoFullName}`);
       }
 
       console.log(`\nPublished to https://github.com/${repoFullName}`);
       console.log("Package is now discoverable via:");
-      console.log(`  zerohand packages discover`);
+      console.log(`  pawn packages discover`);
     });
 }

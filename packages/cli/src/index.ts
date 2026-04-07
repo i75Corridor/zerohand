@@ -13,8 +13,8 @@ import { registerNewCommand } from "./commands/new.js";
 import { registerConfigCommand } from "./commands/config-cmd.js";
 
 const program = new Command()
-  .name("zerohand")
-  .description("Zerohand CLI — manage pipelines, runs, packages, triggers, approvals, budgets, and settings")
+  .name("pawn")
+  .description("Pawn CLI — manage pipelines, runs, packages, triggers, approvals, budgets, and settings")
   .version("0.1.0");
 
 const serverUrl = getServerUrl();

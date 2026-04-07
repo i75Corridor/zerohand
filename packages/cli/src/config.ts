@@ -13,7 +13,7 @@ const DEFAULT_CONFIG: CliConfig = {
 
 export function getConfigPath(): string {
   const configHome = process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config");
-  return join(configHome, "zerohand", "config.json");
+  return join(configHome, "pawn", "config.json");
 }
 
 export function loadConfig(): CliConfig {
@@ -36,5 +36,5 @@ export function saveConfig(updates: Partial<CliConfig>): void {
 }
 
 export function getServerUrl(): string {
-  return process.env.ZEROHAND_SERVER_URL ?? loadConfig().serverUrl;
+  return process.env.PAWN_SERVER_URL ?? loadConfig().serverUrl;
 }
