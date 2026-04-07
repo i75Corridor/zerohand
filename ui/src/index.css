@@ -77,8 +77,8 @@ body {
   contain: layout style;
 }
 
-/* GPU-promote sidebar transform for smooth mobile slide-in */
-aside {
+/* GPU-promote sidebar transform only during mobile slide-in transition */
+aside.transitioning {
   will-change: transform;
 }
 
@@ -96,7 +96,7 @@ aside {
   transition: border-color 200ms var(--ease-out-quart);
 }
 .card-hover:hover {
-  border-color: rgb(71 85 105 / 0.6);
+  border-color: oklch(0.36 0.010 58 / 0.6);
 }
 
 /* ── Focus ring ──────────────────────────────────────────────── */
