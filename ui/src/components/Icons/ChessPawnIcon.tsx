@@ -1,113 +1,146 @@
-import { forwardRef, useImperativeHandle, useRef, useCallback } from "react";
-import { motion, useAnimation, type Variants } from "framer-motion";
+import { motion, useAnimation, type Variants } from "motion/react";
+import type { HTMLAttributes } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
 export interface ChessPawnIconHandle {
   startAnimation: () => void;
   stopAnimation: () => void;
 }
 
+interface ChessPawnIconProps extends HTMLAttributes<HTMLDivElement> {
+  size?: number;
+}
+
 const HEAD_VARIANTS: Variants = {
-  idle: { translateX: 0, translateY: 0, rotate: 0 },
+  normal: {
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring",
+      stiffness: 180,
+      damping: 16,
+    },
+  },
   animate: {
-    translateX: [0, -1, 1.5, -0.5, 0],
-    translateY: [0, -1.5, 0.5, -1, 0],
-    rotate: [0, -3, 2, -1, 0],
+    x: [0, -5, 5, 0],
+    rotate: [0, -15, 15, 0],
     transition: {
       duration: 2.4,
-      ease: "easeInOut" as const,
-      repeat: 0,
+      times: [0, 0.33, 0.66, 1],
+      ease: "easeInOut",
     },
   },
 };
 
 const BODY_VARIANTS: Variants = {
-  idle: { rotate: 0 },
+  normal: {
+    rotate: 0,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 16,
+    },
+  },
   animate: {
-    rotate: [0, -1.5, 1, -0.5, 0],
+    rotate: [0, 5, 5, 5, 3, 0],
     transition: {
       duration: 1.8,
-      ease: "easeInOut" as const,
-      repeat: 0,
+      times: [0, 0.08, 0.3, 0.52, 0.72, 1],
+      ease: "easeInOut",
     },
   },
 };
 
-interface ChessPawnIconProps {
-  size?: number;
-  className?: string;
-}
-
-export const ChessPawnIcon = forwardRef<ChessPawnIconHandle, ChessPawnIconProps>(
-  ({ size = 28, className = "" }, ref) => {
+const ChessPawnIcon = forwardRef<ChessPawnIconHandle, ChessPawnIconProps>(
+  ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
     const headControls = useAnimation();
     const bodyControls = useAnimation();
-    const isAnimating = useRef(false);
+    const isControlledRef = useRef(false);
 
-    const startAnimation = useCallback(async () => {
-      if (isAnimating.current) return;
-      isAnimating.current = true;
-      await Promise.all([
-        headControls.start("animate"),
-        bodyControls.start("animate"),
-      ]);
-      isAnimating.current = false;
-    }, [headControls, bodyControls]);
+    useImperativeHandle(ref, () => {
+      isControlledRef.current = true;
+      return {
+        startAnimation: () => {
+          headControls.start("animate");
+          bodyControls.start("animate");
+        },
+        stopAnimation: () => {
+          headControls.start("normal");
+          bodyControls.start("normal");
+        },
+      };
+    });
 
-    const stopAnimation = useCallback(() => {
-      headControls.start("idle");
-      bodyControls.start("idle");
-      isAnimating.current = false;
-    }, [headControls, bodyControls]);
+    const handleMouseEnter = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isControlledRef.current) {
+          onMouseEnter?.(e);
+        } else {
+          headControls.start("animate");
+          bodyControls.start("animate");
+        }
+      },
+      [headControls, bodyControls, onMouseEnter]
+    );
 
-    useImperativeHandle(ref, () => ({
-      startAnimation,
-      stopAnimation,
-    }));
+    const handleMouseLeave = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isControlledRef.current) {
+          onMouseLeave?.(e);
+        } else {
+          headControls.start("normal");
+          bodyControls.start("normal");
+        }
+      },
+      [headControls, bodyControls, onMouseLeave]
+    );
 
     return (
-      <motion.svg
-        viewBox="0 0 48 48"
-        width={size}
-        height={size}
+      <div
         className={className}
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-        onMouseEnter={() => startAnimation()}
-        onMouseLeave={() => stopAnimation()}
-        style={{ overflow: "visible" }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        {...props}
       >
-        {/* Body group: base + column */}
-        <motion.g
-          variants={BODY_VARIANTS}
-          animate={bodyControls}
-          initial="idle"
-          style={{ originX: "24px", originY: "40px" }}
+        <svg
+          fill="none"
+          height={size}
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+          width={size}
+          xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Base foot */}
-          <rect x="10" y="39" width="28" height="5" rx="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
-          {/* Base platform */}
-          <rect x="13" y="34" width="22" height="6" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-          {/* Body column */}
-          <path d="M 16 34 L 18 22 L 30 22 L 32 34" stroke="currentColor" strokeWidth="2" fill="none" strokeLinejoin="round" />
-          {/* Collar */}
-          <rect x="14" y="20" width="20" height="4" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-        </motion.g>
-
-        {/* Head group: neck + crown */}
-        <motion.g
-          variants={HEAD_VARIANTS}
-          animate={headControls}
-          initial="idle"
-          style={{ originX: "24px", originY: "20px" }}
-        >
-          {/* Neck */}
-          <rect x="20" y="15" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" fill="none" />
-          {/* Crown sphere */}
-          <circle cx="24" cy="10" r="6" stroke="currentColor" strokeWidth="2" fill="none" />
-        </motion.g>
-      </motion.svg>
+          <motion.g
+            animate={bodyControls}
+            initial="normal"
+            style={{ transformBox: "view-box", transformOrigin: "12px 21px" }}
+            variants={BODY_VARIANTS}
+          >
+            <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" />
+            <path d="m14.5 10 1.5 8" />
+            <path d="M7 10h10" />
+            <path d="m8 18 1.5-8" />
+          </motion.g>
+          <motion.circle
+            animate={headControls}
+            cx="12"
+            cy="6"
+            initial="normal"
+            r="4"
+            style={{ transformBox: "fill-box", transformOrigin: "center" }}
+            variants={HEAD_VARIANTS}
+          />
+        </svg>
+      </div>
     );
   }
 );
 
 ChessPawnIcon.displayName = "ChessPawnIcon";
+
+export { ChessPawnIcon };

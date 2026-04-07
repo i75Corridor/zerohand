@@ -1,21 +1,11 @@
-<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
-  <!-- Pawn chess piece — sky-400 on transparent bg -->
-
-  <!-- Crown (sphere) -->
-  <circle cx="50" cy="18" r="14" fill="#38bdf8"/>
-
-  <!-- Neck -->
-  <rect x="42" y="30" width="16" height="10" rx="3" fill="#38bdf8"/>
-
-  <!-- Collar / crossbar -->
-  <rect x="30" y="38" width="40" height="8" rx="4" fill="#38bdf8"/>
-
-  <!-- Body (tapered column) -->
-  <path d="M 34 46 L 38 80 L 62 80 L 66 46 Z" fill="#38bdf8" rx="2"/>
-
-  <!-- Base platform -->
-  <rect x="22" y="80" width="56" height="12" rx="6" fill="#38bdf8"/>
-
-  <!-- Base foot -->
-  <rect x="16" y="90" width="68" height="14" rx="7" fill="#38bdf8"/>
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pawn chess piece favicon — sky-400 filled -->
+  <!-- Head -->
+  <circle cx="12" cy="6" r="4" fill="#38bdf8"/>
+  <!-- Collar bar -->
+  <rect x="7" y="9.5" width="10" height="1.5" rx="0.75" fill="#38bdf8"/>
+  <!-- Body (tapered) -->
+  <path d="M8 11 L9.5 18 L14.5 18 L16 11 Z" fill="#38bdf8"/>
+  <!-- Base -->
+  <path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="#38bdf8"/>
 </svg>
