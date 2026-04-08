@@ -185,8 +185,8 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
             <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${transportBadgeColor}`}>
               {server.transport}
             </span>
-            {server.source === "package" && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-pawn-surface-700 text-pawn-surface-400">package</span>
+            {server.source === "blueprint" && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-pawn-surface-700 text-pawn-surface-400">blueprint</span>
             )}
             {missingEnvVars.length > 0 && (
               <span

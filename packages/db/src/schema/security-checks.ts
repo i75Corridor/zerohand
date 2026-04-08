@@ -1,9 +1,9 @@
 import { pgTable, uuid, text, jsonb, integer, timestamp } from "drizzle-orm/pg-core";
-import { installedPackages } from "./packages.js";
+import { installedBlueprints } from "./blueprints.js";
 
-export const packageSecurityChecks = pgTable("package_security_checks", {
+export const blueprintSecurityChecks = pgTable("blueprint_security_checks", {
   id: uuid("id").primaryKey().defaultRandom(),
-  packageId: uuid("package_id").references(() => installedPackages.id, { onDelete: "cascade" }),
+  blueprintId: uuid("blueprint_id").references(() => installedBlueprints.id, { onDelete: "cascade" }),
   repoUrl: text("repo_url").notNull(),
   level: text("level").notNull(),
   findings: jsonb("findings").$type<Array<Record<string, unknown>>>().notNull().default([]),

@@ -12,7 +12,7 @@ const RunDetail = lazy(() => import("./pages/RunDetail.tsx"));
 const Approvals = lazy(() => import("./pages/Approvals.tsx"));
 const Canvas = lazy(() => import("./pages/Canvas.tsx"));
 const Settings = lazy(() => import("./pages/Settings.tsx"));
-const Packages = lazy(() => import("./pages/Packages.tsx"));
+const Blueprints = lazy(() => import("./pages/Blueprints.tsx"));
 const Skills = lazy(() => import("./pages/Skills.tsx"));
 const SkillDetail = lazy(() => import("./pages/SkillDetail.tsx"));
 const Costs = lazy(() => import("./pages/Costs.tsx"));
@@ -50,7 +50,7 @@ export default function App() {
               <Route path="/pipelines/:id/edit" element={<PipelineBuilder />} />
               <Route path="/approvals" element={<Approvals />} />
               <Route path="/canvas" element={<Canvas />} />
-              <Route path="/packages" element={<Packages />} />
+              <Route path="/blueprints" element={<Blueprints />} />
               <Route path="/skills" element={<Skills />} />
               <Route path="/skills/:namespace/:name" element={<SkillDetail />} />
               <Route path="/settings" element={<Settings />} />

@@ -5,14 +5,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
 import type { AgentToolContext } from "./context.js";
-import { scanPackage } from "../security-scanner.js";
+import { scanBlueprint } from "../security-scanner.js";
 
-export function makeScanPackage(_ctx: AgentToolContext): ToolDefinition {
+export function makeScanBlueprint(_ctx: AgentToolContext): ToolDefinition {
   return {
-    name: "scan_package",
-    label: "Scan Package",
+    name: "scan_blueprint",
+    label: "Scan Blueprint",
     description:
-      "Clone a package repository into a temp directory and run a security scan without installing. Returns a security report with risk level and findings.",
+      "Clone a blueprint repository into a temp directory and run a security scan without installing. Returns a security report with risk level and findings.",
     parameters: Type.Object({
       repoUrl: Type.String({
         description: "GitHub repository URL to scan, e.g. https://github.com/owner/repo",
@@ -34,7 +34,7 @@ export function makeScanPackage(_ctx: AgentToolContext): ToolDefinition {
           child.on("error", reject);
         });
 
-        const report = scanPackage(tempDir);
+        const report = scanBlueprint(tempDir);
         return {
           content: [{ type: "text" as const, text: JSON.stringify(report, null, 2) }],
           details: {},

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { Router } from "express";
 import { eq, asc, ne, inArray, desc, max, sql } from "drizzle-orm";
 import type { Db } from "@pawn/db";
-import { pipelines, pipelineSteps, pipelineRuns, costEvents, installedPackages, pipelineVersions } from "@pawn/db";
+import { pipelines, pipelineSteps, pipelineRuns, costEvents, installedBlueprints, pipelineVersions } from "@pawn/db";
 import type { ApiPipeline, ApiPipelineStep } from "@pawn/shared";
 import { pipelineToYaml } from "@pawn/shared";
 import { skillsDir as getSkillsDir } from "../services/paths.js";
@@ -74,18 +74,18 @@ async function snapshotPipeline(db: Db, pipelineId: string, summary?: string): P
   });
 }
 
-async function syncLocalPackageToDisk(db: Db, pipelineId: string): Promise<void> {
+async function syncLocalBlueprintToDisk(db: Db, pipelineId: string): Promise<void> {
   const pkgs = await db
     .select()
-    .from(installedPackages)
-    .where(eq(installedPackages.pipelineId, pipelineId));
+    .from(installedBlueprints)
+    .where(eq(installedBlueprints.pipelineId, pipelineId));
 
   const localPkg = pkgs.find((p) => (p.metadata as Record<string, unknown> | null)?.isLocal === true);
   if (!localPkg) return;
 
   const localPath = localPkg.localPath;
   if (!existsSync(localPath)) {
-    console.warn(`[Local Package] Directory no longer exists, skipping disk write: ${localPath}`);
+    console.warn(`[Local Blueprint] Directory no longer exists, skipping disk write: ${localPath}`);
     return;
   }
 
@@ -93,7 +93,7 @@ async function syncLocalPackageToDisk(db: Db, pipelineId: string): Promise<void>
   if (!pipeline) return;
 
   writeFileSync(join(localPath, "pipeline.yaml"), pipelineToYaml(pipeline), "utf-8");
-  console.log(`[Local Package] Wrote pipeline.yaml to ${localPath}`);
+  console.log(`[Local Blueprint] Wrote pipeline.yaml to ${localPath}`);
 }
 
 export function createPipelinesRouter(db: Db): Router {
@@ -162,7 +162,7 @@ export function createPipelinesRouter(db: Db): Router {
         .returning();
       if (!row) return res.status(404).json({ error: "Pipeline not found" });
       const result = await loadPipelineWithSteps(db, row.id);
-      await syncLocalPackageToDisk(db, row.id);
+      await syncLocalBlueprintToDisk(db, row.id);
       res.json(result);
     } catch (err) {
       next(err);
@@ -252,7 +252,7 @@ export function createPipelinesRouter(db: Db): Router {
           retryConfig: body.retryConfig ?? null,
         })
         .returning();
-      await syncLocalPackageToDisk(db, req.params.id);
+      await syncLocalBlueprintToDisk(db, req.params.id);
       res.status(201).json(toApiStep(row));
     } catch (err) {
       next(err);
@@ -269,7 +269,7 @@ export function createPipelinesRouter(db: Db): Router {
         .where(eq(pipelineSteps.id, req.params.stepId))
         .returning();
       if (!row) return res.status(404).json({ error: "Step not found" });
-      await syncLocalPackageToDisk(db, req.params.pipelineId);
+      await syncLocalBlueprintToDisk(db, req.params.pipelineId);
       res.json(toApiStep(row));
     } catch (err) {
       next(err);
@@ -284,7 +284,7 @@ export function createPipelinesRouter(db: Db): Router {
         .where(eq(pipelineSteps.id, req.params.stepId))
         .returning();
       if (deleted.length === 0) return res.status(404).json({ error: "Step not found" });
-      await syncLocalPackageToDisk(db, req.params.pipelineId);
+      await syncLocalBlueprintToDisk(db, req.params.pipelineId);
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -379,7 +379,7 @@ export function createPipelinesRouter(db: Db): Router {
       }
 
       const result = await loadPipelineWithSteps(db, req.params.id);
-      await syncLocalPackageToDisk(db, req.params.id);
+      await syncLocalBlueprintToDisk(db, req.params.id);
       res.json(result);
     } catch (err) {
       next(err);

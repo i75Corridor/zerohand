@@ -8,7 +8,7 @@ import {
   Search,
   Zap,
   ListChecks,
-  Package,
+  Blocks,
   Play,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -118,7 +118,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   const suggestions: { icon: typeof Search; label: string; prompt: string; category: "query" | "action" }[] = [
     { icon: ListChecks, label: "List all pipelines", prompt: "List all pipelines", category: "query" },
     { icon: Search, label: "Recent run failures", prompt: "Show me recent run failures", category: "query" },
-    { icon: Package, label: "Installed packages", prompt: "What packages are installed?", category: "query" },
+    { icon: Blocks, label: "Installed blueprints", prompt: "What blueprints are installed?", category: "query" },
     { icon: Zap, label: "Create a web scraping skill", prompt: "Create a new skill for web scraping", category: "action" },
     { icon: Play, label: "Trigger Daily Absurdist", prompt: "Trigger the Daily Absurdist pipeline", category: "action" },
   ];

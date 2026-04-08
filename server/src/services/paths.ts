@@ -5,9 +5,9 @@ export function dataDir(): string {
   return process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
 }
 
-/** Where cloned package repos are stored */
-export function packagesDir(): string {
-  return process.env.PACKAGES_DIR ?? join(dataDir(), "packages");
+/** Where cloned blueprint repos are stored */
+export function blueprintsDir(): string {
+  return process.env.BLUEPRINTS_DIR ?? process.env.PACKAGES_DIR ?? join(dataDir(), "blueprints");
 }
 
 /** Where skill folders (SKILL.md + scripts/) are stored */

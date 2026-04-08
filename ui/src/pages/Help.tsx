@@ -9,7 +9,7 @@ import {
   Webhook,
   ShieldCheck,
   MessageSquare,
-  Package,
+  Blocks,
   Settings,
   Navigation,
   DollarSign,
@@ -65,7 +65,7 @@ const CAPABILITIES = [
   { icon: Webhook, label: "Triggers", description: "List, create, update, delete cron/webhook/channel triggers" },
   { icon: ShieldCheck, label: "Approvals", description: "List pending approvals, approve or reject pipeline steps" },
   { icon: DollarSign, label: "Budgets", description: "List, create, update, delete budget policies for cost control" },
-  { icon: Package, label: "Packages", description: "Install from repo, update, uninstall, discover on GitHub, scan for security" },
+  { icon: Blocks, label: "Blueprints", description: "Install from repo, update, uninstall, discover on GitHub, scan for security" },
   { icon: Settings, label: "Settings", description: "List all settings, update configuration values" },
   { icon: Navigation, label: "Navigation", description: "Navigate the UI to any page" },
 ];
@@ -153,8 +153,8 @@ export default function Help() {
               <span>Pipeline steps requiring human review will pause and appear on the Approvals page.</span>
             </li>
             <li className="flex items-start gap-2">
-              <Package className="w-4 h-4 text-pawn-surface-500 mt-0.5 shrink-0" />
-              <span>Install packages from GitHub to quickly add pre-built pipelines and skills.</span>
+              <Blocks className="w-4 h-4 text-pawn-surface-500 mt-0.5 shrink-0" />
+              <span>Install blueprints from GitHub to quickly add pre-built pipelines and skills.</span>
             </li>
           </ul>
         </div>

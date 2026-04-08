@@ -9,11 +9,11 @@ import { join } from "node:path";
 import type { AgentToolContext } from "./context.js";
 import { safeSkillDir } from "./skill-utils.js";
 
-export function makeExportPackage(ctx: AgentToolContext): ToolDefinition {
+export function makeExportBlueprint(ctx: AgentToolContext): ToolDefinition {
   return {
-    name: "export_package",
-    label: "Export Package",
-    description: "Return the full package structure for a pipeline: pipeline.yaml content, and all bundled skills with their SKILL.md and scripts. Use this to preview what would be published.",
+    name: "export_blueprint",
+    label: "Export Blueprint",
+    description: "Return the full blueprint structure for a pipeline: pipeline.yaml content, and all bundled skills with their SKILL.md and scripts. Use this to preview what would be published.",
     parameters: Type.Object({
       pipelineId: Type.String({ description: "The pipeline ID to export." }),
     }),
@@ -74,7 +74,7 @@ export function makeExportPackage(ctx: AgentToolContext): ToolDefinition {
           }
         }
 
-        // Strip namespace for export (namespace is implied by the package)
+        // Strip namespace for export (namespace is implied by the blueprint)
         const slashIdx = qualifiedName.indexOf("/");
         const bareName = slashIdx > -1 ? qualifiedName.slice(slashIdx + 1) : qualifiedName;
 

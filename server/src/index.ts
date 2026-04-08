@@ -11,8 +11,8 @@ import { createDb, ensurePostgresDatabase, applyPendingMigrations } from "@pawn/
 import { WsManager } from "./ws/index.js";
 import { ExecutionEngine } from "./services/execution-engine.js";
 import { TriggerManager } from "./services/trigger-manager.js";
-import { importAllPackages } from "./services/pipeline-import.js";
-import { checkForUpdates } from "./services/package-manager.js";
+import { importAllBlueprints } from "./services/pipeline-import.js";
+import { checkBlueprintUpdates } from "./services/blueprint-manager.js";
 import { detectDocker } from "./services/script-sandbox.js";
 import { createHealthRouter } from "./routes/health.js";
 import { createPipelinesRouter } from "./routes/pipelines.js";
@@ -25,7 +25,7 @@ import { createSettingsRouter } from "./routes/settings.js";
 import { createFilesRouter } from "./routes/files.js";
 import { createWebhooksRouter } from "./routes/webhooks.js";
 import { createSkillsRouter } from "./routes/skills.js";
-import { createPackagesRouter } from "./routes/packages.js";
+import { createBlueprintsRouter } from "./routes/blueprints.js";
 import { makeMcpServersRouter } from "./routes/mcp-servers.js";
 import { createModelsRouter } from "./routes/models.js";
 import { createLogsRouter } from "./routes/logs.js";
@@ -138,12 +138,12 @@ async function main() {
   }
 
   const pipelinesDir = process.env.PIPELINES_DIR ?? join(process.cwd(), "..", "pipelines");
-  await importAllPackages(db, pipelinesDir);
+  await importAllBlueprints(db, pipelinesDir);
 
   // Non-blocking startup update check, then every 30 minutes
   const runUpdateCheck = () =>
-    void checkForUpdates(db).catch((err) =>
-      console.error("[Packages] Update check failed:", err),
+    void checkBlueprintUpdates(db).catch((err) =>
+      console.error("[Blueprints] Update check failed:", err),
     );
   runUpdateCheck();
   setInterval(runUpdateCheck, 30 * 60 * 1000);
@@ -183,7 +183,7 @@ async function main() {
   app.use("/api", createApprovalsRouter(db, ws));
   app.use("/api", createTriggersRouter(db, ws));
   app.use("/api", createBudgetsRouter(db, ws));
-  app.use("/api", createPackagesRouter(db, ws));
+  app.use("/api", createBlueprintsRouter(db, ws));
 
   const engine = new ExecutionEngine(db, ws);
   const triggers = new TriggerManager(db, ws);

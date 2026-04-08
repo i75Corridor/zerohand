@@ -10,7 +10,7 @@ export function makeGetPipelineYaml(ctx: AgentToolContext): ToolDefinition {
   return {
     name: "get_pipeline_yaml",
     label: "Get Pipeline YAML",
-    description: "Return the YAML representation of a pipeline as it would be exported in a package. Useful for reviewing the final pipeline definition before publishing.",
+    description: "Return the YAML representation of a pipeline as it would be exported in a blueprint. Useful for reviewing the final pipeline definition before publishing.",
     parameters: Type.Object({
       pipelineId: Type.String({ description: "The pipeline ID." }),
     }),

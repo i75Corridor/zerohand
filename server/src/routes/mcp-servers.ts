@@ -18,7 +18,7 @@ function rowToApi(row: typeof mcpServers.$inferSelect): ApiMcpServer {
     env: (row.env as Record<string, string> | null) ?? {},
     enabled: row.enabled,
     source: row.source as ApiMcpServer["source"],
-    sourcePackageId: row.sourcePackageId ?? undefined,
+    sourceBlueprintId: row.sourceBlueprintId ?? undefined,
     metadata: (row.metadata as ApiMcpServer["metadata"]) ?? undefined,
   };
 }

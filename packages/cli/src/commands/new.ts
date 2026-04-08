@@ -13,9 +13,9 @@ interface StepDef {
 export function registerNewCommand(program: Command): void {
   program
     .command("new <package-name>")
-    .description("scaffold a new pipeline package")
+    .description("scaffold a new pipeline blueprint")
     .action(async (packageName: string) => {
-      p.intro(`Creating new pawn package: ${packageName}`);
+      p.intro(`Creating new pawn blueprint: ${packageName}`);
 
       const answers = await p.group(
         {
@@ -127,7 +127,7 @@ export function registerNewCommand(program: Command): void {
         "## Install",
         "",
         "```bash",
-        `pawn packages install https://github.com/YOUR_ORG/${packageName}`,
+        `pawn blueprints install https://github.com/YOUR_ORG/${packageName}`,
         "```",
         "",
         "## Usage",
@@ -183,11 +183,11 @@ export function registerNewCommand(program: Command): void {
         // git not available, skip
       }
 
-      p.outro(`Package scaffolded at ./${packageName}/`);
+      p.outro(`Blueprint scaffolded at ./${packageName}/`);
       console.log(`\nNext steps:`);
       console.log(`  cd ${packageName}`);
       console.log(`  # edit pipeline.yaml and skills/`);
-      console.log(`  git add . && git commit -m "Initial pipeline package"`);
-      console.log(`  pawn packages install https://github.com/YOUR_ORG/${packageName}`);
+      console.log(`  git add . && git commit -m "Initial pipeline blueprint"`);
+      console.log(`  pawn blueprints install https://github.com/YOUR_ORG/${packageName}`);
     });
 }

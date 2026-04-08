@@ -315,11 +315,11 @@ Live tool list for a server.
 
 ---
 
-### Packages
+### Blueprints
 
-#### `POST /api/packages/preview`
+#### `POST /api/blueprints/preview`
 
-Preview a pipeline as a package without writing any files. Returns the pipeline YAML, bundled skill contents, and a validation result — useful for inspecting what an export would produce.
+Preview a pipeline as a blueprint without writing any files. Returns the pipeline YAML, bundled skill contents, and a validation result — useful for inspecting what an export would produce.
 
 ```json
 { "pipelineId": "uuid" }

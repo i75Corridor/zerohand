@@ -19,7 +19,7 @@ The agent follows a structured workflow when asked to build a pipeline:
 6. **Add steps** — call `add_pipeline_step` for each, linking to the skill's qualified name (`local/<name>`)
 7. **Validate** — call `validate_pipeline` and fix any errors before proceeding
 8. **Test (optional)** — call `test_step` to run individual steps with mock inputs
-9. **Export** — call `get_pipeline_yaml` or `export_package` to produce the distributable form
+9. **Export** — call `get_pipeline_yaml` or `export_blueprint` to produce the distributable form
 
 ---
 
@@ -69,7 +69,7 @@ The agent follows a structured workflow when asked to build a pipeline:
 |------|-------------|
 | `validate_pipeline` | Run static validation — returns `{valid, errors[], warnings[]}` |
 | `get_pipeline_yaml` | Serialize a pipeline to its YAML representation |
-| `export_package` | Return full package bundle: YAML + skill SKILL.md files + scripts |
+| `export_blueprint` | Return full blueprint bundle: YAML + skill SKILL.md files + scripts |
 
 ### MCP server tools
 
@@ -90,7 +90,7 @@ Skills created by the agent go into the `local` namespace. When referencing a sk
 ```
 local/researcher
 local/writer
-daily-absurdist/researcher   ← imported package skill
+daily-absurdist/researcher   ← imported blueprint skill
 ```
 
 The agent's system prompt includes this reminder, so it should use qualified names automatically.

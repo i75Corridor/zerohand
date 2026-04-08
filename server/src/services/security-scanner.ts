@@ -264,7 +264,7 @@ function maxLevel(a: SecurityLevel, b: SecurityLevel): SecurityLevel {
   return rank[a] >= rank[b] ? a : b;
 }
 
-export function scanPackage(packageDir: string): SecurityReport {
+export function scanBlueprint(packageDir: string): SecurityReport {
   const findings: SecurityFinding[] = [];
   let scannedFiles = 0;
 

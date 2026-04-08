@@ -1,6 +1,6 @@
 # Pawn CLI
 
-`pawn` is the command-line interface for managing pipelines, runs, and packages — and for scaffolding new pipeline packages ready to publish as GitHub repositories.
+`pawn` is the command-line interface for managing pipelines, runs, and blueprints — and for scaffolding new pipeline blueprints ready to publish as GitHub repositories.
 
 ## Installation
 
@@ -166,7 +166,7 @@ Import a `pipeline.yaml` file into the server. If a pipeline with the same name 
 pawn pipelines import ./my-pipeline/pipeline.yaml
 ```
 
-The YAML format matches the [Pipeline Package Format](./PACKAGE_FORMAT.md). Steps are synced by position: existing steps are replaced, new ones added, removed ones deleted.
+The YAML format matches the [Pipeline Blueprint Format](./BLUEPRINT_FORMAT.md). Steps are synced by position: existing steps are replaced, new ones added, removed ones deleted.
 
 > **Note:** Context files (referenced via `context:` in the YAML) are resolved server-side at run time — they are not uploaded by the CLI. The `systemPrompt` field is sent as-is; `systemPromptFile` is not followed client-side.
 
@@ -189,90 +189,90 @@ pawn pipelines export "The Daily Absurdist" --output pipeline.yaml
 
 ---
 
-## Package management
+## Blueprint management
 
-### `pawn packages list`
+### `pawn blueprints list`
 
-List installed packages.
+List installed blueprints.
 
 ```bash
-pawn packages list
+pawn blueprints list
 ```
 
 Shows repo name, skills, whether an update is available, and install date.
 
 ---
 
-### `pawn packages install <repo-url-or-path>`
+### `pawn blueprints install <repo-url-or-path>`
 
-Install a pipeline package from a GitHub repository URL **or a local directory path**.
+Install a pipeline blueprint from a GitHub repository URL **or a local directory path**.
 
 ```bash
 # From GitHub
-pawn packages install https://github.com/i75Corridor/pawn-daily-absurdist
+pawn blueprints install https://github.com/i75Corridor/pawn-daily-absurdist
 
 # From a local directory
-pawn packages install ./my-pipeline
-pawn packages install /absolute/path/to/my-pipeline
+pawn blueprints install ./my-pipeline
+pawn blueprints install /absolute/path/to/my-pipeline
 ```
 
 **Local path install** is the bridge between your local files and the UI editor. When you install from a local path:
 
-1. The server imports `pipeline.yaml` into the database so the pipeline appears in the UI at `http://localhost:3008/packages`
+1. The server imports `pipeline.yaml` into the database so the pipeline appears in the UI at `http://localhost:3008/blueprints`
 2. Any edits you make in the UI editor are written back to `pipeline.yaml` on disk automatically
-3. The install is **ephemeral by path** — if you move the directory, re-run `pawn packages install <new-path>` to re-register it
+3. The install is **ephemeral by path** — if you move the directory, re-run `pawn blueprints install <new-path>` to re-register it
 
-This is useful when you've scaffolded a new package with `pawn new` and want to iterate on it visually before publishing:
+This is useful when you've scaffolded a new blueprint with `pawn new` and want to iterate on it visually before publishing:
 
 ```bash
 pawn new my-pipeline          # scaffold
-pawn packages install ./my-pipeline  # load into UI
-# edit in UI at http://localhost:3008/packages
+pawn blueprints install ./my-pipeline  # load into UI
+# edit in UI at http://localhost:3008/blueprints
 # changes flow back to ./my-pipeline/pipeline.yaml
 ```
 
-The `packages list` command shows a `TYPE` column (`local` or `remote`) so you can tell at a glance which packages are file-backed.
+The `blueprints list` command shows a `TYPE` column (`local` or `remote`) so you can tell at a glance which blueprints are file-backed.
 
 ---
 
-### `pawn packages update <name>`
+### `pawn blueprints update <name>`
 
-Pull the latest version of an installed package.
+Pull the latest version of an installed blueprint.
 
 ```bash
-pawn packages update pawn-daily-absurdist
+pawn blueprints update pawn-daily-absurdist
 ```
 
 The `<name>` matches the last segment of the repository full name (case-insensitive).
 
 ---
 
-### `pawn packages uninstall <name>`
+### `pawn blueprints uninstall <name>`
 
-Uninstall a package.
+Uninstall a blueprint.
 
 ```bash
-pawn packages uninstall pawn-daily-absurdist
+pawn blueprints uninstall pawn-daily-absurdist
 ```
 
 ---
 
-### `pawn packages discover [query]`
+### `pawn blueprints discover [query]`
 
-Search GitHub for repositories tagged with the `pawn-package` topic.
+Search GitHub for repositories tagged with the `pawn-blueprint` topic.
 
 ```bash
-pawn packages discover
-pawn packages discover news
+pawn blueprints discover
+pawn blueprints discover news
 ```
 
 ---
 
 ## Scaffolding
 
-### `pawn new <package-name>`
+### `pawn new <blueprint-name>`
 
-Interactively scaffold a new pipeline package. Prompts for name, description, model, input parameters, and step definitions, then generates a ready-to-publish directory structure.
+Interactively scaffold a new pipeline blueprint. Prompts for name, description, model, input parameters, and step definitions, then generates a ready-to-publish directory structure.
 
 ```bash
 pawn new my-pipeline
@@ -297,13 +297,13 @@ The directory is `git init`'d automatically. To publish manually:
 ```bash
 cd my-pipeline
 git add .
-git commit -m "Initial pipeline package"
+git commit -m "Initial pipeline blueprint"
 gh repo create my-pipeline --public --push
-gh repo edit my-pipeline --add-topic pawn-package
-pawn packages install https://github.com/YOUR_ORG/my-pipeline
+gh repo edit my-pipeline --add-topic pawn-blueprint
+pawn blueprints install https://github.com/YOUR_ORG/my-pipeline
 ```
 
-> **In-app alternative:** You can skip the CLI entirely and author pipelines + skills directly in the UI, then use the **Publish to GitHub** button on the pipeline detail page. See [`docs/pipeline-packages.md`](./pipeline-packages.md) for the full workflow.
+> **In-app alternative:** You can skip the CLI entirely and author pipelines + skills directly in the UI, then use the **Publish to GitHub** button on the pipeline detail page. See [`docs/pipeline-blueprints.md`](./pipeline-blueprints.md) for the full workflow.
 
 ---
 

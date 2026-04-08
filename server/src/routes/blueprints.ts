@@ -5,18 +5,18 @@ import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { desc, eq } from "drizzle-orm";
 import type { Db } from "@pawn/db";
-import { installedPackages, packageSecurityChecks, pipelines } from "@pawn/db";
+import { installedBlueprints, blueprintSecurityChecks, pipelines } from "@pawn/db";
 import type { WsManager } from "../ws/index.js";
 import {
-  installPackage,
-  updatePackage,
-  uninstallPackage,
-  discoverPackages,
-  checkForUpdates,
-} from "../services/package-manager.js";
+  installBlueprint,
+  updateBlueprint,
+  uninstallBlueprint,
+  discoverBlueprints,
+  checkBlueprintUpdates,
+} from "../services/blueprint-manager.js";
 import { importPipelinePackage } from "../services/pipeline-import.js";
-import { scanPackage } from "../services/security-scanner.js";
-import { packagesDir as getPackagesDir, skillsDir as getSkillsDir } from "../services/paths.js";
+import { scanBlueprint } from "../services/security-scanner.js";
+import { blueprintsDir as getBlueprintsDir, skillsDir as getSkillsDir } from "../services/paths.js";
 import { loadPipelineWithSteps } from "./pipelines.js";
 import { pipelineToYaml } from "@pawn/shared";
 
@@ -29,7 +29,7 @@ function ghAvailable(): boolean {
   return result.status === 0;
 }
 
-async function buildPackageDir(
+async function buildBlueprintDir(
   db: Db,
   pipelineId: string,
   outDir: string,
@@ -99,7 +99,7 @@ async function buildPackageDir(
     "## Install",
     "",
     "```bash",
-    `pawn packages install https://github.com/YOUR_ORG/${slugName}`,
+    `pawn blueprints install https://github.com/YOUR_ORG/${slugName}`,
     "```",
     "",
     "## Usage",
@@ -116,18 +116,18 @@ async function buildPackageDir(
   return { name: pipeline.name, slugName };
 }
 
-export function createPackagesRouter(db: Db, ws: WsManager): Router {
+export function createBlueprintsRouter(db: Db, ws: WsManager): Router {
   const router = Router();
 
-  // GET /api/packages/gh-status — check if gh CLI is available
-  router.get("/packages/gh-status", (_req, res) => {
+  // GET /api/blueprints/gh-status — check if gh CLI is available
+  router.get("/blueprints/gh-status", (_req, res) => {
     res.json({ available: ghAvailable() });
   });
 
-  // GET /api/packages — list installed packages
-  router.get("/packages", async (_req, res, next) => {
+  // GET /api/blueprints — list installed blueprints
+  router.get("/blueprints", async (_req, res, next) => {
     try {
-      const pkgs = await db.select().from(installedPackages);
+      const pkgs = await db.select().from(installedBlueprints);
 
       // Enrich with pipeline name
       const enriched = await Promise.all(
@@ -166,35 +166,35 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
     }
   });
 
-  // GET /api/packages/discover?q= — search GitHub
-  router.get("/packages/discover", async (req, res, next) => {
+  // GET /api/blueprints/discover?q= — search GitHub
+  router.get("/blueprints/discover", async (req, res, next) => {
     try {
       const query = typeof req.query.q === "string" ? req.query.q : undefined;
-      const results = await discoverPackages(db, query);
+      const results = await discoverBlueprints(db, query);
       res.json(results);
     } catch (err) {
       next(err);
     }
   });
 
-  // POST /api/packages/install — { repoUrl, force? }
-  router.post("/packages/install", async (req, res, next) => {
+  // POST /api/blueprints/install — { repoUrl, force? }
+  router.post("/blueprints/install", async (req, res, next) => {
     try {
       const { repoUrl, force } = req.body as { repoUrl?: string; force?: boolean };
       if (!repoUrl || typeof repoUrl !== "string") {
         res.status(400).json({ error: "repoUrl is required" });
         return;
       }
-      const result = await installPackage(db, repoUrl, getPackagesDir(), getSkillsDir(), { force: force === true });
+      const result = await installBlueprint(db, repoUrl, getBlueprintsDir(), getSkillsDir(), { force: force === true });
       res.status(201).json(result);
-      ws.broadcast({ type: "data_changed", entity: "package", action: "created", id: repoUrl });
+      ws.broadcast({ type: "data_changed", entity: "blueprint", action: "created", id: repoUrl });
     } catch (err) {
       next(err);
     }
   });
 
-  // POST /api/packages/scan — { repoUrl } — preview security scan without installing
-  router.post("/packages/scan", async (req, res, next) => {
+  // POST /api/blueprints/scan — { repoUrl } — preview security scan without installing
+  router.post("/blueprints/scan", async (req, res, next) => {
     let tempDir: string | null = null;
     try {
       const { repoUrl } = req.body as { repoUrl?: string };
@@ -217,7 +217,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
         child.on("error", reject);
       });
 
-      const report = scanPackage(tempDir);
+      const report = scanBlueprint(tempDir);
       res.json(report);
     } catch (err) {
       next(err);
@@ -228,30 +228,30 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
     }
   });
 
-  // POST /api/packages/:id/update — pull latest
-  router.post("/packages/:id/update", async (req, res, next) => {
+  // POST /api/blueprints/:id/update — pull latest
+  router.post("/blueprints/:id/update", async (req, res, next) => {
     try {
       const { force } = req.body as { force?: boolean };
-      const result = await updatePackage(db, req.params.id, getSkillsDir(), { force: force === true });
+      const result = await updateBlueprint(db, req.params.id, getSkillsDir(), { force: force === true });
       res.json(result);
-      ws.broadcast({ type: "data_changed", entity: "package", action: "updated", id: req.params.id });
+      ws.broadcast({ type: "data_changed", entity: "blueprint", action: "updated", id: req.params.id });
     } catch (err) {
       next(err);
     }
   });
 
-  // GET /api/packages/:id/security — latest security report for a package
-  router.get("/packages/:id/security", async (req, res, next) => {
+  // GET /api/blueprints/:id/security — latest security report for a blueprint
+  router.get("/blueprints/:id/security", async (req, res, next) => {
     try {
       const rows = await db
         .select()
-        .from(packageSecurityChecks)
-        .where(eq(packageSecurityChecks.packageId, req.params.id))
-        .orderBy(desc(packageSecurityChecks.scannedAt))
+        .from(blueprintSecurityChecks)
+        .where(eq(blueprintSecurityChecks.blueprintId, req.params.id))
+        .orderBy(desc(blueprintSecurityChecks.scannedAt))
         .limit(1);
 
       if (rows.length === 0) {
-        res.status(404).json({ error: "No security scan found for this package" });
+        res.status(404).json({ error: "No security scan found for this blueprint" });
         return;
       }
 
@@ -267,19 +267,19 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
     }
   });
 
-  // DELETE /api/packages/:id
-  router.delete("/packages/:id", async (req, res, next) => {
+  // DELETE /api/blueprints/:id
+  router.delete("/blueprints/:id", async (req, res, next) => {
     try {
-      await uninstallPackage(db, req.params.id, getSkillsDir());
+      await uninstallBlueprint(db, req.params.id, getSkillsDir());
       res.status(204).end();
-      ws.broadcast({ type: "data_changed", entity: "package", action: "deleted", id: req.params.id });
+      ws.broadcast({ type: "data_changed", entity: "blueprint", action: "deleted", id: req.params.id });
     } catch (err) {
       next(err);
     }
   });
 
-  // POST /api/packages/install-local — { localPath }
-  router.post("/packages/install-local", async (req, res, next) => {
+  // POST /api/blueprints/install-local — { localPath }
+  router.post("/blueprints/install-local", async (req, res, next) => {
     try {
       const { localPath } = req.body as { localPath?: string };
       if (!localPath || typeof localPath !== "string") {
@@ -313,28 +313,28 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
       const repoUrl = `local:${localPath}`;
       const dirName = basename(localPath);
 
-      // Upsert the installed_packages record
+      // Upsert the installed_blueprints record
       const existing = await db
         .select()
-        .from(installedPackages)
-        .where(eq(installedPackages.repoUrl, repoUrl))
+        .from(installedBlueprints)
+        .where(eq(installedBlueprints.repoUrl, repoUrl))
         .limit(1);
 
       let pkg;
       if (existing.length > 0) {
         [pkg] = await db
-          .update(installedPackages)
+          .update(installedBlueprints)
           .set({
             localPath,
             pipelineId: pipeline?.id ?? null,
             repoFullName: dirName,
             updatedAt: new Date(),
           })
-          .where(eq(installedPackages.repoUrl, repoUrl))
+          .where(eq(installedBlueprints.repoUrl, repoUrl))
           .returning();
       } else {
         [pkg] = await db
-          .insert(installedPackages)
+          .insert(installedBlueprints)
           .values({
             repoUrl,
             repoFullName: dirName,
@@ -356,15 +356,15 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
         metadata: pkg.metadata,
         installedAt: pkg.installedAt?.toISOString() ?? null,
       });
-      ws.broadcast({ type: "data_changed", entity: "package", action: "created", id: pkg.id });
+      ws.broadcast({ type: "data_changed", entity: "blueprint", action: "created", id: pkg.id });
     } catch (err) {
       next(err);
     }
   });
 
-  // POST /api/packages/export — bundle pipeline + skills as tar.gz download
-  // POST /api/packages/preview — return package contents as JSON without writing to disk
-  router.post("/packages/preview", async (req, res, next) => {
+  // POST /api/blueprints/export — bundle pipeline + skills as tar.gz download
+  // POST /api/blueprints/preview — return blueprint contents as JSON without writing to disk
+  router.post("/blueprints/preview", async (req, res, next) => {
     try {
       const { pipelineId } = req.body as { pipelineId?: string };
       if (!pipelineId || typeof pipelineId !== "string") {
@@ -417,7 +417,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
     }
   });
 
-  router.post("/packages/export", async (req, res, next) => {
+  router.post("/blueprints/export", async (req, res, next) => {
     let tempDir: string | null = null;
     try {
       const { pipelineId } = req.body as { pipelineId?: string };
@@ -427,7 +427,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
       }
 
       tempDir = mkdtempSync(join(tmpdir(), "pawn-export-"));
-      const result = await buildPackageDir(db, pipelineId, tempDir);
+      const result = await buildBlueprintDir(db, pipelineId, tempDir);
       if (!result) {
         res.status(404).json({ error: "Pipeline not found" });
         return;
@@ -461,8 +461,8 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
     }
   });
 
-  // POST /api/packages/publish — publish to GitHub (create repo or update via PR)
-  router.post("/packages/publish", async (req, res, next) => {
+  // POST /api/blueprints/publish — publish to GitHub (create repo or update via PR)
+  router.post("/blueprints/publish", async (req, res, next) => {
     let tempDir: string | null = null;
     try {
       const { pipelineId, repo, private: isPrivate, description } = req.body as {
@@ -478,12 +478,12 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
       }
 
       if (!ghAvailable()) {
-        res.status(400).json({ error: "The 'gh' CLI is required to publish packages. Install from https://cli.github.com" });
+        res.status(400).json({ error: "The 'gh' CLI is required to publish blueprints. Install from https://cli.github.com" });
         return;
       }
 
       tempDir = mkdtempSync(join(tmpdir(), "pawn-publish-"));
-      const result = await buildPackageDir(db, pipelineId, tempDir);
+      const result = await buildBlueprintDir(db, pipelineId, tempDir);
       if (!result) {
         res.status(404).json({ error: "Pipeline not found" });
         return;
@@ -491,12 +491,12 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
 
       const repoName = repo ?? result.slugName;
 
-      // Find a previously-published authored package for this pipeline.
+      // Find a previously-published authored blueprint for this pipeline.
       // Match by pipelineId (set on publish since v1) OR by repoFullName slug
       // (for records created before pipelineId was stored).
       const allAuthored = await db
         .select()
-        .from(installedPackages)
+        .from(installedBlueprints)
         .then((rows) => rows.filter((r) => (r.metadata as Record<string, unknown>)?.origin === "authored"));
 
       const existingPkg = allAuthored.find(
@@ -506,26 +506,26 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
           r.repoFullName.endsWith(`/${repoName}`),
       ) ?? null;
 
-      /** Clone an existing repo, commit updated package files, push a branch, open a PR. */
-      async function pushUpdatePR(repoFullName: string, packageName: string, packageDir: string) {
+      /** Clone an existing repo, commit updated blueprint files, push a branch, open a PR. */
+      async function pushUpdatePR(repoFullName: string, blueprintName: string, blueprintDir: string) {
         const cloneDir = mkdtempSync(join(tmpdir(), "pawn-clone-"));
         try {
           const cloneResult = spawnSync("gh", ["repo", "clone", repoFullName, cloneDir], { encoding: "utf-8", stdio: "pipe" });
           if (cloneResult.status !== 0) return { error: `Failed to clone repository: ${cloneResult.stderr?.trim()}` };
 
-          spawnSync("bash", ["-c", `cp -r ${packageDir}/. ${cloneDir}/`], { stdio: "ignore" });
+          spawnSync("bash", ["-c", `cp -r ${blueprintDir}/. ${cloneDir}/`], { stdio: "ignore" });
 
           const branch = `update/${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
           spawnSync("git", ["checkout", "-b", branch], { cwd: cloneDir, stdio: "ignore" });
           spawnSync("git", ["add", "."], { cwd: cloneDir, stdio: "ignore" });
 
-          const commitResult = spawnSync("git", ["commit", "-m", `Update ${packageName}`], { cwd: cloneDir, encoding: "utf-8", stdio: "pipe" });
+          const commitResult = spawnSync("git", ["commit", "-m", `Update ${blueprintName}`], { cwd: cloneDir, encoding: "utf-8", stdio: "pipe" });
           if (commitResult.status !== 0) return { noChanges: true };
 
           spawnSync("git", ["push", "origin", branch], { cwd: cloneDir, stdio: "ignore" });
 
           const prResult = spawnSync(
-            "gh", ["pr", "create", "--title", `Update ${packageName}`, "--body", `Automated update from Pawn — pipeline "${packageName}" was modified.`, "--head", branch, "--base", "main"],
+            "gh", ["pr", "create", "--title", `Update ${blueprintName}`, "--body", `Automated update from Pawn — pipeline "${blueprintName}" was modified.`, "--head", branch, "--base", "main"],
             { cwd: cloneDir, encoding: "utf-8", stdio: "pipe" },
           );
           return { prUrl: prResult.stdout?.trim() ?? `https://github.com/${repoFullName}/pulls` };
@@ -542,9 +542,9 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
         const targetRepoUrl = `https://github.com/${targetFullName}`;
         // Persist the authoritative name for future publishes
         if (targetFullName !== existingPkg.repoFullName) {
-          await db.update(installedPackages)
+          await db.update(installedBlueprints)
             .set({ repoFullName: targetFullName, repoUrl: targetRepoUrl, pipelineId, updatedAt: new Date() })
-            .where(eq(installedPackages.id, existingPkg.id));
+            .where(eq(installedBlueprints.id, existingPkg.id));
         }
         const pr = await pushUpdatePR(targetFullName, result.name, tempDir!);
         if ("error" in pr) { res.status(500).json({ error: pr.error }); return; }
@@ -577,9 +577,9 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
           }
           const resolvedRepoUrl = `https://github.com/${resolvedFullName}`;
           // Upsert record so future publishes find it by pipelineId
-          await db.insert(installedPackages)
+          await db.insert(installedBlueprints)
             .values({ repoUrl: resolvedRepoUrl, repoFullName: resolvedFullName, pipelineId, localPath: tempDir!, skills: [], updateAvailable: false, metadata: { origin: "authored" } })
-            .onConflictDoUpdate({ target: installedPackages.repoUrl, set: { pipelineId, updatedAt: new Date() } });
+            .onConflictDoUpdate({ target: installedBlueprints.repoUrl, set: { pipelineId, updatedAt: new Date() } });
           const pr = await pushUpdatePR(resolvedFullName, result.name, tempDir!);
           if ("error" in pr) { res.status(500).json({ error: pr.error }); return; }
           res.status(200).json({ repoUrl: resolvedRepoUrl, repoFullName: resolvedFullName, ...pr });
@@ -590,14 +590,14 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
       }
 
       // Add topic
-      spawnSync("gh", ["repo", "edit", repoName, "--add-topic", "pawn-package"], { stdio: "ignore" });
+      spawnSync("gh", ["repo", "edit", repoName, "--add-topic", "pawn-blueprint"], { stdio: "ignore" });
 
       const repoFullName = repoName;
       const repoUrl = `https://github.com/${repoFullName}`;
 
-      // Create installed_packages record, storing pipelineId for future re-publishes
+      // Create installed_blueprints record, storing pipelineId for future re-publishes
       const [pkg] = await db
-        .insert(installedPackages)
+        .insert(installedBlueprints)
         .values({
           repoUrl,
           repoFullName,
@@ -615,7 +615,7 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
         repoFullName: pkg.repoFullName,
         metadata: pkg.metadata,
       });
-      ws.broadcast({ type: "data_changed", entity: "package", action: "created", id: pkg.id });
+      ws.broadcast({ type: "data_changed", entity: "blueprint", action: "created", id: pkg.id });
     } catch (err) {
       next(err);
     } finally {
@@ -625,10 +625,10 @@ export function createPackagesRouter(db: Db, ws: WsManager): Router {
     }
   });
 
-  // POST /api/packages/check-updates — synchronous update check
-  router.post("/packages/check-updates", async (_req, res, next) => {
+  // POST /api/blueprints/check-updates — synchronous update check
+  router.post("/blueprints/check-updates", async (_req, res, next) => {
     try {
-      await checkForUpdates(db);
+      await checkBlueprintUpdates(db);
       res.json({ message: "Update check complete" });
     } catch (err) {
       next(err);

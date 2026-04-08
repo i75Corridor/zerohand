@@ -10,7 +10,7 @@ import { api } from "../lib/api.ts";
 import StatusBadge from "../components/StatusBadge.tsx";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
-import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun, ApiValidationResult, ApiPipelineVersion, ApiPackagePreview } from "@pawn/shared";
+import type { ApiPipeline, ApiPipelineStep, ApiPipelineRun, ApiValidationResult, ApiPipelineVersion, ApiBlueprintPreview } from "@pawn/shared";
 
 
 // ── Custom reactflow step node ────────────────────────────────────────────────
@@ -315,14 +315,14 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
 
   const publish = useMutation({
     mutationFn: () =>
-      api.publishPackage({
+      api.publishBlueprint({
         pipelineId: pipeline.id,
         repo,
         private: isPrivate,
         description: pipeline.description ?? undefined,
       }),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      queryClient.invalidateQueries({ queryKey: ["blueprints"] });
       setPublishResult({ repoUrl: result.repoUrl, prUrl: result.prUrl, noChanges: result.noChanges });
     },
   });
@@ -400,7 +400,7 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
                 {isPrivate && (
                   <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-card">
                     <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
-                    <p className="text-xs text-amber-300">Private repos won't be discoverable via <code>pawn packages discover</code> and won't appear in the package registry.</p>
+                    <p className="text-xs text-amber-300">Private repos won't be discoverable via <code>pawn blueprints discover</code> and won't appear in the blueprint registry.</p>
                   </div>
                 )}
               </div>
@@ -426,17 +426,17 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
   );
 }
 
-// ── Package preview modal ─────────────────────────────────────────────────────
+// ── Blueprint preview modal ───────────────────────────────────────────────────
 
 function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: () => void }) {
-  const [preview, setPreview] = useState<ApiPackagePreview | null>(null);
+  const [preview, setPreview] = useState<ApiBlueprintPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [activeSkill, setActiveSkill] = useState<number>(0);
   const [tab, setTab] = useState<"yaml" | "skills" | "validation">("yaml");
 
   React.useEffect(() => {
-    api.previewPackage(pipelineId)
+    api.previewBlueprint(pipelineId)
       .then(setPreview)
       .catch((e: Error) => setErr(e.message))
       .finally(() => setLoading(false));
@@ -449,7 +449,7 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-pawn-surface-800">
-          <h2 className="text-lg font-semibold text-pawn-text-primary">Package Preview</h2>
+          <h2 className="text-lg font-semibold text-pawn-text-primary">Blueprint Preview</h2>
           <button onClick={onClose} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
             <X size={16} />
           </button>
@@ -709,9 +709,9 @@ export default function PipelineDetail() {
     enabled: !!id,
   });
 
-  const { data: packages = [] } = useQuery({
-    queryKey: ["packages"],
-    queryFn: () => api.listInstalledPackages(),
+  const { data: blueprints = [] } = useQuery({
+    queryKey: ["blueprints"],
+    queryFn: () => api.listInstalledBlueprints(),
   });
 
   const { data: ghStatus } = useQuery({
@@ -723,8 +723,8 @@ export default function PipelineDetail() {
   if (isLoading) return <LoadingState />;
   if (error || !pipeline) return <div className="p-8 text-rose-400" role="alert">Pipeline not found.</div>;
 
-  const isFromPackage = packages.some((pkg) => pkg.pipelineId === pipeline.id);
-  const exportCmd = `pawn packages export "${pipeline.name}"`;
+  const isFromBlueprint = blueprints.some((pkg) => pkg.pipelineId === pipeline.id);
+  const exportCmd = `pawn blueprints export "${pipeline.name}"`;
 
   function handleCopy() {
     navigator.clipboard.writeText(exportCmd).then(() => {
@@ -737,7 +737,7 @@ export default function PipelineDetail() {
     setExporting(true);
     setExportError("");
     try {
-      await api.exportPackage(pipeline!.id);
+      await api.exportBlueprint(pipeline!.id);
     } catch (err) {
       setExportError((err as Error).message);
     } finally {
@@ -837,7 +837,7 @@ export default function PipelineDetail() {
               className="flex items-center gap-1.5 px-3 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors disabled:opacity-50"
             >
               <Download size={13} />
-              {exporting ? "Exporting..." : "Export as Package"}
+              {exporting ? "Exporting..." : "Export as Blueprint"}
             </button>
             <button
               onClick={() => ghStatus?.available !== false && setShowPublish(true)}
@@ -857,7 +857,7 @@ export default function PipelineDetail() {
           </div>
           {exportError && <p className="text-xs text-rose-400 mb-2" role="alert">{exportError}</p>}
           {deleteError && <p className="text-xs text-rose-400 mb-2" role="alert">Delete failed: {deleteError}</p>}
-          {!isFromPackage && (
+          {!isFromBlueprint && (
             <div className="bg-pawn-surface-800/50 border border-pawn-surface-800 rounded-card px-4 py-3 flex items-center gap-3">
               <code className="font-mono text-xs text-pawn-surface-500 flex-1">{exportCmd}</code>
               <button

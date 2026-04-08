@@ -106,9 +106,9 @@ MCP tools appear in the LLM context with the name `mcp__<serverName>__<toolName>
 
 ---
 
-## Package MCP Server Declarations
+## Blueprint MCP Server Declarations
 
-Packages can auto-register MCP servers on import by declaring them in `pipeline.yaml`:
+Blueprints can auto-register MCP servers on import by declaring them in `pipeline.yaml`:
 
 ```yaml
 mcpServers:
@@ -121,7 +121,7 @@ mcpServers:
     url: https://api.example.com/mcp
 ```
 
-On import, these are upserted into the `mcp_servers` table with `source: "package"`. If a server with that name already exists, the existing record takes precedence (logged as a warning).
+On import, these are upserted into the `mcp_servers` table with `source: "blueprint"`. If a server with that name already exists, the existing record takes precedence (logged as a warning).
 
 ---
 

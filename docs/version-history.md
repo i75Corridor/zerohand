@@ -82,7 +82,7 @@ What happens:
 2. Pipeline metadata fields are updated to the snapshot values.
 3. All current steps are deleted.
 4. Steps from the snapshot are re-inserted.
-5. If the pipeline has a local package on disk, `pipeline.yaml` is updated.
+5. If the pipeline has a local blueprint on disk, `pipeline.yaml` is updated.
 
 Returns the restored `ApiPipeline` object.
 

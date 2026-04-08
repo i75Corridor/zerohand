@@ -7,7 +7,7 @@ import type {
   ApiTrigger,
   ApiApproval,
   ApiBudgetPolicy,
-  ApiInstalledPackage,
+  ApiInstalledBlueprint,
   ApiSetting,
 } from "@pawn/shared";
 
@@ -160,30 +160,30 @@ export class ApiClient {
     return this.request("DELETE", `/budgets/${id}`);
   }
 
-  // Packages
-  listPackages(): Promise<ApiInstalledPackage[]> {
-    return this.request("GET", "/packages");
+  // Blueprints
+  listBlueprints(): Promise<ApiInstalledBlueprint[]> {
+    return this.request("GET", "/blueprints");
   }
 
-  installPackage(repoUrl: string, force?: boolean): Promise<object> {
-    return this.request("POST", "/packages/install", { repoUrl, force });
+  installBlueprint(repoUrl: string, force?: boolean): Promise<object> {
+    return this.request("POST", "/blueprints/install", { repoUrl, force });
   }
 
-  updatePackage(id: string, force?: boolean): Promise<object> {
-    return this.request("POST", `/packages/${id}/update`, { force });
+  updateBlueprint(id: string, force?: boolean): Promise<object> {
+    return this.request("POST", `/blueprints/${id}/update`, { force });
   }
 
-  uninstallPackage(id: string): Promise<void> {
-    return this.request("DELETE", `/packages/${id}`);
+  uninstallBlueprint(id: string): Promise<void> {
+    return this.request("DELETE", `/blueprints/${id}`);
   }
 
-  discoverPackages(query?: string): Promise<object[]> {
+  discoverBlueprints(query?: string): Promise<object[]> {
     const qs = query ? `?q=${encodeURIComponent(query)}` : "";
-    return this.request("GET", `/packages/discover${qs}`);
+    return this.request("GET", `/blueprints/discover${qs}`);
   }
 
-  scanPackage(repoUrl: string): Promise<object> {
-    return this.request("POST", "/packages/scan", { repoUrl });
+  scanBlueprint(repoUrl: string): Promise<object> {
+    return this.request("POST", "/blueprints/scan", { repoUrl });
   }
 
   // Settings

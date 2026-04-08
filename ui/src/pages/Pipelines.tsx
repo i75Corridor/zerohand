@@ -681,7 +681,7 @@ export default function Pipelines() {
             description="Pipelines define multi-step AI agent workflows. Each one chains skills together with configurable inputs, triggers, and approval gates."
             actions={[
               { label: "Create Pipeline", to: "/pipelines/new" },
-              { label: "Browse Packages", to: "/packages", variant: "secondary" },
+              { label: "Browse Blueprints", to: "/blueprints", variant: "secondary" },
             ]}
             hint="Pipelines can be triggered manually, on a cron schedule, or via webhook."
           />

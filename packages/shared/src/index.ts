@@ -180,7 +180,7 @@ export interface ApiSecurityReport {
   scannedAt: string;
 }
 
-export interface ApiInstalledPackage {
+export interface ApiInstalledBlueprint {
   id: string;
   repoUrl: string;
   repoFullName: string;
@@ -208,7 +208,7 @@ export interface ApiSkillBundle {
   scripts: ApiSkillBundleScript[];
 }
 
-export interface ApiDiscoveredPackage {
+export interface ApiDiscoveredBlueprint {
   fullName: string;
   description: string;
   url: string;
@@ -261,7 +261,7 @@ export interface ApiValidationResult {
   warnings: ApiValidationError[];
 }
 
-export interface ApiPackagePreview {
+export interface ApiBlueprintPreview {
   pipelineYaml: string;
   skills: Array<{
     name: string;
@@ -300,8 +300,8 @@ export interface ApiMcpServer {
   headers?: Record<string, string>;
   env?: Record<string, string>;
   enabled: boolean;
-  source: "manual" | "package";
-  sourcePackageId?: string;
+  source: "manual" | "blueprint";
+  sourceBlueprintId?: string;
   metadata?: {
     envRequirements?: McpEnvRequirement[];
   };
@@ -382,7 +382,7 @@ export interface WsIncomingGlobalChat {
 
 export interface WsDataChanged {
   type: "data_changed";
-  entity: "pipeline" | "step" | "skill" | "trigger" | "approval" | "budget" | "package" | "setting" | "cost";
+  entity: "pipeline" | "step" | "skill" | "trigger" | "approval" | "budget" | "blueprint" | "setting" | "cost";
   action: "created" | "updated" | "deleted";
   id: string;
 }
