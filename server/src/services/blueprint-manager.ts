@@ -1,12 +1,12 @@
 /**
- * GitHub-based package manager for Pawn.
+ * GitHub-based blueprint manager for Pawn.
  *
- * A "package" is a GitHub repository tagged with the `pawn-package` topic.
+ * A "blueprint" is a GitHub repository tagged with the `pawn-blueprint` topic.
  * It contains a pipeline.yaml at the root and a skills/ directory with all
  * referenced skills bundled.
  *
- * Packages are cloned into DATA_DIR/packages/<repo-name>/ and tracked in the
- * installed_packages DB table. Skills are copied into SKILLS_DIR on install.
+ * Blueprints are cloned into DATA_DIR/blueprints/<repo-name>/ and tracked in the
+ * installed_blueprints DB table. Skills are copied into SKILLS_DIR on install.
  */
 import { spawn } from "node:child_process";
 import {
@@ -20,9 +20,9 @@ import {
 import { join, resolve, sep, basename, dirname } from "node:path";
 import { eq } from "drizzle-orm";
 import type { Db } from "@pawn/db";
-import { installedPackages, packageSecurityChecks, pipelines } from "@pawn/db";
+import { installedBlueprints, blueprintSecurityChecks, pipelines } from "@pawn/db";
 import { importPipelinePackage } from "./pipeline-import.js";
-import { scanPackage, type SecurityReport } from "./security-scanner.js";
+import { scanBlueprint, type SecurityReport } from "./security-scanner.js";
 import { loadSkillDef } from "./skill-loader.js";
 import { getEnvApiKey } from "@mariozechner/pi-ai";
 import { isOllamaAvailable } from "./ollama-provider.js";
@@ -102,21 +102,21 @@ function repoToNamespace(repoFullName: string): string {
   return repoName.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-|-$/g, "") || "local";
 }
 
-function installSkills(packageDir: string, skillsDir: string, namespace: string): SkillInstallResult {
-  const packageSkillsDir = join(packageDir, "skills");
+function installSkills(blueprintDir: string, skillsDir: string, namespace: string): SkillInstallResult {
+  const blueprintSkillsDir = join(blueprintDir, "skills");
   const result: SkillInstallResult = { added: [], updated: [], skipped: [] };
 
-  if (!existsSync(packageSkillsDir)) return result;
+  if (!existsSync(blueprintSkillsDir)) return result;
 
   const nsDir = join(skillsDir, namespace);
   mkdirSync(nsDir, { recursive: true });
 
-  const entries = readdirSync(packageSkillsDir, { withFileTypes: true });
+  const entries = readdirSync(blueprintSkillsDir, { withFileTypes: true });
   const skillNames = entries.filter((e) => e.isDirectory()).map((e) => e.name);
 
   for (const name of skillNames) {
     // Guard against path traversal
-    const srcDir = join(packageSkillsDir, name);
+    const srcDir = join(blueprintSkillsDir, name);
     const destDir = join(nsDir, name);
     const resolvedSkillsDir = resolve(skillsDir);
     const resolvedDest = resolve(destDir);
@@ -147,10 +147,10 @@ function installSkills(packageDir: string, skillsDir: string, namespace: string)
   return result;
 }
 
-function getPackageSkillNames(packageDir: string, namespace: string): string[] {
-  const packageSkillsDir = join(packageDir, "skills");
-  if (!existsSync(packageSkillsDir)) return [];
-  return readdirSync(packageSkillsDir, { withFileTypes: true })
+function getBlueprintSkillNames(blueprintDir: string, namespace: string): string[] {
+  const blueprintSkillsDir = join(blueprintDir, "skills");
+  if (!existsSync(blueprintSkillsDir)) return [];
+  return readdirSync(blueprintSkillsDir, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => `${namespace}/${e.name}`);
 }
@@ -191,37 +191,37 @@ export function checkModelAvailability(skillNames: string[], skillsDir: string):
   return warnings;
 }
 
-export interface PackageInstallResult {
+export interface BlueprintInstallResult {
   pipelineName: string;
   skills: SkillInstallResult;
   security: SecurityReport;
   modelWarnings: ModelWarning[];
 }
 
-export async function installPackage(
+export async function installBlueprint(
   db: Db,
   repoUrl: string,
-  packagesDir: string,
+  blueprintsDir: string,
   skillsDir: string,
   options: { force?: boolean } = {},
-): Promise<PackageInstallResult> {
+): Promise<BlueprintInstallResult> {
   const { repo, repoFullName } = parseRepoUrl(repoUrl);
 
   // Check not already installed
   const existing = await db
     .select()
-    .from(installedPackages)
-    .where(eq(installedPackages.repoUrl, repoUrl))
+    .from(installedBlueprints)
+    .where(eq(installedBlueprints.repoUrl, repoUrl))
     .limit(1);
   if (existing.length > 0) {
-    throw new Error(`Package ${repoFullName} is already installed`);
+    throw new Error(`Blueprint ${repoFullName} is already installed`);
   }
 
   const token = getGithubToken();
   const authUrl = buildAuthUrl(repoUrl, token);
-  const localPath = join(packagesDir, repo);
+  const localPath = join(blueprintsDir, repo);
 
-  mkdirSync(packagesDir, { recursive: true });
+  mkdirSync(blueprintsDir, { recursive: true });
 
   if (existsSync(localPath)) {
     // Directory exists but not in DB (e.g. after DB reset) — remove and re-clone
@@ -235,24 +235,24 @@ export async function installPackage(
   }
 
   // Security scan — runs before any skills are installed
-  const security = scanPackage(localPath);
+  const security = scanBlueprint(localPath);
   if (security.level === "high" && !options.force) {
     rmSync(localPath, { recursive: true, force: true });
     const summary = security.findings
       .map((f) => `  • [${f.level.toUpperCase()}] [${f.file}] ${f.description}`)
       .join("\n");
     throw new Error(
-      `Package ${repoFullName} failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
+      `Blueprint ${repoFullName} failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
     );
   }
 
-  // Install skills under the package namespace
+  // Install skills under the blueprint namespace
   const namespace = repoToNamespace(repoFullName);
   mkdirSync(skillsDir, { recursive: true });
   const skillResult = installSkills(localPath, skillsDir, namespace);
-  const skillNames = getPackageSkillNames(localPath, namespace);
+  const skillNames = getBlueprintSkillNames(localPath, namespace);
 
-  // Import pipeline (skill refs get qualified with the package namespace; MCP servers declared in the manifest are auto-registered)
+  // Import pipeline (skill refs get qualified with the blueprint namespace; MCP servers declared in the manifest are auto-registered)
   await importPipelinePackage(db, localPath, namespace, repoUrl);
 
   // Get created pipeline ID
@@ -273,7 +273,7 @@ export async function installPackage(
     .limit(1);
   const pipelineId = pipelineRows[0]?.id ?? null;
 
-  const [installed] = await db.insert(installedPackages).values({
+  const [installed] = await db.insert(installedBlueprints).values({
     repoUrl,
     repoFullName,
     pipelineId,
@@ -283,11 +283,11 @@ export async function installPackage(
     localPath,
     skills: skillNames,
     metadata: { description: "", stars: 0 },
-  }).returning({ id: installedPackages.id });
+  }).returning({ id: installedBlueprints.id });
 
   // Persist security scan result
-  await db.insert(packageSecurityChecks).values({
-    packageId: installed.id,
+  await db.insert(blueprintSecurityChecks).values({
+    blueprintId: installed.id,
     repoUrl,
     level: security.level,
     findings: security.findings as unknown as Array<Record<string, unknown>>,
@@ -296,22 +296,22 @@ export async function installPackage(
   });
 
   const modelWarnings = checkModelAvailability(skillNames, skillsDir);
-  console.log(`[Packages] Installed ${repoFullName}: ${pipelineManifestName} (security: ${security.level})`);
+  console.log(`[Blueprints] Installed ${repoFullName}: ${pipelineManifestName} (security: ${security.level})`);
   return { pipelineName: pipelineManifestName, skills: skillResult, security, modelWarnings };
 }
 
-export async function updatePackage(
+export async function updateBlueprint(
   db: Db,
-  packageId: string,
+  blueprintId: string,
   skillsDir: string,
   options: { force?: boolean } = {},
-): Promise<PackageInstallResult> {
+): Promise<BlueprintInstallResult> {
   const pkg = await db
     .select()
-    .from(installedPackages)
-    .where(eq(installedPackages.id, packageId))
+    .from(installedBlueprints)
+    .where(eq(installedBlueprints.id, blueprintId))
     .limit(1);
-  if (!pkg[0]) throw new Error(`Package not found: ${packageId}`);
+  if (!pkg[0]) throw new Error(`Blueprint not found: ${blueprintId}`);
 
   const { localPath, repoUrl } = pkg[0];
 
@@ -330,7 +330,7 @@ export async function updatePackage(
   await git(["pull", "--ff-only"], localPath);
 
   // Security scan after pull
-  const security = scanPackage(localPath);
+  const security = scanBlueprint(localPath);
   if (security.level === "high" && !options.force) {
     // Roll back to previous state by resetting to the installed ref
     try { await git(["reset", "--hard", pkg[0].installedRef ?? "HEAD~1"], localPath); } catch { /* best effort */ }
@@ -338,18 +338,18 @@ export async function updatePackage(
       .map((f) => `  • [${f.level.toUpperCase()}] [${f.file}] ${f.description}`)
       .join("\n");
     throw new Error(
-      `Package ${pkg[0].repoFullName} update failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
+      `Blueprint ${pkg[0].repoFullName} update failed security check (high risk):\n${summary}\n\nUse force=true to override.`,
     );
   }
 
   const namespace = repoToNamespace(pkg[0].repoFullName);
   const skillResult = installSkills(localPath, skillsDir, namespace);
-  const skillNames = getPackageSkillNames(localPath, namespace);
+  const skillNames = getBlueprintSkillNames(localPath, namespace);
   await importPipelinePackage(db, localPath, namespace, repoUrl);
 
   const newRef = await getCurrentRef(localPath);
   await db
-    .update(installedPackages)
+    .update(installedBlueprints)
     .set({
       installedRef: newRef,
       latestRef: newRef,
@@ -357,11 +357,11 @@ export async function updatePackage(
       skills: skillNames,
       updatedAt: new Date(),
     })
-    .where(eq(installedPackages.id, packageId));
+    .where(eq(installedBlueprints.id, blueprintId));
 
   // Persist updated security scan result
-  await db.insert(packageSecurityChecks).values({
-    packageId,
+  await db.insert(blueprintSecurityChecks).values({
+    blueprintId,
     repoUrl,
     level: security.level,
     findings: security.findings as unknown as Array<Record<string, unknown>>,
@@ -378,30 +378,30 @@ export async function updatePackage(
   })();
 
   const modelWarnings = checkModelAvailability(skillNames, skillsDir);
-  console.log(`[Packages] Updated ${pkg[0].repoFullName} (security: ${security.level})`);
+  console.log(`[Blueprints] Updated ${pkg[0].repoFullName} (security: ${security.level})`);
   return { pipelineName, skills: skillResult, security, modelWarnings };
 }
 
-export async function uninstallPackage(
+export async function uninstallBlueprint(
   db: Db,
-  packageId: string,
+  blueprintId: string,
   skillsDir: string,
 ): Promise<void> {
   const pkg = await db
     .select()
-    .from(installedPackages)
-    .where(eq(installedPackages.id, packageId))
+    .from(installedBlueprints)
+    .where(eq(installedBlueprints.id, blueprintId))
     .limit(1);
-  if (!pkg[0]) throw new Error(`Package not found: ${packageId}`);
+  if (!pkg[0]) throw new Error(`Blueprint not found: ${blueprintId}`);
 
   const { localPath, pipelineId, skills: pkgSkills } = pkg[0];
 
-  // Remove pipeline from DB (cascade deletes steps; runs are preserved via set null on package)
+  // Remove pipeline from DB (cascade deletes steps; runs are preserved via set null on blueprint)
   if (pipelineId) {
     await db.delete(pipelines).where(eq(pipelines.id, pipelineId));
   }
 
-  // Remove skills installed by this package (skills are stored as qualified "namespace/name")
+  // Remove skills installed by this blueprint (skills are stored as qualified "namespace/name")
   if (Array.isArray(pkgSkills)) {
     const { rmSync } = await import("node:fs");
     for (const skillName of pkgSkills as string[]) {
@@ -409,7 +409,7 @@ export async function uninstallPackage(
       const skillDir = join(skillsDir, skillName);
       if (existsSync(skillDir)) {
         rmSync(skillDir, { recursive: true, force: true });
-        console.log(`[Packages] Removed skill: ${skillName}`);
+        console.log(`[Blueprints] Removed skill: ${skillName}`);
         // If namespace dir is now empty, clean it up
         const nsDir = dirname(skillDir);
         if (nsDir !== skillsDir && existsSync(nsDir)) {
@@ -428,12 +428,12 @@ export async function uninstallPackage(
     rmSync(localPath, { recursive: true, force: true });
   }
 
-  await db.delete(installedPackages).where(eq(installedPackages.id, packageId));
-  console.log(`[Packages] Uninstalled ${pkg[0].repoFullName}`);
+  await db.delete(installedBlueprints).where(eq(installedBlueprints.id, blueprintId));
+  console.log(`[Blueprints] Uninstalled ${pkg[0].repoFullName}`);
 }
 
-export async function checkForUpdates(db: Db): Promise<void> {
-  const pkgs = await db.select().from(installedPackages);
+export async function checkBlueprintUpdates(db: Db): Promise<void> {
+  const pkgs = await db.select().from(installedBlueprints);
   const token = getGithubToken();
 
   for (const pkg of pkgs) {
@@ -441,7 +441,7 @@ export async function checkForUpdates(db: Db): Promise<void> {
       const latestRef = await getRemoteRef(pkg.repoUrl, token);
       const updateAvailable = latestRef !== pkg.installedRef;
       await db
-        .update(installedPackages)
+        .update(installedBlueprints)
         .set({
           latestRef,
           updateAvailable,
@@ -449,28 +449,28 @@ export async function checkForUpdates(db: Db): Promise<void> {
           lastCheckedAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(installedPackages.id, pkg.id));
+        .where(eq(installedBlueprints.id, pkg.id));
 
       if (updateAvailable) {
-        console.log(`[Packages] Update available for ${pkg.repoFullName}`);
+        console.log(`[Blueprints] Update available for ${pkg.repoFullName}`);
       }
     } catch (err) {
       const msg = String(err);
       const isNotFound = msg.includes("Repository not found") || msg.includes("not found");
       await db
-        .update(installedPackages)
+        .update(installedBlueprints)
         .set({ repoNotFound: isNotFound, lastCheckedAt: new Date(), updatedAt: new Date() })
-        .where(eq(installedPackages.id, pkg.id));
+        .where(eq(installedBlueprints.id, pkg.id));
       if (isNotFound) {
-        console.warn(`[Packages] ${pkg.repoFullName} — repository no longer exists or is inaccessible`);
+        console.warn(`[Blueprints] ${pkg.repoFullName} — repository no longer exists or is inaccessible`);
       } else {
-        console.warn(`[Packages] Could not check updates for ${pkg.repoFullName}: ${msg.split("\n")[0]}`);
+        console.warn(`[Blueprints] Could not check updates for ${pkg.repoFullName}: ${msg.split("\n")[0]}`);
       }
     }
   }
 }
 
-export interface DiscoveredPackage {
+export interface DiscoveredBlueprint {
   fullName: string;
   description: string;
   url: string;
@@ -479,12 +479,12 @@ export interface DiscoveredPackage {
   installed: boolean;
 }
 
-export async function discoverPackages(
+export async function discoverBlueprints(
   db: Db,
   query?: string,
-): Promise<DiscoveredPackage[]> {
+): Promise<DiscoveredBlueprint[]> {
   const token = getGithubToken();
-  const q = `topic:pawn-package${query ? `+${encodeURIComponent(query)}` : ""}`;
+  const q = `topic:pawn-blueprint${query ? `+${encodeURIComponent(query)}` : ""}`;
   const url = `https://api.github.com/search/repositories?q=${q}&sort=stars&per_page=30`;
 
   const headers: Record<string, string> = {
@@ -506,7 +506,7 @@ export async function discoverPackages(
     }>;
   };
 
-  const installed = await db.select({ repoUrl: installedPackages.repoUrl }).from(installedPackages);
+  const installed = await db.select({ repoUrl: installedBlueprints.repoUrl }).from(installedBlueprints);
   const installedUrls = new Set(installed.map((p) => p.repoUrl.replace(/\.git$/, "")));
 
   return data.items.map((item) => ({

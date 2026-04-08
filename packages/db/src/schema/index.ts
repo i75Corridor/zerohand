@@ -6,7 +6,7 @@ export * from "./approvals.js";
 export * from "./costs.js";
 export * from "./budgets.js";
 export * from "./settings.js";
-export * from "./packages.js";
+export * from "./blueprints.js";
 export * from "./security-checks.js";
 export * from "./mcp-servers.js";
 export * from "./pipeline-versions.js";

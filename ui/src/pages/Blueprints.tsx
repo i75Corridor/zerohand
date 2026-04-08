@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Package,
+  Blocks,
   RefreshCw,
   Trash2,
   Download,
@@ -17,7 +17,7 @@ import {
 import { api } from "../lib/api.ts";
 import EmptyState from "../components/EmptyState.tsx";
 import PageHeader from "../components/PageHeader.tsx";
-import type { ApiInstalledPackage, ApiDiscoveredPackage, ApiModelWarning } from "@pawn/shared";
+import type { ApiInstalledBlueprint, ApiDiscoveredBlueprint, ApiModelWarning } from "@pawn/shared";
 
 // ── Security error parsing ─────────────────────────────────────────────────────
 
@@ -45,8 +45,8 @@ function parseSecurityError(err: unknown): ParsedSecurityError | null {
   }
   if (!inner.includes("failed security check")) return null;
 
-  const repoMatch = inner.match(/^Error: Package (.+?) failed security check/);
-  const repoName = repoMatch?.[1] ?? "package";
+  const repoMatch = inner.match(/^Error: Blueprint (.+?) failed security check/);
+  const repoName = repoMatch?.[1] ?? "blueprint";
 
   const findings: SecurityFinding[] = [];
   for (const line of inner.split("\n")) {
@@ -151,7 +151,7 @@ function ModelWarningPanel({
   );
 }
 
-// ── Installed package card ─────────────────────────────────────────────────────
+// ── Installed blueprint card ──────────────────────────────────────────────────
 
 function InstalledCard({
   pkg,
@@ -160,7 +160,7 @@ function InstalledCard({
   updating,
   uninstalling,
 }: {
-  pkg: ApiInstalledPackage;
+  pkg: ApiInstalledBlueprint;
   onUpdate: () => void;
   onUninstall: () => void;
   updating: boolean;
@@ -247,7 +247,7 @@ function InstalledCard({
             onClick={onUninstall}
             disabled={uninstalling}
             className="text-pawn-surface-600 hover:text-rose-400 disabled:opacity-50 transition-colors"
-            aria-label="Uninstall package"
+            aria-label="Uninstall blueprint"
           >
             <Trash2 size={13} />
           </button>
@@ -257,14 +257,14 @@ function InstalledCard({
   );
 }
 
-// ── Discovered package card ────────────────────────────────────────────────────
+// ── Discovered blueprint card ─────────────────────────────────────────────────
 
 function DiscoverCard({
   pkg,
   onInstall,
   installing,
 }: {
-  pkg: ApiDiscoveredPackage;
+  pkg: ApiDiscoveredBlueprint;
   onInstall: () => void;
   installing: boolean;
 }) {
@@ -294,7 +294,7 @@ function DiscoverCard({
       <div className="flex items-center justify-between mt-auto">
         <div className="flex flex-wrap gap-1">
           {pkg.topics
-            .filter((t) => t !== "pawn-package")
+            .filter((t) => t !== "pawn-blueprint")
             .slice(0, 3)
             .map((t) => (
               <span key={t} className="text-xs text-pawn-surface-400 bg-pawn-surface-800 px-1.5 py-0.5 rounded">
@@ -317,7 +317,7 @@ function DiscoverCard({
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
-export default function Packages() {
+export default function Blueprints() {
   const queryClient = useQueryClient();
   const [discoverQuery, setDiscoverQuery] = useState("");
   const [manualUrl, setManualUrl] = useState("");
@@ -328,21 +328,21 @@ export default function Packages() {
   const [modelWarnings, setModelWarnings] = useState<ApiModelWarning[] | null>(null);
 
   const { data: installed = [], isLoading: loadingInstalled } = useQuery({
-    queryKey: ["packages"],
-    queryFn: () => api.listInstalledPackages(),
+    queryKey: ["blueprints"],
+    queryFn: () => api.listInstalledBlueprints(),
   });
 
   const { data: discovered = [], isLoading: loadingDiscover, refetch: runDiscover } = useQuery({
-    queryKey: ["packages", "discover", discoverQuery],
-    queryFn: () => api.discoverPackages(discoverQuery || undefined),
+    queryKey: ["blueprints", "discover", discoverQuery],
+    queryFn: () => api.discoverBlueprints(discoverQuery || undefined),
     enabled: false, // only run when user triggers
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["packages"] });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["blueprints"] });
 
   const install = useMutation({
     mutationFn: ({ repoUrl, force }: { repoUrl: string; force?: boolean }) =>
-      api.installPackage(repoUrl, force),
+      api.installBlueprint(repoUrl, force),
     onSuccess: (result) => {
       invalidate();
       setManualUrl("");
@@ -356,7 +356,7 @@ export default function Packages() {
   });
 
   const update = useMutation({
-    mutationFn: (id: string) => api.updatePackage(id),
+    mutationFn: (id: string) => api.updateBlueprint(id),
     onSuccess: (result) => {
       invalidate();
       if (result.modelWarnings && result.modelWarnings.length > 0) {
@@ -367,7 +367,7 @@ export default function Packages() {
   });
 
   const uninstall = useMutation({
-    mutationFn: (id: string) => api.uninstallPackage(id),
+    mutationFn: (id: string) => api.uninstallBlueprint(id),
     onSuccess: () => invalidate(),
     onSettled: () => setUninstallingId(null),
   });
@@ -379,7 +379,7 @@ export default function Packages() {
 
   const handleDiscover = () => void runDiscover();
 
-  const handleInstallDiscovered = (pkg: ApiDiscoveredPackage) => {
+  const handleInstallDiscovered = (pkg: ApiDiscoveredBlueprint) => {
     setInstallingId(pkg.fullName);
     install.mutate({ repoUrl: `https://github.com/${pkg.fullName}` });
   };
@@ -399,7 +399,7 @@ export default function Packages() {
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-6xl pt-14 lg:pt-10">
       <PageHeader
-        title="Packages"
+        title="Blueprints"
         actions={
           <button
             onClick={() => checkUpdates.mutate()}
@@ -412,7 +412,7 @@ export default function Packages() {
         }
       />
 
-      {/* Installed packages */}
+      {/* Installed blueprints */}
       <section className="mb-10">
         <h2 className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-4">
           Installed
@@ -423,13 +423,13 @@ export default function Packages() {
           <div className="bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-6">
             <EmptyState
               compact
-              icon={Package}
+              icon={Blocks}
               title="Your arsenal is empty"
-              description="Packages bundle pipelines and skills from GitHub repositories. Search below to discover community packages, or paste a repo URL to install directly."
+              description="Blueprints bundle pipelines and skills from GitHub repositories. Search below to discover community blueprints, or paste a repo URL to install directly."
               actions={[
-                { label: "Search Packages", onClick: () => document.querySelector<HTMLInputElement>('[placeholder*="Search GitHub"]')?.focus() },
+                { label: "Search Blueprints", onClick: () => document.querySelector<HTMLInputElement>('[placeholder*="Search GitHub"]')?.focus() },
               ]}
-              hint="Packages are version-tracked and can be updated from here."
+              hint="Blueprints are version-tracked and can be updated from here."
             />
           </div>
         ) : (
@@ -466,7 +466,7 @@ export default function Packages() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-pawn-surface-500" />
             <input
               className="w-full bg-pawn-surface-900 border border-pawn-surface-800 rounded-button pl-8 pr-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-600 focus:outline-none focus:border-pawn-gold-500"
-              placeholder="Search GitHub for pawn packages..."
+              placeholder="Search GitHub for pawn blueprints..."
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleDiscover()}

@@ -30,16 +30,16 @@ function parseRepoFromRemote(remoteUrl: string): string {
   return m ? m[1] : "";
 }
 
-export function registerPackagesCommand(program: Command, client: ApiClient): void {
-  const cmd = program.command("packages").description("manage pipeline packages");
+export function registerBlueprintsCommand(program: Command, client: ApiClient): void {
+  const cmd = program.command("blueprints").description("manage pipeline blueprints");
 
   // ── list ──────────────────────────────────────────────────────────────────
 
   cmd
     .command("list")
-    .description("list installed packages")
+    .description("list installed blueprints")
     .action(async () => {
-      const pkgs = await client.listPackages();
+      const pkgs = await client.listBlueprints();
       const rows = pkgs.map((p) => ({
         ID: shortId(p.id),
         REPO: p.repoFullName,
@@ -55,7 +55,7 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
 
   cmd
     .command("install <repo-url-or-path>")
-    .description("install a package from a GitHub repo URL or local directory path")
+    .description("install a blueprint from a GitHub repo URL or local directory path")
     .action(async (arg: string) => {
       if (isLocalPath(arg)) {
         const localPath = resolve(arg.replace(/^~/, process.env.HOME ?? "~"));
@@ -63,14 +63,14 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
           console.error(`Path not found: ${localPath}`);
           process.exit(1);
         }
-        console.log(`Loading local package from ${localPath}...`);
-        await client.installLocalPackage(localPath);
-        console.log("Local package loaded. Open the UI to view and edit it.");
+        console.log(`Loading local blueprint from ${localPath}...`);
+        await client.installLocalBlueprint(localPath);
+        console.log("Local blueprint loaded. Open the UI to view and edit it.");
         console.log("Note: UI changes will be saved back to disk at this path.");
       } else {
         console.log(`Installing ${arg}...`);
-        await client.installPackage(arg);
-        console.log("Package installed");
+        await client.installBlueprint(arg);
+        console.log("Blueprint installed");
       }
     });
 
@@ -78,14 +78,14 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
 
   cmd
     .command("update <name>")
-    .description("update an installed package")
+    .description("update an installed blueprint")
     .action(async (name: string) => {
-      const pkg = await client.findPackageByName(name);
+      const pkg = await client.findBlueprintByName(name);
       if (!pkg) {
-        console.error(`Package "${name}" not found`);
+        console.error(`Blueprint "${name}" not found`);
         process.exit(1);
       }
-      await client.updatePackage(pkg.id);
+      await client.updateBlueprint(pkg.id);
       console.log(`Updated ${pkg.repoFullName}`);
     });
 
@@ -93,14 +93,14 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
 
   cmd
     .command("uninstall <name>")
-    .description("uninstall a package")
+    .description("uninstall a blueprint")
     .action(async (name: string) => {
-      const pkg = await client.findPackageByName(name);
+      const pkg = await client.findBlueprintByName(name);
       if (!pkg) {
-        console.error(`Package "${name}" not found`);
+        console.error(`Blueprint "${name}" not found`);
         process.exit(1);
       }
-      await client.uninstallPackage(pkg.id);
+      await client.uninstallBlueprint(pkg.id);
       console.log(`Uninstalled ${pkg.repoFullName}`);
     });
 
@@ -108,11 +108,11 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
 
   cmd
     .command("discover [query]")
-    .description("search GitHub for pawn packages")
+    .description("search GitHub for pawn blueprints")
     .action(async (query?: string) => {
-      const results = await client.discoverPackages(query);
+      const results = await client.discoverBlueprints(query);
       if (results.length === 0) {
-        console.log("No packages found");
+        console.log("No blueprints found");
         return;
       }
       const rows = results.map((r) => ({
@@ -128,7 +128,7 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
 
   cmd
     .command("export <pipeline-name> [output-dir]")
-    .description("export a pipeline from the server as a local package directory")
+    .description("export a pipeline from the server as a local blueprint directory")
     .option("-f, --force", "overwrite output directory if it already exists")
     .action(async (pipelineName: string, outputDir: string | undefined, opts: { force?: boolean }) => {
       // 1. Fetch pipeline
@@ -195,7 +195,7 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
         "## Install",
         "",
         "```bash",
-        `pawn packages install https://github.com/YOUR_ORG/${dirName}`,
+        `pawn blueprints install https://github.com/YOUR_ORG/${dirName}`,
         "```",
         "",
         "## Usage",
@@ -211,18 +211,18 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
       // 6. .gitignore
       writeFileSync(join(outDir, ".gitignore"), "node_modules/\n.env\n", "utf-8");
 
-      console.log(`\nPackage exported to ./${dirName}/`);
+      console.log(`\nBlueprint exported to ./${dirName}/`);
       console.log(`\nNext steps:`);
       console.log(`  cd ${dirName}`);
       console.log(`  git init && git add . && git commit -m "Export ${full.name}"`);
-      console.log(`  pawn packages publish . --repo YOUR_ORG/${dirName}`);
+      console.log(`  pawn blueprints publish . --repo YOUR_ORG/${dirName}`);
     });
 
   // ── publish ───────────────────────────────────────────────────────────────
 
   cmd
     .command("publish <path>")
-    .description("publish a local package to GitHub and tag it as a pawn-package")
+    .description("publish a local blueprint to GitHub and tag it as a pawn-blueprint")
     .option("--repo <owner/repo>", "GitHub repository to publish to (required if no git remote)")
     .option("--private", "create the GitHub repo as private (default: public)")
     .option("--description <text>", "GitHub repo description (defaults to pipeline description)")
@@ -235,13 +235,13 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
       }
       if (!existsSync(join(absPath, "pipeline.yaml"))) {
         console.error(`No pipeline.yaml found at ${absPath}`);
-        console.error("Run 'pawn packages export <name>' first.");
+        console.error("Run 'pawn blueprints export <name>' first.");
         process.exit(1);
       }
 
       // 2. Check gh CLI
       if (!ghAvailable()) {
-        console.error("The 'gh' CLI is required to publish packages.");
+        console.error("The 'gh' CLI is required to publish blueprints.");
         console.error("Install it from: https://cli.github.com");
         process.exit(1);
       }
@@ -262,14 +262,14 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
         console.log("Initializing git repository...");
         gitExec(["init"], absPath);
         gitExec(["add", "."], absPath);
-        gitExec(["commit", "-m", "Initial package"], absPath);
+        gitExec(["commit", "-m", "Initial blueprint"], absPath);
       } else {
         // Commit any uncommitted changes
         const statusResult = gitExec(["status", "--porcelain"], absPath);
         if (statusResult.stdout.trim()) {
           console.log("Committing local changes...");
           gitExec(["add", "."], absPath);
-          gitExec(["commit", "-m", "Update package"], absPath);
+          gitExec(["commit", "-m", "Update blueprint"], absPath);
         }
       }
 
@@ -314,19 +314,19 @@ export function registerPackagesCommand(program: Command, client: ApiClient): vo
         }
       }
 
-      // 6. Add pawn-package topic
-      console.log("Adding pawn-package topic...");
+      // 6. Add pawn-blueprint topic
+      console.log("Adding pawn-blueprint topic...");
       const topicResult = spawnSync(
-        "gh", ["repo", "edit", repoFullName, "--add-topic", "pawn-package"],
+        "gh", ["repo", "edit", repoFullName, "--add-topic", "pawn-blueprint"],
         { stdio: "inherit" },
       );
       if (topicResult.status !== 0) {
-        console.warn("Warning: could not add pawn-package topic automatically.");
+        console.warn("Warning: could not add pawn-blueprint topic automatically.");
         console.warn(`Add it manually at: https://github.com/${repoFullName}`);
       }
 
       console.log(`\nPublished to https://github.com/${repoFullName}`);
-      console.log("Package is now discoverable via:");
-      console.log(`  pawn packages discover`);
+      console.log("Blueprint is now discoverable via:");
+      console.log(`  pawn blueprints discover`);
     });
 }

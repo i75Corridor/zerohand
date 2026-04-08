@@ -1,8 +1,8 @@
 import type {
   ApiApproval,
   ApiBudgetPolicy,
-  ApiDiscoveredPackage,
-  ApiInstalledPackage,
+  ApiDiscoveredBlueprint,
+  ApiInstalledBlueprint,
   ApiPipeline,
   ApiPipelineRun,
   ApiPipelineStep,
@@ -101,42 +101,42 @@ export class ApiClient {
     return this.request("GET", `/runs/${runId}/steps`);
   }
 
-  // Packages
-  listPackages(): Promise<ApiInstalledPackage[]> {
-    return this.request("GET", "/packages");
+  // Blueprints
+  listBlueprints(): Promise<ApiInstalledBlueprint[]> {
+    return this.request("GET", "/blueprints");
   }
 
-  discoverPackages(query?: string): Promise<ApiDiscoveredPackage[]> {
+  discoverBlueprints(query?: string): Promise<ApiDiscoveredBlueprint[]> {
     const qs = query ? `?q=${encodeURIComponent(query)}` : "";
-    return this.request("GET", `/packages/discover${qs}`);
+    return this.request("GET", `/blueprints/discover${qs}`);
   }
 
-  installPackage(repoUrl: string, force?: boolean): Promise<object> {
-    return this.request("POST", "/packages/install", { repoUrl, force: force ?? false });
+  installBlueprint(repoUrl: string, force?: boolean): Promise<object> {
+    return this.request("POST", "/blueprints/install", { repoUrl, force: force ?? false });
   }
 
   getSkillBundle(name: string): Promise<ApiSkillBundle> {
     return this.request("GET", `/skills/${encodeURIComponent(name)}/bundle`);
   }
 
-  scanPackage(repoUrl: string): Promise<ApiSecurityReport> {
-    return this.request("POST", "/packages/scan", { repoUrl });
+  scanBlueprint(repoUrl: string): Promise<ApiSecurityReport> {
+    return this.request("POST", "/blueprints/scan", { repoUrl });
   }
 
-  getPackageSecurity(id: string): Promise<ApiSecurityReport> {
-    return this.request("GET", `/packages/${id}/security`);
+  getBlueprintSecurity(id: string): Promise<ApiSecurityReport> {
+    return this.request("GET", `/blueprints/${id}/security`);
   }
 
-  installLocalPackage(localPath: string): Promise<object> {
-    return this.request("POST", "/packages/install-local", { localPath });
+  installLocalBlueprint(localPath: string): Promise<object> {
+    return this.request("POST", "/blueprints/install-local", { localPath });
   }
 
-  updatePackage(id: string): Promise<object> {
-    return this.request("POST", `/packages/${id}/update`);
+  updateBlueprint(id: string): Promise<object> {
+    return this.request("POST", `/blueprints/${id}/update`);
   }
 
-  uninstallPackage(id: string): Promise<void> {
-    return this.request("DELETE", `/packages/${id}`);
+  uninstallBlueprint(id: string): Promise<void> {
+    return this.request("DELETE", `/blueprints/${id}`);
   }
 
   // Triggers
@@ -209,8 +209,8 @@ export class ApiClient {
     return all.find((p) => p.name.toLowerCase() === name.toLowerCase()) ?? null;
   }
 
-  async findPackageByName(name: string): Promise<ApiInstalledPackage | null> {
-    const all = await this.listPackages();
+  async findBlueprintByName(name: string): Promise<ApiInstalledBlueprint | null> {
+    const all = await this.listBlueprints();
     const lower = name.toLowerCase();
     return (
       all.find((p) => {

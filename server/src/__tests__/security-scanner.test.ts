@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { scanPackage } from "../services/security-scanner.js";
+import { scanBlueprint as scanPackage } from "../services/security-scanner.js";
 
 function makePackageDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "zh-scan-test-"));

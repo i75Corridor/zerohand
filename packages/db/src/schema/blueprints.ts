@@ -1,7 +1,7 @@
 import { pgTable, uuid, text, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { pipelines } from "./pipelines.js";
 
-export const installedPackages = pgTable("installed_packages", {
+export const installedBlueprints = pgTable("installed_blueprints", {
   id: uuid("id").primaryKey().defaultRandom(),
   repoUrl: text("repo_url").notNull().unique(),
   repoFullName: text("repo_full_name").notNull(),

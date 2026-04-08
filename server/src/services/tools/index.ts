@@ -23,7 +23,7 @@ import { makeUpdateSkillScript } from "./update-skill-script.js";
 import { makeDeleteSkillScript } from "./delete-skill-script.js";
 import { makeValidatePipeline } from "./validate-pipeline.js";
 import { makeGetPipelineYaml } from "./get-pipeline-yaml.js";
-import { makeExportPackage } from "./export-package.js";
+import { makeExportBlueprint } from "./export-blueprint.js";
 import { makeListMcpServers } from "./list-mcp-servers.js";
 import { makeListMcpServerTools } from "./list-mcp-server-tools.js";
 import { makeRegisterMcpServer } from "./register-mcp-server.js";
@@ -46,12 +46,12 @@ import { makeListBudgets } from "./list-budgets.js";
 import { makeCreateBudget } from "./create-budget.js";
 import { makeUpdateBudget } from "./update-budget.js";
 import { makeDeleteBudget } from "./delete-budget.js";
-import { makeListPackages } from "./list-packages.js";
-import { makeInstallPackage } from "./install-package.js";
-import { makeUpdatePackage } from "./update-package.js";
-import { makeUninstallPackage } from "./uninstall-package.js";
-import { makeDiscoverPackages } from "./discover-packages.js";
-import { makeScanPackage } from "./scan-package.js";
+import { makeListBlueprints } from "./list-blueprints.js";
+import { makeInstallBlueprint } from "./install-blueprint.js";
+import { makeUpdateBlueprint } from "./update-blueprint.js";
+import { makeUninstallBlueprint } from "./uninstall-blueprint.js";
+import { makeDiscoverBlueprints } from "./discover-blueprints.js";
+import { makeScanBlueprint } from "./scan-blueprint.js";
 import { makeGetRunLog } from "./get-run-log.js";
 import { makeDetectMcpEnv } from "./detect-mcp-env.js";
 
@@ -82,7 +82,7 @@ export function makeAllTools(ctx: AgentToolContext): ToolDefinition[] {
     makeDeleteSkillScript(ctx),
     makeValidatePipeline(ctx),
     makeGetPipelineYaml(ctx),
-    makeExportPackage(ctx),
+    makeExportBlueprint(ctx),
     makeListMcpServers(ctx),
     makeListMcpServerTools(ctx),
     makeRegisterMcpServer(ctx),
@@ -106,12 +106,12 @@ export function makeAllTools(ctx: AgentToolContext): ToolDefinition[] {
     makeCreateBudget(ctx),
     makeUpdateBudget(ctx),
     makeDeleteBudget(ctx),
-    makeListPackages(ctx),
-    makeInstallPackage(ctx),
-    makeUpdatePackage(ctx),
-    makeUninstallPackage(ctx),
-    makeDiscoverPackages(ctx),
-    makeScanPackage(ctx),
+    makeListBlueprints(ctx),
+    makeInstallBlueprint(ctx),
+    makeUpdateBlueprint(ctx),
+    makeUninstallBlueprint(ctx),
+    makeDiscoverBlueprints(ctx),
+    makeScanBlueprint(ctx),
     makeGetRunLog(ctx),
   ];
 }

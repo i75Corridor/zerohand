@@ -1,6 +1,6 @@
-# Pawn Pipeline Package Format
+# Pawn Pipeline Blueprint Format
 
-A pipeline package is a directory that can be distributed as a git repository, npm package, or zip archive. When placed in the `PIPELINES_DIR` directory (default: `../pipelines`), the server auto-imports it on startup.
+A pipeline blueprint is a directory that can be distributed as a git repository, npm package, or zip archive. When placed in the `PIPELINES_DIR` directory (default: `../pipelines`), the server auto-imports it on startup.
 
 ## Directory Structure
 
@@ -28,7 +28,7 @@ model: google/gemini-2.5-flash
 systemPrompt: |
   You are the editorial team for My Publication.
 
-# Optional: inline system prompt file (relative to package dir)
+# Optional: inline system prompt file (relative to blueprint dir)
 # systemPromptFile: ./SYSTEM.md
 
 # Optional: JSON Schema for inputs passed to the pipeline at trigger time
@@ -115,7 +115,7 @@ steps:
 | `description` | No | Human-readable description |
 | `model` | No | `provider/model-name` for all skill-based steps (e.g. `google/gemini-2.5-flash`) |
 | `systemPrompt` | No | Inline system prompt prepended to all skill prompts |
-| `systemPromptFile` | No | Path relative to package dir to a system prompt `.md` file |
+| `systemPromptFile` | No | Path relative to blueprint dir to a system prompt `.md` file |
 | `inputSchema` | No | JSON Schema object for pipeline inputs |
 | `context` | No | Map of key → relative file path; files are loaded and available as `{{context.key}}` |
 | `workers` | No | Legacy: map of worker key → worker config (omit for skill-based pipelines) |
@@ -159,7 +159,7 @@ skills/
         web_search.js
     writer/
       SKILL.md
-  daily-absurdist/            # namespace = package slug on import
+  daily-absurdist/            # namespace = blueprint slug on import
     researcher/
       SKILL.md
     writer/
@@ -169,7 +169,7 @@ skills/
 | Namespace | Source |
 |-----------|--------|
 | `local` | Skills created via the in-app builder or the global agent |
-| `<package-slug>` | Skills imported from a package (namespace = slug derived from package name) |
+| `<blueprint-slug>` | Skills imported from a blueprint (namespace = slug derived from blueprint name) |
 
 When referencing a skill in `pipeline.yaml` or via the API, use the fully qualified name:
 
@@ -179,7 +179,7 @@ steps:
     skill: local/researcher    # or daily-absurdist/researcher
 ```
 
-**Export behavior:** When exporting a pipeline as a package, the namespace prefix is stripped from skill paths (the package itself is the namespace context on import).
+**Export behavior:** When exporting a pipeline as a blueprint, the namespace prefix is stripped from skill paths (the blueprint itself is the namespace context on import).
 
 ### SKILL.md format
 
@@ -228,8 +228,8 @@ Supported script types: `.js` (node), `.ts` (npx tsx), `.py` (python3), `.sh` (b
 
 The server performs an **idempotent upsert** on startup:
 
-- **New package** (name not in DB): creates pipeline, workers (if any), and steps.
-- **Existing package, same hash**: skips (no changes).
-- **Existing package, hash changed**: updates pipeline and steps in-place, preserving all run history.
+- **New blueprint** (name not in DB): creates pipeline, workers (if any), and steps.
+- **Existing blueprint, same hash**: skips (no changes).
+- **Existing blueprint, hash changed**: updates pipeline and steps in-place, preserving all run history.
 
 Workers are tracked by their YAML key via `pipeline.metadata.workerKeyMap`. Context values are stored in `pipeline.metadata.context` and loaded at run time for skill prompt interpolation.

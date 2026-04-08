@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu, DollarSign, Menu, HelpCircle } from "lucide-react";
+import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Blocks, Cpu, DollarSign, Menu, HelpCircle } from "lucide-react";
 import { ChessPawnIcon } from "./Icons/ChessPawnIcon.tsx";
 import { ContrastIcon } from "./Icons/ContrastIcon.tsx";
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
@@ -49,12 +49,12 @@ function ApprovalsNavItem() {
 }
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/pipelines", label: "Pipelines", icon: GitBranch },
-  { to: "/skills", label: "Skills", icon: Cpu },
-  { to: "/packages", label: "Packages", icon: Package },
-  { to: "/costs", label: "Costs", icon: DollarSign },
-  { to: "/canvas", label: "Canvas", icon: Image },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, accent: "gold" },
+  { to: "/pipelines", label: "Pipelines", icon: GitBranch, accent: "indigo" },
+  { to: "/skills", label: "Skills", icon: Cpu, accent: "violet" },
+  { to: "/blueprints", label: "Blueprints", icon: Blocks, accent: "teal" },
+  { to: "/costs", label: "Costs", icon: DollarSign, accent: "amber" },
+  { to: "/canvas", label: "Canvas", icon: Image, accent: "rose" },
 ] as const;
 
 const ACTIVE_TEXT = "text-pawn-gold-400";

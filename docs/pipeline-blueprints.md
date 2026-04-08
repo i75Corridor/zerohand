@@ -1,6 +1,6 @@
-# Pipeline Packages
+# Pipeline Blueprints
 
-Pipelines are defined as self-contained directory packages under `pipelines/`. Each package is a directory containing a `pipeline.yaml` manifest and any associated prompt files and context documents.
+Pipelines are defined as self-contained directory blueprints under `pipelines/`. Each blueprint is a directory containing a `pipeline.yaml` manifest and any associated prompt files and context documents.
 
 ```
 pipelines/
@@ -166,17 +166,17 @@ The recommended way to create and iterate on pipelines is entirely in the UI —
 
 All changes write directly to `SKILLS_DIR/<name>/SKILL.md` and `scripts/` on disk.
 
-### Export as Package
+### Export as Blueprint
 
 Once a pipeline is ready, export it as a redistributable `.tar.gz` archive:
 
 1. Open the pipeline detail page.
-2. Click **Export as Package**.
+2. Click **Export as Blueprint**.
 3. The archive includes `pipeline.yaml`, `skills/<name>/SKILL.md`, and all associated scripts.
 
 ### Publish to GitHub
 
-Publishing creates a GitHub repository from the pipeline, adds the `pawn-package` topic (making it discoverable via `pawn packages discover`), and records the package in your installed packages list.
+Publishing creates a GitHub repository from the pipeline, adds the `pawn-blueprint` topic (making it discoverable via `pawn blueprints discover`), and records the blueprint in your installed blueprints list.
 
 **Prerequisite:** The `gh` CLI must be installed and authenticated.
 
@@ -191,20 +191,20 @@ gh auth login
 
 `gh auth login` writes credentials to `~/.config/gh/hosts.yml`. The Pawn server calls `gh repo create` via this credential — no additional environment variables are needed.
 
-> **Note:** `gh` auth is distinct from the `GITHUB_TOKEN` env var (which is used for API rate limiting and cloning private repos during `packages install`). For publishing, only `gh auth login` matters.
+> **Note:** `gh` auth is distinct from the `GITHUB_TOKEN` env var (which is used for API rate limiting and cloning private repos during `blueprints install`). For publishing, only `gh auth login` matters.
 
 To publish from the UI:
 
 1. Open the pipeline detail page.
 2. Click **Publish to GitHub**.
 3. Choose a repository name, visibility, and optional description.
-4. Click **Publish** — the repo is created on GitHub and the package is registered locally.
+4. Click **Publish** — the repo is created on GitHub and the blueprint is registered locally.
 
-> **Private repos:** A private repository won't appear in `pawn packages discover` results (which searches public repos by topic). It can still be installed explicitly via `pawn packages install https://github.com/YOUR_ORG/repo` if you have access.
+> **Private repos:** A private repository won't appear in `pawn blueprints discover` results (which searches public repos by topic). It can still be installed explicitly via `pawn blueprints install https://github.com/YOUR_ORG/repo` if you have access.
 
 ---
 
-## Adding a New Pipeline Package (File-based)
+## Adding a New Pipeline Blueprint (File-based)
 
 The file-based workflow is still supported — useful for version-controlled pipeline definitions checked into a repo.
 

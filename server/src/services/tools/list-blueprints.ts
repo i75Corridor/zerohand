@@ -1,17 +1,17 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { eq } from "drizzle-orm";
-import { installedPackages, pipelines } from "@pawn/db";
+import { installedBlueprints, pipelines } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
-export function makeListPackages(ctx: AgentToolContext): ToolDefinition {
+export function makeListBlueprints(ctx: AgentToolContext): ToolDefinition {
   return {
-    name: "list_packages",
-    label: "List Packages",
-    description: "List all installed packages enriched with pipeline names, skills, and update status.",
+    name: "list_blueprints",
+    label: "List Blueprints",
+    description: "List all installed blueprints enriched with pipeline names, skills, and update status.",
     parameters: Type.Object({}),
     execute: async () => {
-      const pkgs = await ctx.db.select().from(installedPackages);
+      const pkgs = await ctx.db.select().from(installedBlueprints);
 
       const enriched = await Promise.all(
         pkgs.map(async (pkg) => {

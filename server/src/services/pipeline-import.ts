@@ -19,7 +19,7 @@ import { join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { eq, inArray } from "drizzle-orm";
 import type { Db } from "@pawn/db";
-import { pipelines, pipelineSteps, mcpServers, installedPackages } from "@pawn/db";
+import { pipelines, pipelineSteps, mcpServers, installedBlueprints } from "@pawn/db";
 
 interface StepConfig {
   name: string;
@@ -107,15 +107,15 @@ function qualifySkillRef(skillRef: string | undefined, namespace: string): strin
 /**
  * Upsert MCP server declarations from a pipeline.yaml into the mcp_servers table.
  * Skips servers whose name already exists (logs warning).
- * Links newly-inserted servers to the installed package via sourcePackageId.
+ * Links newly-inserted servers to the installed blueprint via sourceBlueprintId.
  */
 async function registerMcpServers(
   db: Db,
   mcpServerDeclarations: Record<string, McpServerDeclaration>,
   packageRepoUrl: string,
 ): Promise<void> {
-  const pkg = await db.query.installedPackages.findFirst({
-    where: eq(installedPackages.repoUrl, packageRepoUrl),
+  const pkg = await db.query.installedBlueprints.findFirst({
+    where: eq(installedBlueprints.repoUrl, packageRepoUrl),
   });
 
   for (const [name, decl] of Object.entries(mcpServerDeclarations)) {
@@ -134,10 +134,10 @@ async function registerMcpServers(
       url: decl.url ?? null,
       headers: decl.headers ?? {},
       env: decl.env ?? {},
-      source: "package",
-      sourcePackageId: pkg?.id ?? null,
+      source: "blueprint",
+      sourceBlueprintId: pkg?.id ?? null,
     });
-    console.log(`[Import] Registered MCP server "${name}" from package.`);
+    console.log(`[Import] Registered MCP server "${name}" from blueprint.`);
   }
 }
 
@@ -297,7 +297,7 @@ export async function importPipelinePackage(
   }
 }
 
-export async function importAllPackages(db: Db, pipelinesDir: string): Promise<void> {
+export async function importAllBlueprints(db: Db, pipelinesDir: string): Promise<void> {
   if (!existsSync(pipelinesDir)) {
     console.log(`[Import] Pipelines directory not found: ${pipelinesDir}`);
     return;

@@ -1,17 +1,17 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import type { AgentToolContext } from "./context.js";
-import { updatePackage } from "../package-manager.js";
+import { updateBlueprint } from "../blueprint-manager.js";
 
-export function makeUpdatePackage(ctx: AgentToolContext): ToolDefinition {
+export function makeUpdateBlueprint(ctx: AgentToolContext): ToolDefinition {
   return {
-    name: "update_package",
-    label: "Update Package",
+    name: "update_blueprint",
+    label: "Update Blueprint",
     description:
-      "Update an installed package to the latest version by pulling from its remote repository. A security scan runs after the pull.",
+      "Update an installed blueprint to the latest version by pulling from its remote repository. A security scan runs after the pull.",
     parameters: Type.Object({
-      packageId: Type.String({
-        description: "ID of the installed package to update.",
+      blueprintId: Type.String({
+        description: "ID of the installed blueprint to update.",
       }),
       force: Type.Optional(
         Type.Boolean({
@@ -19,14 +19,14 @@ export function makeUpdatePackage(ctx: AgentToolContext): ToolDefinition {
         }),
       ),
     }),
-    execute: async (_id, params: { packageId: string; force?: boolean }) => {
-      const result = await updatePackage(
+    execute: async (_id, params: { blueprintId: string; force?: boolean }) => {
+      const result = await updateBlueprint(
         ctx.db,
-        params.packageId,
+        params.blueprintId,
         ctx.skillsDir,
         { force: params.force === true },
       );
-      ctx.broadcastDataChanged("package", "updated", params.packageId);
+      ctx.broadcastDataChanged("blueprint", "updated", params.blueprintId);
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         details: {},

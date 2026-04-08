@@ -8,15 +8,15 @@ import type {
   ApiBudgetPolicy,
   ApiSkill,
   ApiSkillBundle,
-  ApiInstalledPackage,
-  ApiDiscoveredPackage,
+  ApiInstalledBlueprint,
+  ApiDiscoveredBlueprint,
   ApiModelEntry,
   ApiCostBreakdown,
   ApiMcpServer,
   ApiMcpTool,
   ApiValidationResult,
   ApiPipelineVersion,
-  ApiPackagePreview,
+  ApiBlueprintPreview,
   ApiModelWarning,
 } from "@pawn/shared";
 
@@ -213,14 +213,14 @@ export const api = {
   restorePipelineVersion: (id: string, version: number) =>
     request<ApiPipeline>(`/pipelines/${id}/versions/${version}/restore`, { method: "POST" }),
 
-  // Packages
-  previewPackage: (pipelineId: string) =>
-    request<ApiPackagePreview>("/packages/preview", {
+  // Blueprints
+  previewBlueprint: (pipelineId: string) =>
+    request<ApiBlueprintPreview>("/blueprints/preview", {
       method: "POST",
       body: JSON.stringify({ pipelineId }),
     }),
-  exportPackage: async (pipelineId: string): Promise<void> => {
-    const res = await fetch(`${BASE}/packages/export`, {
+  exportBlueprint: async (pipelineId: string): Promise<void> => {
+    const res = await fetch(`${BASE}/blueprints/export`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pipelineId }),
@@ -232,36 +232,36 @@ export const api = {
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const cd = res.headers.get("content-disposition") ?? "";
-    const filename = cd.match(/filename="([^"]+)"/)?.[1] ?? "package.tar.gz";
+    const filename = cd.match(/filename="([^"]+)"/)?.[1] ?? "blueprint.tar.gz";
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   },
-  getGhStatus: () => request<{ available: boolean }>("/packages/gh-status"),
-  publishPackage: (body: { pipelineId: string; repo?: string; private?: boolean; description?: string }) =>
-    request<{ id: string; repoUrl: string; repoFullName: string; prUrl?: string; noChanges?: boolean }>("/packages/publish", {
+  getGhStatus: () => request<{ available: boolean }>("/blueprints/gh-status"),
+  publishBlueprint: (body: { pipelineId: string; repo?: string; private?: boolean; description?: string }) =>
+    request<{ id: string; repoUrl: string; repoFullName: string; prUrl?: string; noChanges?: boolean }>("/blueprints/publish", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  listInstalledPackages: () => request<ApiInstalledPackage[]>("/packages"),
-  discoverPackages: (q?: string) =>
-    request<ApiDiscoveredPackage[]>(`/packages/discover${q ? `?q=${encodeURIComponent(q)}` : ""}`),
-  installPackage: (repoUrl: string, force?: boolean) =>
-    request<{ pipelineName: string; modelWarnings?: ApiModelWarning[] }>("/packages/install", {
+  listInstalledBlueprints: () => request<ApiInstalledBlueprint[]>("/blueprints"),
+  discoverBlueprints: (q?: string) =>
+    request<ApiDiscoveredBlueprint[]>(`/blueprints/discover${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  installBlueprint: (repoUrl: string, force?: boolean) =>
+    request<{ pipelineName: string; modelWarnings?: ApiModelWarning[] }>("/blueprints/install", {
       method: "POST",
       body: JSON.stringify({ repoUrl, force: force ?? false }),
     }),
-  updatePackage: (id: string) =>
-    request<{ pipelineName: string; modelWarnings?: ApiModelWarning[] }>(`/packages/${id}/update`, { method: "POST" }),
-  uninstallPackage: (id: string) => request<void>(`/packages/${id}`, { method: "DELETE" }),
-  checkForUpdates: () => request<{ message: string }>("/packages/check-updates", { method: "POST" }),
+  updateBlueprint: (id: string) =>
+    request<{ pipelineName: string; modelWarnings?: ApiModelWarning[] }>(`/blueprints/${id}/update`, { method: "POST" }),
+  uninstallBlueprint: (id: string) => request<void>(`/blueprints/${id}`, { method: "DELETE" }),
+  checkForUpdates: () => request<{ message: string }>("/blueprints/check-updates", { method: "POST" }),
 
   // MCP Servers
   listMcpServers: () => request<ApiMcpServer[]>("/mcp-servers"),
   getMcpServer: (id: string) => request<ApiMcpServer>(`/mcp-servers/${id}`),
-  createMcpServer: (body: Omit<ApiMcpServer, "id" | "source" | "sourcePackageId">) =>
+  createMcpServer: (body: Omit<ApiMcpServer, "id" | "source" | "sourceBlueprintId">) =>
     request<ApiMcpServer>("/mcp-servers", { method: "POST", body: JSON.stringify(body) }),
   updateMcpServer: (id: string, body: Partial<ApiMcpServer>) =>
     request<ApiMcpServer>(`/mcp-servers/${id}`, { method: "PATCH", body: JSON.stringify(body) }),

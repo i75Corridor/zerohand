@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { checkModelAvailability } from "../services/package-manager.js";
+import { checkModelAvailability } from "../services/blueprint-manager.js";
 
 vi.mock("../services/ollama-provider.js", () => ({
   isOllamaAvailable: vi.fn(() => false),

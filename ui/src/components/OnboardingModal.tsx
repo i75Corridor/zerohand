@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Rocket, GitBranch, Play, MessageSquare, Package } from "lucide-react";
+import { Rocket, GitBranch, Play, MessageSquare, Blocks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Modal from "./Modal.tsx";
 
@@ -23,7 +23,7 @@ const STEPS: Step[] = [
     title: "Pipelines",
     description:
       "A pipeline is a sequence of steps executed in order. Each step references a skill by name. Pipelines have a name, input schema, a top-level model, and a system prompt shared across all steps.",
-    tip: "Start by creating a pipeline or installing one from a package.",
+    tip: "Start by creating a pipeline or installing one from a blueprint.",
   },
   {
     icon: Play,
@@ -40,11 +40,11 @@ const STEPS: Step[] = [
     tip: "Try asking: \"Create a pipeline that summarizes news articles daily.\"",
   },
   {
-    icon: Package,
-    title: "Skills & Packages",
+    icon: Blocks,
+    title: "Skills & Blueprints",
     description:
-      "Skills are the building blocks — each one is a focused AI agent with a system prompt and optional scripts. Packages bundle pipelines and skills together for easy sharing and installation from GitHub.",
-    tip: "Browse the Packages page to discover and install community packages.",
+      "Skills are the building blocks — each one is a focused AI agent with a system prompt and optional scripts. Blueprints bundle pipelines and skills together for easy sharing and installation from GitHub.",
+    tip: "Browse the Blueprints page to discover and install community blueprints.",
   },
 ];
 

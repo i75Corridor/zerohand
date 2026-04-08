@@ -126,12 +126,12 @@ export default function Skills() {
           <EmptyState
             icon={Cpu}
             title="No pieces in play"
-            description="Skills are reusable AI capabilities -- prompts, scripts, or tools that pipeline steps can invoke. Create one from scratch or install a package that includes skills."
+            description="Skills are reusable AI capabilities -- prompts, scripts, or tools that pipeline steps can invoke. Create one from scratch or install a blueprint that includes skills."
             actions={[
               { label: "Create a Skill", onClick: () => setCreating(true) },
-              { label: "Browse Packages", to: "/packages", variant: "secondary" },
+              { label: "Browse Blueprints", to: "/blueprints", variant: "secondary" },
             ]}
-            hint="Skills installed from packages appear here automatically."
+            hint="Skills installed from blueprints appear here automatically."
           />
         </div>
       ) : (

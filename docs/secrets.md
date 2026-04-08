@@ -53,9 +53,9 @@ secrets:
 
 Those secrets are decrypted and passed as environment variables into the skill's script process (or Docker sandbox if enabled). The script reads them via `process.env.SLACK_WEBHOOK_URL` etc.
 
-### 3. GitHub Token for Package Installs
+### 3. GitHub Token for Blueprint Installs
 
-The key `GITHUB_TOKEN` in the secrets table is used by the package manager to authenticate `git clone` for private package repositories. If not set, only public repos can be installed.
+The key `GITHUB_TOKEN` in the secrets table is used by the blueprint manager to authenticate `git clone` for private blueprint repositories. If not set, only public repos can be installed.
 
 ### Managing Secrets
 
@@ -80,7 +80,7 @@ The two systems are **completely independent**. There is no "check env var, fall
 | Model provider auth | ✓ | ✗ |
 | `{{secret.KEY}}` in prompts | ✗ | ✓ |
 | Script `secretEnv` injection | ✗ | ✓ |
-| GitHub package installs | ✗ | ✓ (`GITHUB_TOKEN`) |
+| GitHub blueprint installs | ✗ | ✓ (`GITHUB_TOKEN`) |
 
 **Example:** If `ANTHROPIC_API_KEY` exists as both an env var and a DB secret:
 - The **env var** is what allows Anthropic models to appear as available in the model selector and be used for inference.

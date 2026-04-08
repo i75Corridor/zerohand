@@ -2,7 +2,7 @@
 
 ## Overview
 
-Pawn is a monorepo agentic workflow orchestrator. Pipelines are defined as YAML packages, stored in a directory, and seeded into PostgreSQL on startup. The execution engine polls for queued runs, resolves prompt templates, dispatches work to the appropriate worker type, and streams events back to the UI over WebSocket.
+Pawn is a monorepo agentic workflow orchestrator. Pipelines are defined as YAML blueprints, stored in a directory, and seeded into PostgreSQL on startup. The execution engine polls for queued runs, resolves prompt templates, dispatches work to the appropriate worker type, and streams events back to the UI over WebSocket.
 
 The control plane adds scheduling (cron triggers), human approval gates, and budget enforcement on top of the core execution loop.
 
@@ -21,7 +21,7 @@ The control plane adds scheduling (cron triggers), human approval gates, and bud
 │  │  runs steps in sequence  │   │    versions, restore)        │   │
 │  │  budget check            │   │  /api/runs (+resume, rerun)  │   │
 │  │  approval gates          │   │  /api/mcp-servers            │   │
-│  │  session persistence     │   │  /api/packages (+preview)    │   │
+│  │  session persistence     │   │  /api/blueprints (+preview)  │   │
 │  │  MCP client pool         │   │  /api/triggers               │   │
 │  │  step-by-step mode       │   │  /api/approvals              │   │
 │  └──────────┬───────────────┘   │  /api/budgets                │   │
@@ -81,7 +81,7 @@ Drizzle ORM schema and migration client. Exports:
 
 TypeScript interfaces shared between server and UI:
 
-- API response types (`ApiPipeline`, `ApiPipelineRun`, `ApiStepRun`, `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, `ApiMcpServer`, `ApiMcpTool`, `ApiValidationResult`, `ApiPipelineVersion`, `ApiPackagePreview`, etc.)
+- API response types (`ApiPipeline`, `ApiPipelineRun`, `ApiStepRun`, `ApiTrigger`, `ApiApproval`, `ApiBudgetPolicy`, `ApiMcpServer`, `ApiMcpTool`, `ApiValidationResult`, `ApiPipelineVersion`, `ApiBlueprintPreview`, etc.)
 - WebSocket message types (`WsMessage`, `WsStepEvent`, etc.)
 - Status enums (`PipelineRunStatus`, `StepRunStatus`)
 - YAML serialization: `pipelineToYaml()` (converts `ApiPipeline` → YAML string for export)
@@ -91,7 +91,7 @@ TypeScript interfaces shared between server and UI:
 Express application. Responsibilities:
 
 - Boots embedded PostgreSQL (or connects to external via `DATABASE_URL`)
-- Applies migrations and seeds pipeline packages on startup
+- Applies migrations and seeds pipeline blueprints on startup
 - Starts the execution engine (polls every 2s for queued runs)
 - Starts the trigger manager (polls every 30s for due cron triggers)
 - Starts the global agent (LLM with pipeline-authoring tools)
@@ -219,7 +219,7 @@ Steps reference a worker DB record. Workers have their own model, system prompt,
 
 ## Key Design Decisions
 
-**Pipeline packages over DB-only config** — Pipelines are defined in `pipelines/<name>/pipeline.yaml`. This makes them version-controllable, shareable as packages, and editable without a UI. The seeder detects changes via a SHA-256 content hash and re-seeds automatically on restart.
+**Pipeline blueprints over DB-only config** — Pipelines are defined in `pipelines/<name>/pipeline.yaml`. This makes them version-controllable, shareable as blueprints, and editable without a UI. The seeder detects changes via a SHA-256 content hash and re-seeds automatically on restart.
 
 **Embedded PostgreSQL for local dev** — Zero setup. The server starts its own Postgres process on first boot. Set `DATABASE_URL` to use external Postgres (e.g. Docker Compose).
 
@@ -233,7 +233,7 @@ Steps reference a worker DB record. Workers have their own model, system prompt,
 
 **Cost recording after every pi step** — `cost_events` are inserted with real token counts from the pi session's usage object. Budget checks query this table before each step.
 
-**Skill namespacing** — Skills are stored in `SKILLS_DIR/<namespace>/<skill-name>/`. The `local` namespace is for in-app skills; imported packages use the package slug as namespace. This prevents naming collisions across packages.
+**Skill namespacing** — Skills are stored in `SKILLS_DIR/<namespace>/<skill-name>/`. The `local` namespace is for in-app skills; imported blueprints use the blueprint slug as namespace. This prevents naming collisions across blueprints.
 
 **MCP server pool per run** — A `McpClientPool` is created at the start of each pipeline run and torn down (success or failure) in the `finally` block. Connections are established lazily (only for skills that declare them in `mcpServers` frontmatter) and reused across steps.
 
@@ -241,4 +241,4 @@ Steps reference a worker DB record. Workers have their own model, system prompt,
 
 **Static validation separate from execution** — The `validate_pipeline` logic is a pure function with no LLM calls. It can be called from the REST API, the agent tool, or the PipelineBuilder after save — all sharing the same implementation.
 
-**Package preview without side effects** — `POST /api/packages/preview` serializes the pipeline to YAML and reads skill files from disk but writes nothing. This lets the UI show exactly what an export would produce before committing.
+**Blueprint preview without side effects** — `POST /api/blueprints/preview` serializes the pipeline to YAML and reads skill files from disk but writes nothing. This lets the UI show exactly what an export would produce before committing.
