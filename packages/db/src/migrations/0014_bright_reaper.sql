@@ -1,0 +1,1 @@
+-- squashed: schema already applied by migrations 0004-0013
