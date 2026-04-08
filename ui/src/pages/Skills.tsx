@@ -32,7 +32,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
   return (
     <div className="bg-pawn-surface-900 border border-pawn-surface-700 rounded-card p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-white">New Skill</span>
+        <span className="text-sm font-medium text-pawn-text-primary">New Skill</span>
         <button onClick={onCancel} className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
           <X size={14} />
         </button>
@@ -40,7 +40,7 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
       <div className="space-y-3">
         <div>
           <input
-            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
+            className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
             placeholder="skill-name (lowercase, hyphens ok)"
             value={name}
             onChange={(e) => { setName(e.target.value.toLowerCase()); setError(""); }}
@@ -51,14 +51,14 @@ function NewSkillForm({ onCancel }: { onCancel: () => void }) {
           )}
         </div>
         <input
-          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
           placeholder="Description (optional)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
         {error && <p className="text-xs text-rose-400">{error}</p>}
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-white transition-colors">
+          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-pawn-text-primary transition-colors">
             Cancel
           </button>
           <button
@@ -151,7 +151,7 @@ export default function Skills() {
                   >
                     <Cpu size={15} className="text-violet-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white font-mono">{ns}/{skill.name}</div>
+                      <div className="text-sm font-medium text-pawn-text-primary font-mono">{ns}/{skill.name}</div>
                       {skill.description && (
                         <div className="text-xs text-pawn-surface-500 mt-0.5 truncate">{skill.description}</div>
                       )}

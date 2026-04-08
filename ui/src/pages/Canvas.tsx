@@ -86,7 +86,7 @@ function RunSection({ run, defaultExpanded }: { run: ApiPipelineRun; defaultExpa
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-white">{run.pipelineName ?? run.pipelineId}</span>
+            <span className="text-sm font-semibold text-pawn-text-primary">{run.pipelineName ?? run.pipelineId}</span>
             {topic && (
               <>
                 <span className="text-pawn-surface-700">·</span>

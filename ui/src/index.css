@@ -2,55 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════════════════════════════
+   Light / Dark Theme System
+   ──────────────────────────────────────────────────────────────────
+   Stop numbers represent DEPTH/HIERARCHY, not absolute lightness.
+   surface-950 = deepest container bg (near-white in light, near-black in dark)
+   surface-50  = lightest accent     (near-black in light, near-white in dark)
+   ══════════════════════════════════════════════════════════════════ */
+
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* ── Pawn Brand: Warm Metallic Chess Palette ──────────────── */
+  /* ── Gold — primary brand accent (same in both themes) ─────── */
+  --pawn-gold-50:  oklch(0.97 0.03 80);
+  --pawn-gold-100: oklch(0.93 0.06 78);
+  --pawn-gold-200: oklch(0.87 0.10 76);
+  --pawn-gold-300: oklch(0.80 0.13 74);
+  --pawn-gold-400: oklch(0.72 0.14 72);
+  --pawn-gold-500: oklch(0.64 0.14 70);
+  --pawn-gold-600: oklch(0.56 0.13 68);
+  --pawn-gold-700: oklch(0.48 0.11 66);
+  --pawn-gold-800: oklch(0.40 0.08 64);
+  --pawn-gold-900: oklch(0.32 0.06 62);
+  --pawn-gold-950: oklch(0.22 0.04 60);
 
-  /* Gold — primary brand accent */
-  --pawn-gold-50:  oklch(0.97 0.03 80);   /* #fdf6e3 */
-  --pawn-gold-100: oklch(0.93 0.06 78);   /* #f5e6be */
-  --pawn-gold-200: oklch(0.87 0.10 76);   /* #ebd092 */
-  --pawn-gold-300: oklch(0.80 0.13 74);   /* #d4ac5a */
-  --pawn-gold-400: oklch(0.76 0.14 72);   /* #c99a3e */
-  --pawn-gold-500: oklch(0.70 0.14 70);   /* #b8862d */
-  --pawn-gold-600: oklch(0.62 0.13 68);   /* #9a6e1f */
-  --pawn-gold-700: oklch(0.52 0.11 66);   /* #7a5518 */
-  --pawn-gold-800: oklch(0.42 0.08 64);   /* #5c3f12 */
-  --pawn-gold-900: oklch(0.32 0.06 62);   /* #3d2a0d */
-  --pawn-gold-950: oklch(0.22 0.04 60);   /* #241a08 */
+  /* ── Surface — LIGHT MODE (inverted: 950=lightest, 50=darkest) ── */
+  --pawn-surface-50:  oklch(0.25 0.008 54);
+  --pawn-surface-100: oklch(0.30 0.008 56);
+  --pawn-surface-200: oklch(0.40 0.010 58);
+  --pawn-surface-300: oklch(0.50 0.010 60);
+  --pawn-surface-400: oklch(0.58 0.010 62);
+  --pawn-surface-500: oklch(0.66 0.008 64);
+  --pawn-surface-600: oklch(0.78 0.006 66);
+  --pawn-surface-700: oklch(0.86 0.005 68);
+  --pawn-surface-800: oklch(0.91 0.004 70);
+  --pawn-surface-900: oklch(0.95 0.003 72);
+  --pawn-surface-950: oklch(0.98 0.002 74);
 
-  /* Surface — warm-tinted neutrals (replacing cold slates) */
-  --pawn-surface-50:  oklch(0.97 0.005 70);  /* #f7f5f2 */
-  --pawn-surface-100: oklch(0.92 0.008 68);  /* #e8e4de */
-  --pawn-surface-200: oklch(0.82 0.010 66);  /* #c8c2b8 */
-  --pawn-surface-300: oklch(0.68 0.010 64);  /* #9e9889 */
-  --pawn-surface-400: oklch(0.56 0.010 62);  /* #7d776a */
-  --pawn-surface-500: oklch(0.46 0.010 60);  /* #5e5850 */
-  --pawn-surface-600: oklch(0.36 0.010 58);  /* #45403a */
-  --pawn-surface-700: oklch(0.28 0.010 56);  /* #33302b */
-  --pawn-surface-800: oklch(0.22 0.008 54);  /* #252220 */
-  --pawn-surface-900: oklch(0.16 0.008 52);  /* #181614 */
-  --pawn-surface-950: oklch(0.10 0.006 50);  /* #0d0c0a */
+  /* ── Semantic text tokens ──────────────────────────────────── */
+  --pawn-text-primary:   oklch(0.15 0.008 50);
+  --pawn-text-secondary: oklch(0.35 0.008 54);
+  --pawn-text-muted:     oklch(0.50 0.010 58);
 
-  /* Semantic status — each has a 400 (text), 500 (border/bar), and bg tint */
-  --pawn-info-400:    oklch(0.72 0.10 250);   /* muted blue text */
-  --pawn-info-500:    oklch(0.62 0.12 248);   /* muted blue border/bar */
+  /* ── Semantic status ───────────────────────────────────────── */
+  --pawn-info-400: oklch(0.55 0.12 248);
+  --pawn-info-500: oklch(0.48 0.14 246);
 
-  /* Shape */
+  /* ── Chart tokens ──────────────────────────────────────────── */
+  --pawn-chart-bg:     oklch(0.98 0.002 74 / 0.95);
+  --pawn-chart-border: oklch(0.91 0.004 70);
+  --pawn-chart-grid:   oklch(0.91 0.004 70 / 0.6);
+  --pawn-chart-text:   oklch(0.50 0.010 58);
+
+  /* ── Interactive surface tokens ────────────────────────────── */
+  --pawn-sidebar-bg:     oklch(0.95 0.003 72);
+  --pawn-sidebar-border: oklch(0.88 0.005 68 / 0.7);
+  --pawn-hover-border:   oklch(0.82 0.006 66 / 0.6);
+  --pawn-hover-bg:       oklch(0.94 0.003 72 / 0.5);
+  --pawn-focus-ring:     oklch(0.64 0.14 72 / 0.3);
+
+  /* ── Shape ─────────────────────────────────────────────────── */
   --radius-badge:  6px;
   --radius-button: 8px;
   --radius-card:   12px;
   --radius-panel:  16px;
 }
 
+/* ── DARK MODE ────────────────────────────────────────────────── */
+html.dark {
+  color-scheme: dark;
+
+  /* Gold — slightly brighter for dark backgrounds */
+  --pawn-gold-400: oklch(0.76 0.14 72);
+  --pawn-gold-500: oklch(0.70 0.14 70);
+  --pawn-gold-600: oklch(0.62 0.13 68);
+
+  /* Surface — original dark palette */
+  --pawn-surface-50:  oklch(0.97 0.005 70);
+  --pawn-surface-100: oklch(0.96 0.006 68);
+  --pawn-surface-200: oklch(0.82 0.010 66);
+  --pawn-surface-300: oklch(0.68 0.010 64);
+  --pawn-surface-400: oklch(0.56 0.010 62);
+  --pawn-surface-500: oklch(0.46 0.010 60);
+  --pawn-surface-600: oklch(0.36 0.010 58);
+  --pawn-surface-700: oklch(0.28 0.010 56);
+  --pawn-surface-800: oklch(0.22 0.008 54);
+  --pawn-surface-900: oklch(0.16 0.008 52);
+  --pawn-surface-950: oklch(0.10 0.006 50);
+
+  /* Semantic text tokens */
+  --pawn-text-primary:   oklch(0.96 0.006 68);
+  --pawn-text-secondary: oklch(0.82 0.010 66);
+  --pawn-text-muted:     oklch(0.56 0.010 62);
+
+  /* Semantic status */
+  --pawn-info-400: oklch(0.72 0.10 250);
+  --pawn-info-500: oklch(0.62 0.12 248);
+
+  /* Chart tokens */
+  --pawn-chart-bg:     oklch(0.12 0.008 52 / 0.95);
+  --pawn-chart-border: oklch(0.22 0.008 54);
+  --pawn-chart-grid:   oklch(0.22 0.008 54 / 0.6);
+  --pawn-chart-text:   oklch(0.56 0.010 62);
+
+  /* Interactive surface tokens */
+  --pawn-sidebar-bg:     oklch(0.14 0.008 52);
+  --pawn-sidebar-border: oklch(0.24 0.010 54 / 0.7);
+  --pawn-hover-border:   oklch(0.36 0.010 58 / 0.6);
+  --pawn-hover-bg:       oklch(0.14 0.008 52 / 0.3);
+  --pawn-focus-ring:     oklch(0.76 0.14 72 / 0.2);
+}
+
 body {
   font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
   font-kerning: normal;
   background: var(--pawn-surface-950);
-  color: var(--pawn-surface-100);
+  color: var(--pawn-text-primary);
   @apply antialiased leading-relaxed;
 }
 
@@ -59,14 +128,25 @@ body {
   text-wrap: balance;
 }
 
+/* ── Prose (markdown) inherits theme colors ────────────────────── */
+.prose {
+  --tw-prose-body: var(--pawn-text-secondary);
+  --tw-prose-headings: var(--pawn-text-primary);
+  --tw-prose-links: var(--pawn-gold-400);
+  --tw-prose-bold: var(--pawn-text-primary);
+  --tw-prose-code: var(--pawn-gold-400);
+  --tw-prose-pre-bg: var(--pawn-surface-900);
+  --tw-prose-pre-code: var(--pawn-text-secondary);
+}
+
 /* ── Tabular figures for numeric data ─────────────────────────── */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
 .sidebar {
-  background: var(--pawn-surface-900);
-  border-right: 1px solid oklch(0.22 0.008 54 / 0.6);
+  background: var(--pawn-sidebar-bg);
+  border-right: 1px solid var(--pawn-sidebar-border);
   contain: layout style;
 }
 
@@ -84,13 +164,13 @@ body {
   transition: border-color 200ms var(--ease-out-quart);
 }
 .card-hover:hover {
-  border-color: oklch(0.36 0.010 58 / 0.6);
-  background-color: oklch(0.14 0.008 52 / 0.3);
+  border-color: var(--pawn-hover-border);
+  background-color: var(--pawn-hover-bg);
 }
 
 /* ── Focus ring ──────────────────────────────────────────────── */
 .input-glow:focus {
-  box-shadow: 0 0 0 2px oklch(0.76 0.14 72 / 0.2);
+  box-shadow: 0 0 0 2px var(--pawn-focus-ring);
   transition: box-shadow 200ms var(--ease-out-quart), border-color 200ms var(--ease-out-quart);
 }
 
@@ -144,7 +224,7 @@ html {
 
 /* ── Focus-visible ring for keyboard users ─────────────────────── */
 :focus-visible {
-  outline: 2px solid oklch(0.76 0.14 72 / 0.4);
+  outline: 2px solid var(--pawn-focus-ring);
   outline-offset: 2px;
 }
 

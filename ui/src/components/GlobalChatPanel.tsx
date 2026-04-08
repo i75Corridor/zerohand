@@ -134,13 +134,13 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
   const showEmptyState = messages.length === 0 && !streamingText && !isStreaming;
 
   return (
-    <div className="flex flex-col h-full bg-pawn-surface-950 border-l border-white/[0.07]">
+    <div className="flex flex-col h-full bg-pawn-surface-950 border-l border-pawn-surface-800">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
+      <div className="flex items-center px-4 py-3 border-b border-pawn-surface-800 flex-shrink-0">
         <div className="flex items-center gap-2 flex-1">
           {/* Pawn icon */}
           <span className="text-pawn-gold-400 text-base leading-none" aria-hidden="true">&#9823;</span>
-          <span className="text-sm font-semibold text-white tracking-tight">Agent AI</span>
+          <span className="text-sm font-semibold text-pawn-text-primary tracking-tight">Agent AI</span>
           <span className="text-[10px] text-pawn-surface-500 bg-pawn-surface-800/60 px-1.5 py-0.5 rounded-badge">cmd</span>
         </div>
         <button
@@ -164,7 +164,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
       {/* Empty state — pinned to top, outside scroll area */}
       {showEmptyState && (
         <div className="flex-shrink-0 px-4 pt-4 pb-3">
-          <div className="bg-white/[0.02] border border-white/[0.07] rounded-card p-5">
+          <div className="bg-pawn-surface-900/50 border border-pawn-surface-800 rounded-card p-5">
             <p className="text-xs text-pawn-surface-400 leading-relaxed mb-4">
               Query pipelines, trigger runs, manage skills — or ask anything about your workspace.
             </p>
@@ -179,7 +179,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
                       <button
                         key={s.prompt}
                         onClick={() => fireSuggestion(s.prompt)}
-                        className="flex items-center gap-2.5 w-full px-2 py-1.5 text-left text-xs text-pawn-surface-400 rounded-button hover:bg-pawn-surface-800/60 hover:text-white transition-colors group"
+                        className="flex items-center gap-2.5 w-full px-2 py-1.5 text-left text-xs text-pawn-surface-400 rounded-button hover:bg-pawn-surface-800/60 hover:text-pawn-text-primary transition-colors group"
                       >
                         <Icon size={13} className="text-pawn-surface-600 group-hover:text-pawn-gold-400 transition-colors flex-shrink-0" />
                         <span>{s.label}</span>
@@ -197,7 +197,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
                       <button
                         key={s.prompt}
                         onClick={() => fireSuggestion(s.prompt)}
-                        className="flex items-center gap-2.5 w-full px-2 py-1.5 text-left text-xs text-pawn-surface-400 rounded-button hover:bg-pawn-surface-800/60 hover:text-white transition-colors group"
+                        className="flex items-center gap-2.5 w-full px-2 py-1.5 text-left text-xs text-pawn-surface-400 rounded-button hover:bg-pawn-surface-800/60 hover:text-pawn-text-primary transition-colors group"
                       >
                         <Icon size={13} className="text-pawn-surface-600 group-hover:text-pawn-gold-400 transition-colors flex-shrink-0" />
                         <span>{s.label}</span>
@@ -219,12 +219,12 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
               <div
                 className={`min-w-0 rounded-card px-3 py-2 text-sm ${
                   msg.role === "user"
-                    ? "max-w-[90%] bg-pawn-gold-500/10 text-white border border-pawn-gold-500/20"
-                    : "w-full bg-pawn-surface-800/60 text-pawn-surface-200 border border-pawn-surface-700/50"
+                    ? "max-w-[90%] bg-pawn-gold-500/10 text-pawn-text-primary border border-pawn-gold-500/20"
+                    : "w-full bg-pawn-surface-800/60 text-pawn-text-secondary border border-pawn-surface-700/50"
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
+                  <div className="prose prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
@@ -247,8 +247,8 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {/* Streaming text */}
           {streamingText && (
             <div className="flex justify-start">
-              <div className="max-w-full bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-sm text-pawn-surface-200 min-w-0">
-                <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
+              <div className="max-w-full bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-sm text-pawn-text-secondary min-w-0">
+                <div className="prose prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
                   <ReactMarkdown>{streamingText}</ReactMarkdown>
                 </div>
                 <span className="inline-block w-1 h-3.5 bg-pawn-gold-400 ml-0.5 animate-pulse align-middle opacity-70" />
@@ -272,12 +272,12 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-white/[0.07]">
+      <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-pawn-surface-800">
         <div className="flex gap-2">
           <textarea
             ref={inputRef}
             rows={1}
-            className="flex-1 bg-white/[0.03] border border-white/[0.07] rounded-button px-3 py-2.5 sm:py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500/20 resize-none overflow-hidden"
+            className="flex-1 bg-pawn-surface-900/40 border border-pawn-surface-800 rounded-button px-3 py-2.5 sm:py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500/20 resize-none overflow-hidden"
             placeholder="Ask anything..."
             value={input}
             onChange={(e) => {

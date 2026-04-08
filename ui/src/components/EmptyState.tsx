@@ -67,7 +67,7 @@ export default function EmptyState({
   if (!Icon && !title && message) {
     return (
       <div
-        className={`text-sm text-pawn-surface-500 border border-dashed border-pawn-surface-800/40 rounded-card p-8 text-center ${className}`}
+        className={`text-sm text-pawn-surface-400 bg-pawn-surface-900 border border-pawn-surface-800 rounded-card p-8 text-center ${className}`}
       >
         {message}
         {children && <> {children}</>}
@@ -77,7 +77,7 @@ export default function EmptyState({
 
   return (
     <div
-      className={`border border-dashed border-pawn-surface-800/40 rounded-card text-center ${
+      className={`rounded-card text-center ${
         compact ? "px-6 py-8" : "px-8 py-14"
       } ${className}`}
     >
@@ -87,12 +87,12 @@ export default function EmptyState({
             compact ? "w-10 h-10 mb-3" : "w-12 h-12 mb-4"
           }`}
         >
-          <Icon size={compact ? 18 : 22} className="text-pawn-surface-500" />
+          <Icon size={compact ? 18 : 22} className="text-pawn-surface-400" />
         </div>
       )}
       {title && (
         <h3
-          className={`font-medium text-pawn-surface-200 ${
+          className={`font-medium text-pawn-text-secondary ${
             compact ? "text-sm mb-1" : "text-base mb-1.5"
           }`}
         >
@@ -101,7 +101,7 @@ export default function EmptyState({
       )}
       {description && (
         <p
-          className={`text-pawn-surface-500 max-w-md mx-auto leading-relaxed ${
+          className={`text-pawn-surface-400 max-w-md mx-auto leading-relaxed ${
             compact ? "text-xs" : "text-sm"
           }`}
         >
@@ -113,7 +113,7 @@ export default function EmptyState({
           {actions.map((action) => {
             const isPrimary = action.variant !== "secondary";
             const cls = isPrimary
-              ? "px-4 py-2 bg-pawn-gold-600 hover:bg-pawn-gold-500 text-white text-xs font-medium rounded-button transition-colors"
+              ? "px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-xs font-bold rounded-button transition-colors"
               : "px-4 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-xs font-medium rounded-button transition-colors";
 
             if (action.to) {
@@ -132,7 +132,7 @@ export default function EmptyState({
         </div>
       )}
       {hint && (
-        <p className={`text-pawn-surface-400 max-w-sm mx-auto ${compact ? "text-caption mt-3" : "text-xs mt-4"}`}>
+        <p className={`text-pawn-surface-500 max-w-sm mx-auto ${compact ? "text-caption mt-3" : "text-xs mt-4"}`}>
           {hint}
         </p>
       )}

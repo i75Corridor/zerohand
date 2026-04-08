@@ -1,7 +1,9 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, GitBranch, CheckSquare, Image, Settings, MessageSquare, Package, Cpu, DollarSign, Menu, HelpCircle } from "lucide-react";
 import { ChessPawnIcon } from "./Icons/ChessPawnIcon.tsx";
+import { ContrastIcon } from "./Icons/ContrastIcon.tsx";
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
+import { useTheme } from "../context/ThemeContext.tsx";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api.ts";
@@ -23,17 +25,17 @@ function ApprovalsNavItem() {
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-4 py-2.5 rounded-button text-sm font-medium transition-colors overflow-hidden ${
           isActive
-            ? "bg-pawn-surface-800/50 text-emerald-400 ring-1 ring-pawn-surface-700/50"
-            : "text-pawn-surface-400 hover:text-white hover:bg-pawn-surface-800/40"
+            ? "bg-pawn-surface-800/50 text-pawn-gold-400"
+            : "text-pawn-surface-400 hover:text-pawn-text-primary hover:bg-pawn-surface-800/40"
         }`
       }
     >
       {({ isActive }) => (
         <>
           {isActive && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-emerald-500 rounded-r-full" />
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-pawn-gold-500 rounded-r-full" />
           )}
-          <CheckSquare size={16} className={isActive ? "" : "group-hover:text-emerald-400 transition-colors"} />
+          <CheckSquare size={16} className={isActive ? "" : "group-hover:text-pawn-gold-400 transition-colors"} />
           <span className="flex-1">Approvals</span>
           {pending.length > 0 && (
             <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-caption font-bold px-1.5 py-0.5 rounded-badge leading-none tabular-nums">
@@ -47,40 +49,17 @@ function ApprovalsNavItem() {
 }
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, accent: "gold" },
-  { to: "/pipelines", label: "Pipelines", icon: GitBranch, accent: "indigo" },
-  { to: "/skills", label: "Skills", icon: Cpu, accent: "violet" },
-  { to: "/packages", label: "Packages", icon: Package, accent: "teal" },
-  { to: "/costs", label: "Costs", icon: DollarSign, accent: "amber" },
-  { to: "/canvas", label: "Canvas", icon: Image, accent: "rose" },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/pipelines", label: "Pipelines", icon: GitBranch },
+  { to: "/skills", label: "Skills", icon: Cpu },
+  { to: "/packages", label: "Packages", icon: Package },
+  { to: "/costs", label: "Costs", icon: DollarSign },
+  { to: "/canvas", label: "Canvas", icon: Image },
 ] as const;
 
-const ACCENT_ACTIVE_TEXT: Record<string, string> = {
-  gold: "text-pawn-gold-400",
-  indigo: "text-indigo-400",
-  violet: "text-violet-400",
-  teal: "text-teal-400",
-  amber: "text-amber-400",
-  rose: "text-rose-400",
-};
-
-const ACCENT_BAR: Record<string, string> = {
-  gold: "bg-pawn-gold-500",
-  indigo: "bg-indigo-500",
-  violet: "bg-violet-500",
-  teal: "bg-teal-500",
-  amber: "bg-amber-500",
-  rose: "bg-rose-500",
-};
-
-const ACCENT_HOVER: Record<string, string> = {
-  gold: "group-hover:text-pawn-gold-400",
-  indigo: "group-hover:text-indigo-400",
-  violet: "group-hover:text-violet-400",
-  teal: "group-hover:text-teal-400",
-  amber: "group-hover:text-amber-400",
-  rose: "group-hover:text-rose-400",
-};
+const ACTIVE_TEXT = "text-pawn-gold-400";
+const ACTIVE_BAR = "bg-pawn-gold-500";
+const HOVER_TEXT = "group-hover:text-pawn-gold-400";
 
 const bottomNav = [
   { to: "/help", label: "Help", icon: HelpCircle },
@@ -89,9 +68,20 @@ const bottomNav = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   useDataChangedListener();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const cycleTheme = useCallback(() => {
+    if (theme === "system") {
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    } else if (theme === "light") {
+      setTheme("dark");
+    } else {
+      setTheme("light");
+    }
+  }, [theme, resolvedTheme, setTheme]);
 
   useEffect(() => {
     try {
@@ -160,12 +150,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="px-6 py-6 flex items-center gap-3">
           <ChessPawnIcon size={24} className="text-pawn-gold-400" />
-          <span className="font-display text-xl text-white tracking-tighter">Pawn</span>
+          <span className="font-display text-xl text-pawn-text-primary tracking-tighter">Pawn</span>
         </div>
 
         {/* Main nav */}
         <nav className="flex-1 px-4 py-4 space-y-1">
-          {nav.map(({ to, label, icon: Icon, accent }) => (
+          {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -173,17 +163,17 @@ export default function Layout({ children }: { children: ReactNode }) {
               className={({ isActive }) =>
                 `group relative flex items-center gap-3 px-4 py-2.5 rounded-button text-sm font-medium transition-colors overflow-hidden ${
                   isActive
-                    ? `bg-pawn-surface-800/50 ${ACCENT_ACTIVE_TEXT[accent]} ring-1 ring-pawn-surface-700/50`
-                    : "text-pawn-surface-400 hover:text-white hover:bg-pawn-surface-800/40"
+                    ? `bg-pawn-surface-800/50 ${ACTIVE_TEXT}`
+                    : "text-pawn-surface-400 hover:text-pawn-text-primary hover:bg-pawn-surface-800/40"
                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   {isActive && (
-                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 ${ACCENT_BAR[accent]} rounded-r-full`} />
+                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 ${ACTIVE_BAR} rounded-r-full`} />
                   )}
-                  <Icon size={16} className={isActive ? "" : `${ACCENT_HOVER[accent]} transition-colors`} />
+                  <Icon size={16} className={isActive ? "" : `${HOVER_TEXT} transition-colors`} />
                   {label}
                 </>
               )}
@@ -205,8 +195,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                 className={({ isActive }) =>
                   `group relative flex items-center gap-3 px-4 py-2 rounded-button text-sm font-medium transition-colors overflow-hidden ${
                     isActive
-                      ? "bg-pawn-surface-800/50 text-pawn-gold-400 ring-1 ring-pawn-surface-700/50"
-                      : "text-pawn-surface-400 hover:text-white hover:bg-pawn-surface-800/60"
+                      ? "bg-pawn-surface-800/50 text-pawn-gold-400"
+                      : "text-pawn-surface-400 hover:text-pawn-text-primary hover:bg-pawn-surface-800/60"
                   }`
                 }
               >
@@ -222,12 +212,20 @@ export default function Layout({ children }: { children: ReactNode }) {
               </NavLink>
             ))}
             <button
+              onClick={cycleTheme}
+              aria-label={`Theme: ${theme} (${resolvedTheme})`}
+              className="w-full group flex items-center gap-3 px-4 py-2 rounded-button text-sm font-medium transition-colors text-pawn-surface-400 hover:text-pawn-text-primary hover:bg-pawn-surface-800/60"
+            >
+              <ContrastIcon size={16} className="group-hover:text-pawn-gold-400 transition-colors" />
+              Theme
+            </button>
+            <button
               onClick={() => setAgentOpen((o) => !o)}
               aria-label={agentOpen ? "Close agent panel" : "Open agent panel"}
               className={`w-full group flex items-center gap-3 px-4 py-2 rounded-button text-sm font-medium transition-colors ${
                 agentOpen
-                  ? "bg-pawn-surface-800/50 text-pawn-gold-400 ring-1 ring-pawn-surface-700/50"
-                  : "text-pawn-surface-400 hover:text-white hover:bg-pawn-surface-800/60"
+                  ? "bg-pawn-surface-800/50 text-pawn-gold-400"
+                  : "text-pawn-surface-400 hover:text-pawn-text-primary hover:bg-pawn-surface-800/60"
               }`}
             >
               <MessageSquare size={16} className={agentOpen ? "" : "group-hover:text-pawn-gold-400 transition-colors"} />
@@ -241,7 +239,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <div className="flex flex-1 min-w-0 overflow-hidden">
         <main id="main-content" className="flex-1 min-w-0 overflow-y-auto bg-pawn-surface-950 relative">
           <button
-            className="lg:hidden fixed top-3 left-3 z-30 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-pawn-surface-800 rounded-button text-pawn-surface-400 hover:text-white active:bg-pawn-surface-700 transition-colors"
+            className="lg:hidden fixed top-3 left-3 z-30 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-pawn-surface-800 rounded-button text-pawn-surface-400 hover:text-pawn-text-primary active:bg-pawn-surface-700 transition-colors"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open menu"
           >

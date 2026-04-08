@@ -37,12 +37,10 @@ export default function Modal({
         <Dialog.Content
           className={`pointer-events-auto bg-pawn-surface-900 border border-pawn-surface-700/60 rounded-panel p-6 w-full ${maxWidth} shadow-lg max-h-[90vh] overflow-y-auto animate-scale-in`}
         >
-          {title && (
-            <Dialog.Title className="text-lg font-semibold text-white mb-4">
-              {titleIcon && <span className="inline mr-2 align-middle">{titleIcon}</span>}
-              {title}
-            </Dialog.Title>
-          )}
+          <Dialog.Title className="text-lg font-semibold text-pawn-text-primary mb-4">
+            {titleIcon && <span className="inline mr-2 align-middle">{titleIcon}</span>}
+            {title}
+          </Dialog.Title>
           {children}
         </Dialog.Content>
         </div>

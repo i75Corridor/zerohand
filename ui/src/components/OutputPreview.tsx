@@ -49,7 +49,7 @@ function MarkdownOutput({ serverPath }: { serverPath: string }) {
   if (content === null) return <p className="text-xs text-pawn-surface-500 italic">Loading...</p>;
 
   return (
-    <div className="prose prose-invert prose-sm max-w-none text-pawn-surface-300">
+    <div className="prose prose-sm max-w-none text-pawn-surface-300">
       <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
     </div>
   );

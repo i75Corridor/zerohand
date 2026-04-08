@@ -110,7 +110,7 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
           <input
             type="number" min="0" max="23"
             aria-label="Hour"
-            className="w-14 bg-pawn-surface-800 border border-pawn-surface-700 rounded px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-pawn-gold-500"
+            className="w-14 bg-pawn-surface-800 border border-pawn-surface-700 rounded px-2 py-1 text-sm text-pawn-text-primary text-center focus:outline-none focus:border-pawn-gold-500"
             value={hour}
             onChange={(e) => setHour(e.target.value)}
           />
@@ -118,7 +118,7 @@ function QuickScheduleBuilder({ onSelect }: { onSelect: (cron: string) => void }
           <input
             type="number" min="0" max="59"
             aria-label="Minute"
-            className="w-14 bg-pawn-surface-800 border border-pawn-surface-700 rounded px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-pawn-gold-500"
+            className="w-14 bg-pawn-surface-800 border border-pawn-surface-700 rounded px-2 py-1 text-sm text-pawn-text-primary text-center focus:outline-none focus:border-pawn-gold-500"
             value={minute}
             onChange={(e) => setMinute(e.target.value)}
           />
@@ -185,7 +185,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-700 rounded-card p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
-          <Dialog.Title className="text-lg font-semibold text-white mb-4 truncate">Run: {pipeline.name}</Dialog.Title>
+          <Dialog.Title className="text-lg font-semibold text-pawn-text-primary mb-4 truncate">Run: {pipeline.name}</Dialog.Title>
           <Dialog.Description className="sr-only">Configure inputs and trigger a pipeline run.</Dialog.Description>
 
         {fields.length === 0 ? (
@@ -199,7 +199,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
                 </label>
                 {prop.description && <p className="text-xs text-pawn-surface-500 mb-1">{prop.description}</p>}
                 <input
-                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                   placeholder={prop.description ?? key}
                   value={values[key] ?? ""}
                   onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
@@ -215,7 +215,7 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
         )}
 
         <div className="flex gap-3 justify-end">
-          <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-white transition-colors" onClick={onClose}>Cancel</button>
+          <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-pawn-text-primary transition-colors" onClick={onClose}>Cancel</button>
           <button
             className="px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button disabled:opacity-50 transition-colors"
             disabled={trigger.isPending}
@@ -243,13 +243,13 @@ function TriggerRow({ t, onToggle, onRemove, serverBase }: {
 
   return (
     <div className="flex items-start gap-3 bg-pawn-surface-800 rounded-button px-3 py-2">
-      <button onClick={() => onToggle(t)} className="text-pawn-surface-400 hover:text-white mt-0.5" aria-label={t.enabled ? "Disable trigger" : "Enable trigger"}>
+      <button onClick={() => onToggle(t)} className="text-pawn-surface-400 hover:text-pawn-text-primary mt-0.5" aria-label={t.enabled ? "Disable trigger" : "Enable trigger"}>
         {t.enabled ? <ToggleRight size={18} className="text-pawn-gold-400" /> : <ToggleLeft size={18} />}
       </button>
       <div className="flex-1 min-w-0">
         {isCron && (
           <>
-            <div className="text-xs font-mono text-pawn-surface-200 break-all">{t.cronExpression}</div>
+            <div className="text-xs font-mono text-pawn-text-secondary break-all">{t.cronExpression}</div>
             <div className="text-xs text-pawn-surface-500 break-words">
               {parseCron(t.cronExpression ?? "")}
               {" \u00B7 "}{t.timezone}
@@ -260,7 +260,7 @@ function TriggerRow({ t, onToggle, onRemove, serverBase }: {
         )}
         {isChannel && (
           <>
-            <div className="flex items-center gap-1.5 text-xs text-pawn-surface-200">
+            <div className="flex items-center gap-1.5 text-xs text-pawn-text-secondary">
               <MessageSquare size={11} className="text-violet-400" />
               <span className="font-medium capitalize">{t.channelType ?? "channel"}</span> trigger
             </div>
@@ -374,7 +374,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-700 rounded-card p-4 sm:p-6 w-[calc(100%-2rem)] max-w-lg shadow-lg max-h-[85vh] overflow-y-auto animate-scale-in">
-          <Dialog.Title className="text-lg font-semibold text-white mb-4 truncate">
+          <Dialog.Title className="text-lg font-semibold text-pawn-text-primary mb-4 truncate">
             <Clock size={16} className="inline mr-2 text-indigo-400" />
             Triggers: {pipeline.name}
           </Dialog.Title>
@@ -419,7 +419,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
               <div className="flex gap-2">
                 <div className="flex-1 min-w-0">
                   <input
-                    className={`w-full bg-pawn-surface-800 border rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 font-mono focus:outline-none focus:border-pawn-gold-500 ${
+                    className={`w-full bg-pawn-surface-800 border rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 font-mono focus:outline-none focus:border-pawn-gold-500 ${
                       cronInvalid ? "border-rose-500" : "border-pawn-surface-700"
                     }`}
                     placeholder="0 9 * * *"
@@ -435,7 +435,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                   )}
                 </div>
                 <input
-                  className="w-28 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                  className="w-28 bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                   placeholder="UTC"
                   value={tz}
                   onChange={(e) => setTz(e.target.value)}
@@ -485,7 +485,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                 <label className="block text-xs text-pawn-surface-400 mb-1">Bot Token <span className="text-rose-400" aria-label="required">*</span></label>
                 <input
                   type="password"
-                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                   placeholder={channelType === "telegram" ? "1234567890:ABC..." : "xoxb-..."}
                   value={botToken}
                   onChange={(e) => setBotToken(e.target.value)}
@@ -497,7 +497,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                 <div>
                   <label className="block text-xs text-pawn-surface-400 mb-1">Webhook Secret <span className="text-pawn-surface-600">(optional, recommended)</span></label>
                   <input
-                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                     placeholder="Random secret string"
                     value={webhookSecret}
                     onChange={(e) => setWebhookSecret(e.target.value)}
@@ -510,7 +510,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                   <label className="block text-xs text-pawn-surface-400 mb-1">Signing Secret <span className="text-rose-400" aria-label="required">*</span></label>
                   <input
                     type="password"
-                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                     placeholder="Slack app signing secret"
                     value={signingSecret}
                     onChange={(e) => setSigningSecret(e.target.value)}
@@ -525,7 +525,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                   {" "}<span className="text-pawn-surface-600">(optional)</span>
                 </label>
                 <input
-                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                   placeholder={channelType === "telegram" ? "-100123456789" : "C01234567"}
                   value={channelId}
                   onChange={(e) => setChannelId(e.target.value)}
@@ -552,7 +552,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
                     {prop.description && <span className="text-pawn-surface-600 ml-1">&mdash; {prop.description}</span>}
                   </label>
                   <input
-                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-white placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                     placeholder={prop.description ?? key}
                     value={defaultInputs[key] ?? ""}
                     onChange={(e) => setDefaultInputs((v) => ({ ...v, [key]: e.target.value }))}
@@ -577,7 +577,7 @@ function TriggersModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: 
         </div>
 
         <div className="mt-4 flex justify-end">
-          <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-white transition-colors" onClick={onClose}>Close</button>
+          <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-pawn-text-primary transition-colors" onClick={onClose}>Close</button>
         </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -599,7 +599,7 @@ function PipelineRow({ pipeline }: { pipeline: ApiPipeline }) {
             <GitBranch size={16} className="text-indigo-400" aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
-            <Link to={`/pipelines/${pipeline.id}`} className="text-sm font-medium text-pawn-surface-100 hover:text-pawn-gold-400 transition-colors truncate block" title={pipeline.name}>
+            <Link to={`/pipelines/${pipeline.id}`} className="text-sm font-medium text-pawn-text-primary hover:text-pawn-gold-400 transition-colors truncate block" title={pipeline.name}>
               {pipeline.name}
             </Link>
             {pipeline.description && (
