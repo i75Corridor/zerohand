@@ -182,6 +182,7 @@ export function makeMcpServersRouter(db: Db): Router {
     if (!row) { res.status(404).json({ error: "Not found" }); return; }
 
     const pool = new McpClientPool();
+    pool.setDb(db);
     try {
       const tools = await pool.connect({
         id: row.id,
@@ -273,6 +274,7 @@ export function makeMcpServersRouter(db: Db): Router {
     if (!row) { res.status(404).json({ error: "Not found" }); return; }
 
     const pool = new McpClientPool();
+    pool.setDb(db);
     try {
       const tools = await pool.connect({
         id: row.id,

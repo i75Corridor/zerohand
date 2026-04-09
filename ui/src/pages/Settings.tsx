@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCircle, Loader, Cable, Sun, Moon, Monitor, Palette } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../lib/api.ts";
 import { useTheme } from "../context/ThemeContext.tsx";
 import ModelSelector from "../components/ModelSelector.tsx";
 import PageHeader from "../components/PageHeader.tsx";
+import OAuthConnectionCard from "../components/OAuthConnectionCard.tsx";
 import type { ApiMcpServer, ApiMcpTool } from "@pawn/shared";
 
 // ── Appearance ───────────────────────────────────────────────────────────────
@@ -259,6 +260,10 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
             )}
           </div>
         </div>
+      )}
+
+      {expanded && (server.transport === "sse" || server.transport === "streamable-http") && (
+        <OAuthConnectionCard server={server} />
       )}
     </div>
   );
@@ -799,9 +804,49 @@ function AddProviderForm({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Settings() {
+  const [oauthMessage, setOauthMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthStatus = params.get("oauth");
+    if (oauthStatus === "success") {
+      setOauthMessage({ type: "success", text: "OAuth connection established successfully." });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (oauthStatus === "error") {
+      const msg = params.get("message") || "OAuth connection failed.";
+      setOauthMessage({ type: "error", text: msg });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
       <PageHeader title="Settings" />
+
+      {oauthMessage && (
+        <div
+          className={`mb-4 px-4 py-3 rounded-card border text-sm flex items-center justify-between ${
+            oauthMessage.type === "success"
+              ? "bg-emerald-900/20 border-emerald-800/30 text-emerald-300"
+              : "bg-rose-900/20 border-rose-800/30 text-rose-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {oauthMessage.type === "success" ? (
+              <Check size={14} className="text-emerald-400" />
+            ) : (
+              <AlertCircle size={14} className="text-rose-400" />
+            )}
+            {oauthMessage.text}
+          </div>
+          <button
+            onClick={() => setOauthMessage(null)}
+            className="text-pawn-surface-400 hover:text-pawn-surface-300 transition-colors"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       <AppearanceSection />
       <ActiveModelsSection />

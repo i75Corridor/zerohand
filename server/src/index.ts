@@ -37,6 +37,10 @@ import { startOllamaPolling, stopOllamaPolling } from "./services/ollama-provide
 import { createCustomProvidersRouter } from "./routes/custom-providers.js";
 import { loadCustomProviders } from "./services/custom-providers.js";
 import { loadDatabaseConfig } from "./services/database-config.js";
+import { ensureEncryptionKey } from "./services/oauth-crypto.js";
+import { startOAuthRefreshPolling, stopOAuthRefreshPolling } from "./services/oauth-refresh.js";
+import { oauthPendingFlows } from "@pawn/db";
+import { lte } from "drizzle-orm";
 
 const PORT = parseInt(process.env.PORT ?? "3009", 10);
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "..", ".data");
@@ -128,6 +132,9 @@ async function startPostgres(): Promise<{ url: string; stop: () => Promise<void>
 }
 
 async function main() {
+  const keySource = ensureEncryptionKey(DATA_DIR);
+  console.log(`[OAuth] Encryption key loaded from ${keySource}`);
+
   const { url: dbUrl, stop: stopPostgres } = await startPostgres();
 
   const db = createDb(dbUrl);
@@ -225,6 +232,16 @@ async function main() {
     void startOllamaPolling();
   }
 
+  // Start OAuth token refresh polling
+  startOAuthRefreshPolling(db);
+  console.log("[OAuth] Token refresh polling started");
+
+  // Clean up expired OAuth pending flows
+  const cleaned = await db.delete(oauthPendingFlows).where(lte(oauthPendingFlows.expiresAt, new Date())).returning();
+  if (cleaned.length > 0) {
+    console.log(`[OAuth] Cleaned up ${cleaned.length} expired pending flow(s)`);
+  }
+
   httpServer.listen(PORT, () => {
     console.log(`[Server] Listening on http://localhost:${PORT}`);
     console.log(`[Server] WebSocket on ws://localhost:${PORT}`);
@@ -235,6 +252,7 @@ async function main() {
     engine.stop();
     triggers.stop();
     stopOllamaPolling();
+    stopOAuthRefreshPolling();
     httpServer.close();
     await stopPostgres();
     process.exit(0);
