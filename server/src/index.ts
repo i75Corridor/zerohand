@@ -27,6 +27,7 @@ import { createWebhooksRouter } from "./routes/webhooks.js";
 import { createSkillsRouter } from "./routes/skills.js";
 import { createBlueprintsRouter } from "./routes/blueprints.js";
 import { makeMcpServersRouter } from "./routes/mcp-servers.js";
+import { createOAuthRouter } from "./routes/oauth.js";
 import { createModelsRouter } from "./routes/models.js";
 import { createLogsRouter } from "./routes/logs.js";
 import { ChannelManager } from "./services/channel-manager.js";
@@ -172,6 +173,7 @@ async function main() {
   app.use("/api", createFilesRouter());
   app.use("/api", createSkillsRouter());
   app.use("/api", makeMcpServersRouter(db));
+  app.use("/api", createOAuthRouter(db));
   app.use("/api", createModelsRouter());
   app.use("/api", createLogsRouter());
 
