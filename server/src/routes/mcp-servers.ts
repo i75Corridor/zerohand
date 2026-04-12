@@ -126,6 +126,7 @@ export function makeMcpServersRouter(db: Db): Router {
   // POST /api/mcp-servers
   router.post("/mcp-servers", async (req, res) => {
     const { name, transport, command, args, url, headers, env } = req.body as Partial<ApiMcpServer>;
+    const oauthConfigBody = req.body.oauthConfig as { clientId: string; clientSecret?: string; scopes?: string[] } | undefined;
     if (!name || !transport) { res.status(400).json({ error: "name and transport are required" }); return; }
     try {
       const [row] = await db.insert(mcpServers).values({
@@ -137,6 +138,7 @@ export function makeMcpServersRouter(db: Db): Router {
         headers: headers ?? {},
         env: env ?? {},
         source: "manual",
+        ...(oauthConfigBody ? { oauthConfig: oauthConfigBody } : {}),
       }).returning();
       res.status(201).json(rowToApi(row));
     } catch (err: any) {

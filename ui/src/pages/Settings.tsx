@@ -284,6 +284,16 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
   const [detectedVars, setDetectedVars] = useState<Array<{ name: string; required: boolean; description?: string; docsUrl?: string; detectedFrom: string; value: string }>>([]);
   const [detectionRan, setDetectionRan] = useState(false);
 
+  // OAuth config state
+  const [authType, setAuthType] = useState<"none" | "oauth">("none");
+  const [oauthScopes, setOauthScopes] = useState("");
+  const [useCustomCredentials, setUseCustomCredentials] = useState(false);
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const isHttpTransport = transport === "sse" || transport === "streamable-http";
+
   const create = useMutation({
     mutationFn: () => {
       const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
@@ -291,6 +301,17 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
       const parsedEnv = detectedVars.length > 0
         ? Object.fromEntries(detectedVars.filter(v => v.value).map(v => [v.name, v.value]))
         : parseKV(envVars);
+
+      // Build OAuth config if auth type is oauth
+      const oauthConfig = (isHttpTransport && authType === "oauth")
+        ? {
+            clientId: useCustomCredentials ? clientId.trim() : "default",
+            hasClientSecret: useCustomCredentials && !!clientSecret.trim(),
+            scopes: oauthScopes.trim() ? oauthScopes.trim().split(/\s+/) : undefined,
+            ...(useCustomCredentials && clientSecret.trim() ? { clientSecret: clientSecret.trim() } : {}),
+          } as any
+        : undefined;
+
       return api.createMcpServer({
         name,
         transport,
@@ -300,6 +321,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
         headers: parsedHeaders,
         env: parsedEnv,
         enabled: true,
+        ...(oauthConfig ? { oauthConfig } : {}),
       });
     },
     onSuccess: () => {
@@ -401,7 +423,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           </>
         )}
 
-        {(transport === "sse" || transport === "streamable-http") && (
+        {isHttpTransport && (
           <>
             <div>
               <label className="text-xs text-pawn-surface-400 mb-1 block">URL</label>
@@ -412,12 +434,94 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                 onChange={(e) => setUrl(e.target.value)}
               />
             </div>
+
+            {/* Authentication */}
+            <div className="border border-pawn-surface-700 rounded-card p-3 space-y-3">
+              <div>
+                <label className="text-xs font-medium text-pawn-text-secondary mb-1 block">Authentication</label>
+                <select
+                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500"
+                  value={authType}
+                  onChange={(e) => setAuthType(e.target.value as "none" | "oauth")}
+                >
+                  <option value="none">None</option>
+                  <option value="oauth">OAuth</option>
+                </select>
+              </div>
+
+              {authType === "oauth" && (
+                <div className="border border-pawn-surface-700 rounded-card p-3 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setAdvancedOpen(!advancedOpen)}
+                    className="flex items-center gap-1.5 text-xs text-pawn-surface-400 hover:text-pawn-surface-300 transition-colors"
+                  >
+                    {advancedOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    Advanced
+                  </button>
+
+                  {advancedOpen && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-pawn-text-secondary mb-1 block">OAuth Scopes</label>
+                        <input
+                          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                          placeholder="mcp:* or custom scopes separated by spaces"
+                          value={oauthScopes}
+                          onChange={(e) => setOauthScopes(e.target.value)}
+                        />
+                        <p className="text-xs text-pawn-surface-500 mt-1">Default: mcp:* (space-separated for multiple scopes)</p>
+                      </div>
+
+                      <div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={useCustomCredentials}
+                            onChange={(e) => setUseCustomCredentials(e.target.checked)}
+                            className="rounded border-pawn-surface-600 bg-pawn-surface-800 text-pawn-gold-500 focus:ring-pawn-gold-500"
+                          />
+                          <span className="text-sm text-pawn-text-secondary">Use custom OAuth credentials</span>
+                        </label>
+                        <p className="text-xs text-pawn-surface-500 mt-1 ml-6">Leave unchecked to use the server's default OAuth flow</p>
+                      </div>
+
+                      {useCustomCredentials && (
+                        <div className="space-y-3 ml-6">
+                          <div>
+                            <label className="text-xs text-pawn-surface-400 mb-1 block">Client ID</label>
+                            <input
+                              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                              placeholder="your-client-id"
+                              value={clientId}
+                              onChange={(e) => setClientId(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-pawn-surface-400 mb-1 block">Client Secret</label>
+                            <input
+                              type="password"
+                              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                              placeholder="your-client-secret"
+                              value={clientSecret}
+                              onChange={(e) => setClientSecret(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Custom Headers */}
             <div>
-              <label className="text-xs text-pawn-surface-400 mb-1 block">Headers (KEY=VALUE, one per line)</label>
+              <label className="text-xs text-pawn-surface-400 mb-1 block">Custom Headers (KEY=VALUE, one per line)</label>
               <textarea
                 className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
                 rows={2}
-                placeholder={"Authorization=Bearer sk-...\nX-Custom-Header=value"}
+                placeholder={"X-Custom-Header=value"}
                 value={headers}
                 onChange={(e) => setHeaders(e.target.value)}
               />

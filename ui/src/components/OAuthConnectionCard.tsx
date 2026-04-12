@@ -1,51 +1,33 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, ShieldCheck, ShieldAlert, ShieldX, Unplug, Loader, KeyRound } from "lucide-react";
+import { ChevronDown, ChevronRight, ShieldCheck, ShieldAlert, ShieldX, Loader } from "lucide-react";
 import { api } from "../lib/api.ts";
 import type { ApiMcpServer } from "@pawn/shared";
 
+/**
+ * Shown inside McpServerRow expanded view for HTTP-based servers.
+ * Handles connected/error/expired states and the connect/disconnect actions.
+ * OAuth config (auth type, scopes, credentials) lives in AddMcpServerForm.
+ */
 export default function OAuthConnectionCard({ server }: { server: ApiMcpServer }) {
   const queryClient = useQueryClient();
-  const [configExpanded, setConfigExpanded] = useState(false);
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
-  const [scopes, setScopes] = useState("");
-  const [saveError, setSaveError] = useState("");
-
-  const saveConfig = useMutation({
-    mutationFn: () =>
-      api.updateMcpServer(server.id, {
-        oauthConfig: {
-          clientId: clientId.trim(),
-          hasClientSecret: !!clientSecret.trim(),
-          scopes: scopes.trim() ? scopes.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
-        },
-        // Send the secret via a separate field the backend expects
-        ...(clientSecret.trim() ? { oauthClientSecret: clientSecret.trim() } as Record<string, string> : {}),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
-      setSaveError("");
-    },
-    onError: (e: Error) => setSaveError(e.message),
-  });
+  const [error, setError] = useState("");
 
   const connect = useMutation({
     mutationFn: () => api.initiateOAuthConnect(server.id),
     onSuccess: (data) => {
       window.open(data.authUrl, "_blank");
     },
-    onError: (e: Error) => setSaveError(e.message),
+    onError: (e: Error) => setError(e.message),
   });
 
   const disconnect = useMutation({
     mutationFn: () => api.disconnectOAuth(server.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mcp-servers"] }),
-    onError: (e: Error) => setSaveError(e.message),
+    onError: (e: Error) => setError(e.message),
   });
 
   const conn = server.oauthConnection;
-  const config = server.oauthConfig;
 
   // ── Connected ──────────────────────────────────────────────────────────────
   if (conn && conn.status === "active") {
@@ -82,7 +64,7 @@ export default function OAuthConnectionCard({ server }: { server: ApiMcpServer }
     );
   }
 
-  // ── Error / Expired ────────────────────────────────────────────────────────
+  // ── Error / Expired / Revoked ──────────────────────────────────────────────
   if (conn && (conn.status === "error" || conn.status === "expired" || conn.status === "revoked")) {
     const isError = conn.status === "error";
     return (
@@ -111,19 +93,19 @@ export default function OAuthConnectionCard({ server }: { server: ApiMcpServer }
             {connect.isPending ? <Loader size={11} className="animate-spin inline" /> : "Reconnect"}
           </button>
         </div>
+        {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
       </div>
     );
   }
 
-  // ── Disconnected (has config, no active connection) ────────────────────────
-  if (config) {
+  // ── Disconnected (has OAuth config but no active connection) ────────────────
+  if (server.oauthConfig) {
     return (
       <div className="border-t border-pawn-surface-800 bg-pawn-surface-950 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Unplug size={14} className="text-pawn-surface-500" />
-            <span className="text-xs text-pawn-surface-400">OAuth configured</span>
-            <span className="text-xs text-pawn-surface-500 font-mono">{config.clientId}</span>
+            <ShieldAlert size={14} className="text-pawn-surface-500" />
+            <span className="text-xs text-pawn-surface-400">OAuth configured — not connected</span>
           </div>
           <button
             onClick={() => connect.mutate()}
@@ -133,71 +115,13 @@ export default function OAuthConnectionCard({ server }: { server: ApiMcpServer }
             {connect.isPending ? <Loader size={11} className="animate-spin inline" /> : "Connect with OAuth"}
           </button>
         </div>
-        {saveError && (
-          <p className="text-xs text-rose-400 mt-2">{saveError}</p>
-        )}
+        {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
       </div>
     );
   }
 
-  // ── No OAuth Config ────────────────────────────────────────────────────────
-  return (
-    <div className="border-t border-pawn-surface-800 bg-pawn-surface-950 px-4 py-3">
-      <button
-        onClick={() => setConfigExpanded(!configExpanded)}
-        className="flex items-center gap-2 text-xs text-pawn-surface-400 hover:text-pawn-surface-300 transition-colors w-full"
-      >
-        {configExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        <KeyRound size={12} />
-        <span>OAuth Configuration</span>
-      </button>
-
-      {configExpanded && (
-        <div className="mt-3 space-y-3">
-          <div>
-            <label className="text-xs text-pawn-surface-400 mb-1 block">Client ID</label>
-            <input
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
-              placeholder="your-client-id"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-pawn-surface-400 mb-1 block">Client Secret</label>
-            <input
-              type="password"
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
-              placeholder="your-client-secret"
-              value={clientSecret}
-              onChange={(e) => setClientSecret(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-pawn-surface-400 mb-1 block">Scopes (comma-separated)</label>
-            <input
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
-              placeholder="read,write,admin"
-              value={scopes}
-              onChange={(e) => setScopes(e.target.value)}
-            />
-          </div>
-
-          {saveError && <p className="text-xs text-rose-400">{saveError}</p>}
-
-          <div className="flex justify-end">
-            <button
-              onClick={() => saveConfig.mutate()}
-              disabled={!clientId.trim() || saveConfig.isPending}
-              className="px-3 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-semibold rounded-button transition-colors disabled:opacity-40"
-            >
-              {saveConfig.isPending ? "Saving..." : "Save"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // No OAuth config — nothing to show (config lives in AddMcpServerForm / edit form)
+  return null;
 }
 
 function formatRelativeTime(dateStr: string): string {
