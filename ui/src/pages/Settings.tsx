@@ -262,7 +262,7 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
         </div>
       )}
 
-      {expanded && (server.transport === "sse" || server.transport === "streamable-http") && (
+      {(server.transport === "sse" || server.transport === "streamable-http") && server.oauthConfig && (
         <OAuthConnectionCard server={server} />
       )}
     </div>
