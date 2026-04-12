@@ -179,3 +179,4 @@ async function startPostgres() {
 - Plan: `docs/plans/2026-04-06-003-feat-remote-database-config-plan.md`
 - Existing pattern: `server/src/services/custom-providers.ts` (`providers.json` file-read + cache pattern)
 - Related doc: `docs/solutions/best-practices/adding-agent-tools-dual-system-architecture-2026-04-04.md` (dual-system MCP/in-app architecture for settings tools)
+- Related doc: `docs/solutions/best-practices/mcp-oauth-config-propagation-through-all-code-paths-2026-04-12.md` (ensuring new DB fields reach all config consumers — this doc covers config *sourcing*, that doc covers config *consumption*)
