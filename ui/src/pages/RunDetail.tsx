@@ -44,6 +44,7 @@ function StepCard({
     if (prevStatus.current !== step.status) {
       prevStatus.current = step.status;
       if (step.status === "running") setExpanded(true);
+      if (step.status === "failed") setExpanded(true);
       if (step.status === "completed") setExpanded(false);
     }
   }, [step.status]);
@@ -89,7 +90,11 @@ function StepCard({
 
       {expanded && (
         <div className="bg-pawn-surface-950 p-4" ref={textRef}>
-          {displayText ? (
+          {step.status === "failed" && step.error ? (
+            <pre className="text-xs text-rose-400 whitespace-pre-wrap font-mono leading-relaxed bg-rose-950/20 rounded p-3 border border-rose-900/40">
+              {step.error}
+            </pre>
+          ) : displayText ? (
             isRunning ? (
               <pre className="text-xs text-pawn-surface-300 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed">
                 {displayText}
@@ -309,7 +314,7 @@ export default function RunDetail() {
       </div>
 
       {run.error && (
-        <div className="mb-6 p-4 bg-rose-950/30 border border-rose-900/50 rounded-card text-sm text-rose-300">
+        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-card text-sm text-rose-700 dark:bg-rose-950/30 dark:border-rose-900/50 dark:text-rose-300">
           {run.error}
         </div>
       )}

@@ -60,6 +60,8 @@ export interface SkillDef {
   mcpServers?: string[];
   /** Parameter definitions for script tools, parsed from SKILL.md `parameters:` frontmatter */
   scriptParameters?: ScriptParameter[];
+  /** Whether to expose the pi built-in bash tool to the agent (default false) */
+  bash?: boolean;
 }
 
 export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef | null {
@@ -103,6 +105,7 @@ export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef
 
   const skillMetadata = fm.metadata as Record<string, unknown> | undefined;
   const skillNetwork = (fm.network as boolean | undefined) ?? false;
+  const skillBash = (fm.bash as boolean | undefined) ?? false;
   const skillSecrets = (fm.secrets as string[] | undefined) ?? [];
   const skillMcpServers = (fm.mcpServers as string[] | undefined) ?? [];
   const rawParams = fm.parameters as Array<Record<string, unknown>> | undefined;
@@ -139,6 +142,7 @@ export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef
     scriptPaths,
     metadata: skillMetadata,
     network: skillNetwork,
+    bash: skillBash,
     secrets: skillSecrets,
     mcpServers: skillMcpServers,
     scriptParameters,

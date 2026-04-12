@@ -147,6 +147,16 @@ export const api = {
   getRunSteps: (runId: string) => request<ApiStepRun[]>(`/runs/${runId}/steps`),
   getStepEvents: (runId: string, stepRunId: string) =>
     request<unknown[]>(`/runs/${runId}/steps/${stepRunId}/events`),
+  testStep: (
+    pipelineId: string,
+    stepIndex: number,
+    mockInputs?: Record<string, string>,
+    previousOutputs?: Record<string, string>,
+  ) =>
+    request<{ output: string; toolCalls: string[]; usage: Record<string, unknown> }>(
+      `/pipelines/${pipelineId}/steps/${stepIndex}/test`,
+      { method: "POST", body: JSON.stringify({ mockInputs, previousOutputs }) },
+    ),
   getRunLog: async (runId: string): Promise<Record<string, unknown>[]> => {
     const res = await fetch(`${BASE}/runs/${runId}/log`);
     if (!res.ok) return []; // 404 = no log file, 500 = not yet created; both show empty

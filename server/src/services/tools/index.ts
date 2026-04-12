@@ -16,6 +16,7 @@ import { makeUpdatePipelineStep } from "./update-pipeline-step.js";
 import { makeRemovePipelineStep } from "./remove-pipeline-step.js";
 import { makeListSkills } from "./list-skills.js";
 import { makeGetSkill } from "./get-skill.js";
+import { makeGetSkillScript } from "./get-skill-script.js";
 import { makeCreateSkill } from "./create-skill.js";
 import { makeUpdateSkill } from "./update-skill.js";
 import { makeCreateSkillScript } from "./create-skill-script.js";
@@ -75,6 +76,7 @@ export function makeAllTools(ctx: AgentToolContext): ToolDefinition[] {
     makeRemovePipelineStep(ctx),
     makeListSkills(ctx),
     makeGetSkill(ctx),
+    makeGetSkillScript(ctx),
     makeCreateSkill(ctx),
     makeUpdateSkill(ctx),
     makeCreateSkillScript(ctx),

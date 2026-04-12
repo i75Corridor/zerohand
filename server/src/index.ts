@@ -35,6 +35,7 @@ import { GlobalAgentService } from "./services/global-agent.js";
 import { migrateSkillsToNamespaces } from "./services/skill-migrator.js";
 import { startOllamaPolling, stopOllamaPolling } from "./services/ollama-provider.js";
 import { createCustomProvidersRouter } from "./routes/custom-providers.js";
+import { createStepTestRouter } from "./routes/step-test.js";
 import { loadCustomProviders } from "./services/custom-providers.js";
 import { loadDatabaseConfig } from "./services/database-config.js";
 import { ensureEncryptionKey } from "./services/oauth-crypto.js";
@@ -173,12 +174,13 @@ async function main() {
   // Routes
   app.use("/api", createHealthRouter());
   app.use("/api", createPipelinesRouter(db));
-  app.use("/api", createPipelineRunsRouter(db));
+  app.use("/api", createPipelineRunsRouter(db, (runId) => engine.cancelRun(runId)));
   app.use("/api", createStatsRouter(db));
   let globalAgentRef: import("./services/global-agent.js").GlobalAgentService | null = null;
   app.use("/api", createSettingsRouter(db, () => { void globalAgentRef?.resetSession(); }));
   app.use("/api", createFilesRouter());
   app.use("/api", createSkillsRouter());
+  app.use("/api", createStepTestRouter(db));
   app.use("/api", makeMcpServersRouter(db));
   app.use("/api", createOAuthRouter(db));
   app.use("/api", createModelsRouter());

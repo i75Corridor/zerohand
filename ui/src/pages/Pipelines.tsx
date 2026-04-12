@@ -648,10 +648,10 @@ export default function Pipelines() {
   if (error) {
     return (
       <div className="p-8 max-w-lg" role="alert">
-        <div className="flex items-start gap-3 p-4 bg-rose-950/30 border border-rose-900/50 rounded-card">
-          <AlertCircle size={16} className="text-rose-400 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-3 p-4 bg-rose-50 border border-rose-200 rounded-card dark:bg-rose-950/30 dark:border-rose-900/50">
+          <AlertCircle size={16} className="text-rose-600 mt-0.5 flex-shrink-0 dark:text-rose-400" />
           <div>
-            <p className="text-sm font-medium text-rose-300 mb-1">Failed to load pipelines</p>
+            <p className="text-sm font-medium text-rose-700 mb-1 dark:text-rose-300">Failed to load pipelines</p>
             <p className="text-xs text-pawn-surface-400">{(error as Error).message}</p>
           </div>
         </div>

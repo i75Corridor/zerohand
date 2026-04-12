@@ -82,10 +82,10 @@ function SecurityErrorPanel({
   };
 
   return (
-    <div className="mb-4 bg-rose-950/20 border border-rose-500/20 rounded-card p-4">
+    <div className="mb-4 bg-rose-50 border border-rose-200 rounded-card p-4 dark:bg-rose-950/20 dark:border-rose-500/20">
       <div className="flex items-center gap-2 mb-3">
-        <ShieldAlert size={14} className="text-rose-400 flex-shrink-0" />
-        <span className="text-sm font-semibold text-rose-300">Security check failed</span>
+        <ShieldAlert size={14} className="text-rose-600 flex-shrink-0 dark:text-rose-400" />
+        <span className="text-sm font-semibold text-rose-700 dark:text-rose-300">Security check failed</span>
         <span className="text-xs text-pawn-surface-500">{parsed.repoName}</span>
       </div>
       <div className="flex flex-col gap-2 mb-4">
