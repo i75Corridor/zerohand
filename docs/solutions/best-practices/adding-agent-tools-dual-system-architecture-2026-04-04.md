@@ -165,3 +165,4 @@ export function registerTriggerTools(server: McpServer, client: ApiClient): void
 - Issue #32: Add data_changed WebSocket listener in UI for real-time updates
 - Plan: `docs/plans/2026-04-04-001-feat-agent-tool-parity-plan.md`
 - Plan: `docs/plans/2026-04-03-001-feat-mcp-server-package-plan.md`
+- Related doc: `docs/solutions/best-practices/mcp-oauth-config-propagation-through-all-code-paths-2026-04-12.md` (ensuring new DB fields propagate through all config construction sites — complementary pattern for cross-cutting feature integration)

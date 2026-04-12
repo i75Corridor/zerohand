@@ -9,4 +9,5 @@ export * from "./settings.js";
 export * from "./blueprints.js";
 export * from "./security-checks.js";
 export * from "./mcp-servers.js";
+export * from "./oauth-connections.js";
 export * from "./pipeline-versions.js";

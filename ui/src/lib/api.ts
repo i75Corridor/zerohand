@@ -18,6 +18,7 @@ import type {
   ApiPipelineVersion,
   ApiBlueprintPreview,
   ApiModelWarning,
+  ApiOAuthConnectResponse,
 } from "@pawn/shared";
 
 const BASE = "/api";
@@ -281,6 +282,12 @@ export const api = {
   listMcpServerTools: (id: string) => request<ApiMcpTool[]>(`/mcp-servers/${id}/tools`),
   detectMcpEnv: (body: { transport: string; command?: string; args?: string[]; url?: string; name?: string }) =>
     request<{ detected: Array<{ name: string; required: boolean; description?: string; docsUrl?: string; detectedFrom: string }>; error?: string }>("/mcp-servers/detect-env", { method: "POST", body: JSON.stringify(body) }),
+
+  // OAuth
+  initiateOAuthConnect: (serverId: string) =>
+    request<ApiOAuthConnectResponse>(`/mcp-servers/${serverId}/oauth/connect`, { method: "POST" }),
+  disconnectOAuth: (serverId: string) =>
+    request<void>(`/mcp-servers/${serverId}/oauth/disconnect`, { method: "DELETE" }),
 
   // Models
   listModels: () => request<ApiModelEntry[]>("/models"),

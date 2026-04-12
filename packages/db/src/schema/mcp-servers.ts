@@ -14,6 +14,7 @@ export const mcpServers = pgTable("mcp_servers", {
   source: text("source").notNull().default("manual"), // 'manual' | 'blueprint'
   sourceBlueprintId: uuid("source_blueprint_id").references(() => installedBlueprints.id, { onDelete: "set null" }),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  oauthConfig: jsonb("oauth_config").$type<{ clientId: string; clientSecret?: string; scopes?: string[] }>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCircle, Loader, Cable, Sun, Moon, Monitor, Palette } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../lib/api.ts";
 import { useTheme } from "../context/ThemeContext.tsx";
 import ModelSelector from "../components/ModelSelector.tsx";
 import PageHeader from "../components/PageHeader.tsx";
+import OAuthConnectionCard from "../components/OAuthConnectionCard.tsx";
 import type { ApiMcpServer, ApiMcpTool } from "@pawn/shared";
 
 // ── Appearance ───────────────────────────────────────────────────────────────
@@ -260,6 +261,10 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
           </div>
         </div>
       )}
+
+      {(server.transport === "sse" || server.transport === "streamable-http") && server.oauthConfig && (
+        <OAuthConnectionCard server={server} />
+      )}
     </div>
   );
 }
@@ -279,6 +284,16 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
   const [detectedVars, setDetectedVars] = useState<Array<{ name: string; required: boolean; description?: string; docsUrl?: string; detectedFrom: string; value: string }>>([]);
   const [detectionRan, setDetectionRan] = useState(false);
 
+  // OAuth config state
+  const [authType, setAuthType] = useState<"none" | "oauth">("none");
+  const [oauthScopes, setOauthScopes] = useState("");
+  const [useCustomCredentials, setUseCustomCredentials] = useState(false);
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const isHttpTransport = transport === "sse" || transport === "streamable-http";
+
   const create = useMutation({
     mutationFn: () => {
       const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
@@ -286,6 +301,17 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
       const parsedEnv = detectedVars.length > 0
         ? Object.fromEntries(detectedVars.filter(v => v.value).map(v => [v.name, v.value]))
         : parseKV(envVars);
+
+      // Build OAuth config if auth type is oauth
+      const oauthConfig = (isHttpTransport && authType === "oauth")
+        ? {
+            clientId: useCustomCredentials ? clientId.trim() : "default",
+            hasClientSecret: useCustomCredentials && !!clientSecret.trim(),
+            scopes: oauthScopes.trim() ? oauthScopes.trim().split(/\s+/) : undefined,
+            ...(useCustomCredentials && clientSecret.trim() ? { clientSecret: clientSecret.trim() } : {}),
+          } as any
+        : undefined;
+
       return api.createMcpServer({
         name,
         transport,
@@ -295,6 +321,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
         headers: parsedHeaders,
         env: parsedEnv,
         enabled: true,
+        ...(oauthConfig ? { oauthConfig } : {}),
       });
     },
     onSuccess: () => {
@@ -396,7 +423,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           </>
         )}
 
-        {(transport === "sse" || transport === "streamable-http") && (
+        {isHttpTransport && (
           <>
             <div>
               <label className="text-xs text-pawn-surface-400 mb-1 block">URL</label>
@@ -407,12 +434,94 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                 onChange={(e) => setUrl(e.target.value)}
               />
             </div>
+
+            {/* Authentication */}
+            <div className="border border-pawn-surface-700 rounded-card p-3 space-y-3">
+              <div>
+                <label className="text-xs font-medium text-pawn-text-secondary mb-1 block">Authentication</label>
+                <select
+                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500"
+                  value={authType}
+                  onChange={(e) => setAuthType(e.target.value as "none" | "oauth")}
+                >
+                  <option value="none">None</option>
+                  <option value="oauth">OAuth</option>
+                </select>
+              </div>
+
+              {authType === "oauth" && (
+                <div className="border border-pawn-surface-700 rounded-card p-3 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setAdvancedOpen(!advancedOpen)}
+                    className="flex items-center gap-1.5 text-xs text-pawn-surface-400 hover:text-pawn-surface-300 transition-colors"
+                  >
+                    {advancedOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    Advanced
+                  </button>
+
+                  {advancedOpen && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-pawn-text-secondary mb-1 block">OAuth Scopes</label>
+                        <input
+                          className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                          placeholder="mcp:* or custom scopes separated by spaces"
+                          value={oauthScopes}
+                          onChange={(e) => setOauthScopes(e.target.value)}
+                        />
+                        <p className="text-xs text-pawn-surface-500 mt-1">Default: mcp:* (space-separated for multiple scopes)</p>
+                      </div>
+
+                      <div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={useCustomCredentials}
+                            onChange={(e) => setUseCustomCredentials(e.target.checked)}
+                            className="rounded border-pawn-surface-600 bg-pawn-surface-800 text-pawn-gold-500 focus:ring-pawn-gold-500"
+                          />
+                          <span className="text-sm text-pawn-text-secondary">Use custom OAuth credentials</span>
+                        </label>
+                        <p className="text-xs text-pawn-surface-500 mt-1 ml-6">Leave unchecked to use the server's default OAuth flow</p>
+                      </div>
+
+                      {useCustomCredentials && (
+                        <div className="space-y-3 ml-6">
+                          <div>
+                            <label className="text-xs text-pawn-surface-400 mb-1 block">Client ID</label>
+                            <input
+                              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                              placeholder="your-client-id"
+                              value={clientId}
+                              onChange={(e) => setClientId(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-pawn-surface-400 mb-1 block">Client Secret</label>
+                            <input
+                              type="password"
+                              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+                              placeholder="your-client-secret"
+                              value={clientSecret}
+                              onChange={(e) => setClientSecret(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Custom Headers */}
             <div>
-              <label className="text-xs text-pawn-surface-400 mb-1 block">Headers (KEY=VALUE, one per line)</label>
+              <label className="text-xs text-pawn-surface-400 mb-1 block">Custom Headers (KEY=VALUE, one per line)</label>
               <textarea
                 className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none"
                 rows={2}
-                placeholder={"Authorization=Bearer sk-...\nX-Custom-Header=value"}
+                placeholder={"X-Custom-Header=value"}
                 value={headers}
                 onChange={(e) => setHeaders(e.target.value)}
               />
@@ -799,9 +908,49 @@ function AddProviderForm({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Settings() {
+  const [oauthMessage, setOauthMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthStatus = params.get("oauth");
+    if (oauthStatus === "success") {
+      setOauthMessage({ type: "success", text: "OAuth connection established successfully." });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (oauthStatus === "error") {
+      const msg = params.get("message") || "OAuth connection failed.";
+      setOauthMessage({ type: "error", text: msg });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-4xl pt-14 lg:pt-10">
       <PageHeader title="Settings" />
+
+      {oauthMessage && (
+        <div
+          className={`mb-4 px-4 py-3 rounded-card border text-sm flex items-center justify-between ${
+            oauthMessage.type === "success"
+              ? "bg-emerald-900/20 border-emerald-800/30 text-emerald-300"
+              : "bg-rose-900/20 border-rose-800/30 text-rose-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {oauthMessage.type === "success" ? (
+              <Check size={14} className="text-emerald-400" />
+            ) : (
+              <AlertCircle size={14} className="text-rose-400" />
+            )}
+            {oauthMessage.text}
+          </div>
+          <button
+            onClick={() => setOauthMessage(null)}
+            className="text-pawn-surface-400 hover:text-pawn-surface-300 transition-colors"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       <AppearanceSection />
       <ActiveModelsSection />
