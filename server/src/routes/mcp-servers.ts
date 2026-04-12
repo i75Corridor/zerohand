@@ -195,6 +195,7 @@ export function makeMcpServersRouter(db: Db): Router {
         url: row.url ?? undefined,
         headers: (row.headers as Record<string, string> | null) ?? {},
         env: (row.env as Record<string, string> | null) ?? {},
+        oauthConfig: (row.oauthConfig as { clientId: string; clientSecret?: string; scopes?: string[] } | null) ?? undefined,
       });
       res.json({ connected: true, tools });
     } catch (err) {
@@ -287,6 +288,7 @@ export function makeMcpServersRouter(db: Db): Router {
         url: row.url ?? undefined,
         headers: (row.headers as Record<string, string> | null) ?? {},
         env: (row.env as Record<string, string> | null) ?? {},
+        oauthConfig: (row.oauthConfig as { clientId: string; clientSecret?: string; scopes?: string[] } | null) ?? undefined,
       });
       res.json(tools);
     } catch (err) {
