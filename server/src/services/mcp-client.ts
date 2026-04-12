@@ -7,6 +7,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
+import type { Db } from "@pawn/db";
+import { oauthConnections } from "@pawn/db";
+import { eq } from "drizzle-orm";
+import { PawnOAuthClientProvider } from "./oauth-provider.js";
 
 export interface McpServerConfig {
   id: string;
@@ -17,6 +22,7 @@ export interface McpServerConfig {
   url?: string;
   headers?: Record<string, string>;
   env?: Record<string, string>;
+  oauthConfig?: { clientId: string; clientSecret?: string; scopes?: string[] };
 }
 
 export interface McpToolInfo {
@@ -58,14 +64,30 @@ export function resolveEnvRefs(
 
 export class McpClientPool {
   private entries = new Map<string, PoolEntry>();
+  private db?: Db;
+
+  setDb(db: Db): void {
+    this.db = db;
+  }
 
   async connect(config: McpServerConfig): Promise<McpToolInfo[]> {
     if (this.entries.has(config.name)) {
       return this.entries.get(config.name)!.tools;
     }
 
+    let authProvider: OAuthClientProvider | undefined;
+    if (this.db && config.oauthConfig && (config.transport === "sse" || config.transport === "streamable-http")) {
+      const connection = await this.db.query.oauthConnections.findFirst({
+        where: eq(oauthConnections.mcpServerId, config.id),
+      });
+      if (connection && connection.status === "active") {
+        const redirectUri = process.env.OAUTH_REDIRECT_URI || `http://localhost:${process.env.PORT || 3009}/api/oauth/callback`;
+        authProvider = new PawnOAuthClientProvider(this.db, config.id, redirectUri);
+      }
+    }
+
     const client = new Client({ name: "pawn", version: "1.0.0" });
-    const transport = buildTransport(config);
+    const transport = buildTransport(config, authProvider);
 
     await Promise.race([
       client.connect(transport),
@@ -117,7 +139,7 @@ export class McpClientPool {
   }
 }
 
-function buildTransport(config: McpServerConfig) {
+function buildTransport(config: McpServerConfig, authProvider?: OAuthClientProvider) {
   switch (config.transport) {
     case "stdio": {
       if (!config.command) throw new Error(`MCP stdio server ${config.name} missing command`);
@@ -130,12 +152,14 @@ function buildTransport(config: McpServerConfig) {
     case "sse": {
       if (!config.url) throw new Error(`MCP SSE server ${config.name} missing url`);
       return new SSEClientTransport(new URL(config.url), {
+        authProvider,
         requestInit: config.headers ? { headers: config.headers } : undefined,
       });
     }
     case "streamable-http": {
       if (!config.url) throw new Error(`MCP streamable-http server ${config.name} missing url`);
       return new StreamableHTTPClientTransport(new URL(config.url), {
+        authProvider,
         requestInit: config.headers ? { headers: config.headers } : undefined,
       });
     }

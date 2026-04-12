@@ -172,6 +172,7 @@ export class ExecutionEngine {
     const logger = new RunLogger(runId);
     const runStartMs = Date.now();
     const mcpPool = new McpClientPool();
+    mcpPool.setDb(this.db);
 
     const run = await this.db.query.pipelineRuns.findFirst({
       where: eq(pipelineRuns.id, runId),

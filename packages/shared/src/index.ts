@@ -290,6 +290,31 @@ export interface DatabaseConfig {
   sslMode?: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full";
 }
 
+export type ApiOAuthStatus = 'active' | 'expired' | 'revoked' | 'error' | 'disconnected';
+
+export interface ApiOAuthConnection {
+  id: string;
+  mcpServerId: string;
+  status: ApiOAuthStatus;
+  scope?: string;
+  tokenType: string;
+  connectedAt: string;
+  lastRefreshedAt?: string;
+  expiresAt?: string;
+  errorMessage?: string;
+}
+
+export interface ApiOAuthConfig {
+  clientId: string;
+  hasClientSecret: boolean;  // Never expose raw secret
+  scopes?: string[];
+}
+
+export interface ApiOAuthConnectResponse {
+  authUrl: string;
+  state: string;
+}
+
 export interface ApiMcpServer {
   id: string;
   name: string;
@@ -305,6 +330,8 @@ export interface ApiMcpServer {
   metadata?: {
     envRequirements?: McpEnvRequirement[];
   };
+  oauthConfig?: ApiOAuthConfig;
+  oauthConnection?: ApiOAuthConnection;
 }
 
 export interface ApiMcpTool {
