@@ -1,7 +1,7 @@
 ---
 title: "feat: Add MCP Client OAuth 2.1 Support"
 type: feat
-status: active
+status: completed
 date: 2026-04-08
 ---
 
