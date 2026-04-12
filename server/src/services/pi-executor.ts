@@ -5,10 +5,12 @@ import {
   createAgentSession,
   createExtensionRuntime,
   loadSkillsFromDir,
+  createBashToolDefinition,
   type AgentSession,
   type ToolDefinition,
   type ResourceLoader,
   type Skill,
+  type BashSpawnHook,
 } from "@mariozechner/pi-coding-agent";
 import { getProviders, getEnvApiKey } from "@mariozechner/pi-ai";
 import { resolveModel } from "./ollama-provider.js";
@@ -60,7 +62,7 @@ function serializeError(err: unknown): string {
   const parts = [err.message];
   if (err.cause instanceof Error) parts.push(`Caused by: ${err.cause.message}`);
   // Extract HTTP response body if present (common in API SDK errors)
-  const anyErr = err as Record<string, unknown>;
+  const anyErr = err as unknown as Record<string, unknown>;
   if (anyErr["status"]) parts.push(`Status: ${anyErr["status"]}`);
   if (anyErr["responseBody"]) parts.push(`Response: ${String(anyErr["responseBody"]).slice(0, 500)}`);
   return parts.join(" | ");
@@ -100,7 +102,16 @@ export async function runSkillStep(
   const resourceLoader = makeResourceLoader(fullSystemPrompt, []);
 
   const scriptTools: ToolDefinition[] = makeScriptTools(skill.scriptPaths, scriptExecOpts ?? {}, skill.scriptParameters);
-  const customTools: ToolDefinition[] = [...scriptTools, ...(mcpTools ?? [])];
+
+  const bashTools: ToolDefinition[] = [];
+  if (skill.bash) {
+    const skillDir = join(getSkillsDir(), skill.qualifiedName);
+    const secretEnv = scriptExecOpts?.secretEnv ?? {};
+    const spawnHook: BashSpawnHook = (ctx) => ({ ...ctx, env: { ...ctx.env, ...secretEnv } });
+    bashTools.push(createBashToolDefinition(skillDir, { spawnHook }) as unknown as ToolDefinition);
+  }
+
+  const customTools: ToolDefinition[] = [...scriptTools, ...bashTools, ...(mcpTools ?? [])];
   console.log("[pi-executor] customTools schemas:", JSON.stringify(customTools.map((t) => ({ name: t.name, parameters: t.parameters })), null, 2).slice(0, 3000));
 
   const sessionManager = sessionDir

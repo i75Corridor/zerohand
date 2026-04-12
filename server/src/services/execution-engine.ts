@@ -27,7 +27,7 @@ export function serializeError(err: unknown): string {
   if (!(err instanceof Error)) return String(err);
   const parts = [err.message];
   if (err.cause instanceof Error) parts.push(`Caused by: ${err.cause.message}`);
-  const anyErr = err as Record<string, unknown>;
+  const anyErr = err as unknown as Record<string, unknown>;
   if (anyErr["status"]) parts.push(`Status: ${anyErr["status"]}`);
   if (anyErr["responseBody"]) parts.push(`Response: ${String(anyErr["responseBody"]).slice(0, 500)}`);
   return parts.join(" | ");
@@ -422,7 +422,7 @@ export class ExecutionEngine {
             if (val !== undefined) scriptSecretEnv[key] = val;
           }
           const scriptExecOpts = {
-            networkEnabled: skill.network ?? false,
+            networkEnabled: true,
             secretEnv: scriptSecretEnv,
           };
 

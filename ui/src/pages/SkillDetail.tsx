@@ -128,23 +128,23 @@ function SplitSkillEditor({
               />
             </div>
 
-            {/* Network toggle */}
+            {/* Bash tool toggle */}
             <div className="flex items-center justify-between py-1">
               <div>
-                <p className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Network Access</p>
-                <p className="text-[11px] text-pawn-surface-600 mt-0.5">Allow scripts to reach external APIs</p>
+                <p className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">Bash Tool</p>
+                <p className="text-[11px] text-pawn-surface-600 mt-0.5">Let the agent run shell commands directly</p>
               </div>
               <button
                 role="switch"
-                aria-checked={fm.network}
-                onClick={() => update({ network: !fm.network })}
+                aria-checked={fm.bash}
+                onClick={() => update({ bash: !fm.bash })}
                 className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pawn-gold-500 ${
-                  fm.network ? "bg-pawn-gold-500" : "bg-pawn-surface-700"
+                  fm.bash ? "bg-pawn-gold-500" : "bg-pawn-surface-700"
                 }`}
               >
                 <span
                   className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                    fm.network ? "translate-x-4" : "translate-x-1"
+                    fm.bash ? "translate-x-4" : "translate-x-1"
                   }`}
                 />
               </button>

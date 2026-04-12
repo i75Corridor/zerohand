@@ -143,18 +143,18 @@ function InlineSkillEditor({ skillName }: { skillName: string }) {
         <ModelSelector value={fm.model} onChange={(v) => update({ model: v })} allowNull defaultLabel="Use pipeline default" />
       </div>
 
-      {/* Network */}
+      {/* Bash tool */}
       <div className="flex items-center justify-between py-0.5">
-        <span className="text-xs text-pawn-surface-400">Network access</span>
+        <span className="text-xs text-pawn-surface-400">Bash tool</span>
         <button
           role="switch"
-          aria-checked={fm.network}
-          onClick={() => update({ network: !fm.network })}
+          aria-checked={fm.bash}
+          onClick={() => update({ bash: !fm.bash })}
           className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-            fm.network ? "bg-pawn-gold-500" : "bg-pawn-surface-700"
+            fm.bash ? "bg-pawn-gold-500" : "bg-pawn-surface-700"
           }`}
         >
-          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${fm.network ? "translate-x-4" : "translate-x-1"}`} />
+          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${fm.bash ? "translate-x-4" : "translate-x-1"}`} />
         </button>
       </div>
 
@@ -241,6 +241,35 @@ function parsePromptTokens(template: string) {
   };
 }
 
+function JsonEditor({
+  label,
+  value,
+  onChange,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+}) {
+  const invalid = value.trim() !== "" && (() => { try { JSON.parse(value); return false; } catch { return true; } })();
+  return (
+    <div>
+      <label className="block text-xs text-pawn-surface-500 mb-1 font-mono">{label}</label>
+      <textarea
+        className={`w-full bg-pawn-surface-800 border rounded-button px-3 py-2 text-xs text-pawn-text-primary font-mono leading-relaxed focus:outline-none resize-none ${
+          invalid ? "border-rose-500/70 focus:border-rose-400" : "border-pawn-surface-700 focus:border-pawn-gold-500"
+        }`}
+        rows={rows}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        spellCheck={false}
+      />
+      {invalid && <p className="text-[10px] text-rose-400 mt-0.5">Invalid JSON</p>}
+    </div>
+  );
+}
+
 function StepTestPanel({
   pipelineId,
   stepIndex,
@@ -252,24 +281,55 @@ function StepTestPanel({
 }) {
   const { inputKeys, stepIndices, stepFields } = parsePromptTokens(promptTemplate);
 
-  const [mockInputs, setMockInputs] = useState<Record<string, string>>(() =>
-    Object.fromEntries(inputKeys.map((k) => [k, ""])),
-  );
-  const [previousOutputs, setPreviousOutputs] = useState<Record<string, string>>(() =>
-    Object.fromEntries(stepIndices.map((i) => [String(i), ""])),
-  );
+  const initInputsJson = (keys: string[]) =>
+    keys.length === 0 ? "" : JSON.stringify(Object.fromEntries(keys.map((k) => [k, ""])), null, 2);
+
+  const initStepsJson = (indices: number[], fields: Map<number, Set<string>>) => {
+    const obj: Record<string, string> = {};
+    for (const idx of indices) {
+      const subFields = [...(fields.get(idx) ?? [])].filter(Boolean);
+      obj[String(idx)] = subFields.length > 0
+        ? JSON.stringify(Object.fromEntries(subFields.map((f) => [f, ""])), null, 2)
+        : "";
+    }
+    return obj;
+  };
+
+  const [inputsJson, setInputsJson] = useState(() => initInputsJson(inputKeys));
+  const [stepsJson, setStepsJson] = useState<Record<string, string>>(() => initStepsJson(stepIndices, stepFields));
   const [result, setResult] = useState<{ output: string; toolCalls: string[]; usage: Record<string, unknown> } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [showResult, setShowResult] = useState(true);
 
-  // Sync state when template changes (key prop handles most resets)
+  // Sync when template tokens change — preserve existing values for keys still present
   React.useEffect(() => {
-    setMockInputs((prev) => Object.fromEntries(inputKeys.map((k) => [k, prev[k] ?? ""])));
+    setInputsJson((prev) => {
+      if (inputKeys.length === 0) return "";
+      try {
+        const current = JSON.parse(prev) as Record<string, string>;
+        return JSON.stringify(Object.fromEntries(inputKeys.map((k) => [k, current[k] ?? ""])), null, 2);
+      } catch {
+        return initInputsJson(inputKeys);
+      }
+    });
   }, [inputKeys.join(",")]);
 
   React.useEffect(() => {
-    setPreviousOutputs((prev) => Object.fromEntries(stepIndices.map((i) => [String(i), prev[String(i)] ?? ""])));
+    setStepsJson((prev) => {
+      const next: Record<string, string> = {};
+      for (const idx of stepIndices) {
+        if (prev[String(idx)] !== undefined) {
+          next[String(idx)] = prev[String(idx)];
+        } else {
+          const subFields = [...(stepFields.get(idx) ?? [])].filter(Boolean);
+          next[String(idx)] = subFields.length > 0
+            ? JSON.stringify(Object.fromEntries(subFields.map((f) => [f, ""])), null, 2)
+            : "";
+        }
+      }
+      return next;
+    });
   }, [stepIndices.join(",")]);
 
   async function run() {
@@ -277,6 +337,19 @@ function StepTestPanel({
     setError(null);
     setResult(null);
     try {
+      let mockInputs: Record<string, string> = {};
+      if (inputsJson.trim()) {
+        try {
+          mockInputs = JSON.parse(inputsJson) as Record<string, string>;
+        } catch {
+          setError("Pipeline inputs: invalid JSON");
+          return;
+        }
+      }
+      const previousOutputs: Record<string, string> = {};
+      for (const [idxStr, val] of Object.entries(stepsJson)) {
+        previousOutputs[idxStr] = val;
+      }
       const res = await api.testStep(pipelineId, stepIndex, mockInputs, previousOutputs);
       setResult(res);
       setShowResult(true);
@@ -291,52 +364,28 @@ function StepTestPanel({
 
   return (
     <div className="space-y-4">
-      {/* Pipeline inputs (from {{input.X}} tokens) */}
+      {/* Pipeline inputs */}
       {inputKeys.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Pipeline inputs</p>
-          {inputKeys.map((key) => (
-            <div key={key}>
-              <label className="block text-xs text-pawn-surface-500 mb-1 font-mono">{`{{input.${key}}}`}</label>
-              <input
-                className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
-                value={mockInputs[key] ?? ""}
-                onChange={(e) => setMockInputs((p) => ({ ...p, [key]: e.target.value }))}
-                placeholder={`Value for ${key}`}
-              />
-            </div>
-          ))}
+        <div>
+          <p className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider mb-2">Pipeline inputs</p>
+          <JsonEditor label="{ input }" value={inputsJson} onChange={setInputsJson} rows={Math.max(3, inputKeys.length * 2 + 2)} />
         </div>
       )}
 
-      {/* Previous step outputs — only steps actually referenced in the template */}
+      {/* Previous step outputs */}
       {stepIndices.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-semibold text-pawn-surface-400 uppercase tracking-wider">Previous step outputs</p>
           {stepIndices.map((idx) => {
-            const fields = [...(stepFields.get(idx) ?? [])].filter(Boolean);
-            const needsJson = fields.length > 0;
-            const placeholder = needsJson
-              ? `{"${fields[0]}": "…"}` + (fields.length > 1 ? ` /* also: ${fields.slice(1).join(", ")} */` : "")
-              : `Mock output for step ${idx + 1}`;
+            const subFields = [...(stepFields.get(idx) ?? [])].filter(Boolean);
             return (
-              <div key={idx}>
-                <div className="flex items-baseline gap-2 mb-1">
-                  <label className="text-xs text-pawn-surface-500 font-mono">{`{{steps.${idx}.output}}`}</label>
-                  {needsJson && (
-                    <span className="text-[10px] text-amber-400 font-mono">
-                      needs: {fields.map((f) => `.${f}`).join(", ")}
-                    </span>
-                  )}
-                </div>
-                <textarea
-                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-xs text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 resize-none font-mono"
-                  rows={needsJson ? 3 : 2}
-                  value={previousOutputs[String(idx)] ?? ""}
-                  onChange={(e) => setPreviousOutputs((p) => ({ ...p, [String(idx)]: e.target.value }))}
-                  placeholder={placeholder}
-                />
-              </div>
+              <JsonEditor
+                key={idx}
+                label={`steps.${idx}.output`}
+                value={stepsJson[String(idx)] ?? ""}
+                onChange={(v) => setStepsJson((p) => ({ ...p, [String(idx)]: v }))}
+                rows={subFields.length > 0 ? Math.max(3, subFields.length * 2 + 2) : 3}
+              />
             );
           })}
         </div>

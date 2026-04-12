@@ -10,7 +10,7 @@ export interface SkillFm {
   name: string;
   description: string;
   model: string | null;
-  network: boolean;
+  bash: boolean;
   secrets: string[];
   mcpServers: string[];
   /** raw lines for keys we don't surface in the form (e.g. version, type, metadata) */
@@ -18,13 +18,13 @@ export interface SkillFm {
 }
 
 export function parseFrontMatter(content: string): { fm: SkillFm; body: string } {
-  const fm: SkillFm = { name: "", description: "", model: null, network: false, secrets: [], mcpServers: [], _preserved: [] };
+  const fm: SkillFm = { name: "", description: "", model: null, bash: false, secrets: [], mcpServers: [], _preserved: [] };
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)/);
   if (!match) return { fm, body: content };
 
   const body = match[2].trim();
   const lines = match[1].split("\n");
-  const HANDLED = new Set(["name", "description", "model", "network", "secrets", "mcpServers"]);
+  const HANDLED = new Set(["name", "description", "model", "bash", "secrets", "mcpServers"]);
 
   let i = 0;
   while (i < lines.length) {
@@ -73,7 +73,7 @@ export function parseFrontMatter(content: string): { fm: SkillFm; body: string }
       if (key === "name") fm.name = strVal;
       if (key === "description") fm.description = strVal;
       if (key === "model") fm.model = strVal || null;
-      if (key === "network") fm.network = val === "true";
+      if (key === "bash") fm.bash = val === "true";
     }
     i++;
   }
@@ -87,7 +87,7 @@ export function serializeFrontMatter(fm: SkillFm, body: string): string {
   if (fm.name) lines.push(`name: ${fm.name}`);
   if (fm.description) lines.push(`description: "${fm.description.replace(/"/g, '\\"')}"`);
   if (fm.model) lines.push(`model: ${fm.model}`);
-  if (fm.network) lines.push("network: true");
+  if (fm.bash) lines.push("bash: true");
   if (fm.secrets.length > 0) {
     lines.push("secrets:");
     fm.secrets.forEach((s) => lines.push(`  - ${s}`));
