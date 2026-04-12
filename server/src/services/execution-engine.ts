@@ -23,6 +23,16 @@ import { recordCost } from "./budget-guard.js";
 import { SessionRegistry } from "./session-registry.js";
 import { readModelSetting } from "./model-utils.js";
 
+export function serializeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const parts = [err.message];
+  if (err.cause instanceof Error) parts.push(`Caused by: ${err.cause.message}`);
+  const anyErr = err as Record<string, unknown>;
+  if (anyErr["status"]) parts.push(`Status: ${anyErr["status"]}`);
+  if (anyErr["responseBody"]) parts.push(`Response: ${String(anyErr["responseBody"]).slice(0, 500)}`);
+  return parts.join(" | ");
+}
+
 export function classifyError(err: unknown): "timeout" | "budget_exceeded" | "unknown" {
   const msg = String(err).toLowerCase();
   if (msg.includes("budget exceeded") || msg.includes("budget limit")) return "budget_exceeded";
@@ -132,7 +142,7 @@ export class ExecutionEngine {
         console.error(`[ExecutionEngine] Run ${run.id} failed:`, err);
         await this.db
           .update(pipelineRuns)
-          .set({ status: "failed", error: String(err), finishedAt: new Date(), updatedAt: new Date() })
+          .set({ status: "failed", error: serializeError(err), finishedAt: new Date(), updatedAt: new Date() })
           .where(eq(pipelineRuns.id, run.id));
         this.ws.broadcast({ type: "run_status", pipelineRunId: run.id, status: "failed" });
         this.activeRunIds.delete(run.id);
@@ -238,6 +248,9 @@ export class ExecutionEngine {
     }
 
     for (const step of steps) {
+      // Stop immediately if the run was cancelled between steps
+      if (signal?.aborted) break;
+
       const existingSR = existingByIndex.get(step.stepIndex);
 
       // Already completed — skip and continue
@@ -463,6 +476,17 @@ export class ExecutionEngine {
             mcpToolDefs,
           );
           this.sessionRegistry.unregister(stepRun.id);
+
+          // If abort fired during the step, stop here — don't mark as completed
+          if (signal?.aborted) {
+            await this.db
+              .update(stepRuns)
+              .set({ status: "cancelled", finishedAt: new Date(), updatedAt: new Date() })
+              .where(eq(stepRuns.id, stepRun.id));
+            this.ws.broadcast({ type: "step_status", pipelineRunId: runId, stepRunId: stepRun.id, stepIndex: step.stepIndex, status: "cancelled" });
+            break;
+          }
+
           output = result.output;
           usage = result.usage;
           if (!output) {
@@ -513,6 +537,16 @@ export class ExecutionEngine {
         } catch (err) {
           this.sessionRegistry.unregister(stepRun.id);
 
+          // Abort — cancel the step and stop the loop, don't treat as a failure
+          if (signal?.aborted) {
+            await this.db
+              .update(stepRuns)
+              .set({ status: "cancelled", finishedAt: new Date(), updatedAt: new Date() })
+              .where(eq(stepRuns.id, stepRun.id));
+            this.ws.broadcast({ type: "step_status", pipelineRunId: runId, stepRunId: stepRun.id, stepIndex: step.stepIndex, status: "cancelled" });
+            break;
+          }
+
           if (attempt < maxRetries && isRetryable(err, retryConfig)) {
             attempt++;
             const backoffMs = (retryConfig?.backoffMs ?? 1000) * Math.pow(2, attempt - 1);
@@ -543,7 +577,7 @@ export class ExecutionEngine {
             continue;
           }
 
-          const errMsg = String(err);
+          const errMsg = serializeError(err);
           await this.db
             .update(stepRuns)
             .set({ status: "failed", error: errMsg, finishedAt: new Date(), updatedAt: new Date() })
@@ -563,6 +597,16 @@ export class ExecutionEngine {
           throw err;
         }
       }
+    }
+
+    // If cancelled, the route already wrote "cancelled" to the DB — just clean up
+    if (signal?.aborted) {
+      logger.info("run_end", { status: "cancelled", durationMs: Date.now() - runStartMs });
+      logger.close();
+      this.ws.broadcast({ type: "run_status", pipelineRunId: runId, status: "cancelled" });
+      this.activeRunIds.delete(runId);
+      void mcpPool.disconnectAll();
+      return;
     }
 
     const lastOutput = steps.length > 0 ? stepOutputs.get(steps[steps.length - 1].stepIndex) : undefined;

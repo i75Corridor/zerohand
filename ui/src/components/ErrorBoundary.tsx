@@ -33,9 +33,9 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div
           role="alert"
-          className="m-8 p-6 bg-rose-950/30 border border-rose-900/50 rounded-card max-w-lg"
+          className="m-8 p-6 bg-rose-50 border border-rose-200 rounded-card max-w-lg dark:bg-rose-950/30 dark:border-rose-900/50"
         >
-          <h2 className="text-lg font-semibold text-rose-300 mb-2">
+          <h2 className="text-lg font-semibold text-rose-700 mb-2 dark:text-rose-300">
             Something went wrong
           </h2>
           <p className="text-sm text-pawn-surface-400 mb-4">
@@ -43,13 +43,13 @@ export default class ErrorBoundary extends Component<Props, State> {
             refreshing the page.
           </p>
           {this.state.error && (
-            <pre className="text-xs text-rose-400/80 font-mono bg-pawn-surface-950 rounded-button p-3 overflow-x-auto whitespace-pre-wrap break-words mb-4">
+            <pre className="text-xs text-rose-700 font-mono bg-rose-100 rounded-button p-3 overflow-x-auto whitespace-pre-wrap break-words mb-4 dark:text-rose-400/80 dark:bg-pawn-surface-950">
               {this.state.error.message}
             </pre>
           )}
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-sm font-medium rounded-button border border-rose-500/30 transition-colors"
+            className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 text-sm font-medium rounded-button border border-rose-300 transition-colors dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:text-rose-300 dark:border-rose-500/30"
           >
             Reload page
           </button>

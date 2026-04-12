@@ -1,5 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
+import { sql } from "drizzle-orm";
 import { pipelineSteps } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
@@ -18,6 +19,14 @@ export function makeAddPipelineStep(ctx: AgentToolContext): ToolDefinition {
       approvalRequired: Type.Optional(Type.Boolean({ description: "Whether human approval is required before executing (default false)" })),
     }),
     execute: async (_id, params: { pipelineId: string; name: string; skillName: string; promptTemplate: string; stepIndex: number; timeoutSeconds?: number; approvalRequired?: boolean }) => {
+      // Shift existing steps at or after the insertion point up by one
+      await ctx.db
+        .update(pipelineSteps)
+        .set({ stepIndex: sql`${pipelineSteps.stepIndex} + 1` })
+        .where(
+          sql`${pipelineSteps.pipelineId} = ${params.pipelineId} AND ${pipelineSteps.stepIndex} >= ${params.stepIndex}`
+        );
+
       const [row] = await ctx.db
         .insert(pipelineSteps)
         .values({

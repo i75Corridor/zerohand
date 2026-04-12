@@ -5,7 +5,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type { ApiSkill } from "@pawn/shared";
 import { skillsDir as getSkillsDir } from "../services/paths.js";
 
-const ALLOWED_EXTS = [".js", ".ts", ".py", ".sh"];
+const ALLOWED_EXTS = [".js", ".cjs", ".mjs", ".ts", ".py", ".sh"];
 
 /** Validate a single path segment (namespace or skill name) */
 function isValidSegment(s: string): boolean {

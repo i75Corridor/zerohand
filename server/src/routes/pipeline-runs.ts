@@ -37,7 +37,7 @@ function toApiStepRun(row: typeof stepRuns.$inferSelect): ApiStepRun {
   };
 }
 
-export function createPipelineRunsRouter(db: Db): Router {
+export function createPipelineRunsRouter(db: Db, cancelRun: (runId: string) => void): Router {
   const router = Router();
 
   router.get("/runs", async (req, res, next) => {
@@ -152,6 +152,7 @@ export function createPipelineRunsRouter(db: Db): Router {
         .where(eq(pipelineRuns.id, req.params.id))
         .returning();
       if (!row) return res.status(404).json({ error: "Run not found" });
+      cancelRun(req.params.id);
       res.json(toApiRun(row));
     } catch (err) {
       next(err);

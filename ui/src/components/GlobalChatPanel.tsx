@@ -217,10 +217,10 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`min-w-0 rounded-card px-3 py-2 text-sm ${
+                className={`min-w-0 rounded-card px-3 py-2 text-sm break-words ${
                   msg.role === "user"
-                    ? "max-w-[90%] bg-pawn-gold-500/10 text-pawn-text-primary border border-pawn-gold-500/20"
-                    : "w-full bg-pawn-surface-800/60 text-pawn-text-secondary border border-pawn-surface-700/50"
+                    ? "max-w-[90%] bg-pawn-gold-500/20 text-pawn-text-primary border border-pawn-gold-500/40"
+                    : "w-full bg-pawn-surface-800 text-pawn-text-secondary border border-pawn-surface-700"
                 }`}
               >
                 {msg.role === "assistant" ? (
@@ -237,7 +237,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {/* Tool call indicator */}
           {activeToolCall && (
             <div className="flex justify-start">
-              <div className="bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-xs text-pawn-gold-400 flex items-center gap-2">
+              <div className="bg-pawn-surface-800 border border-pawn-surface-700 rounded-card px-3 py-2 text-xs text-pawn-gold-400 flex items-center gap-2">
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-gold-400 rounded-full animate-pulse" />
                 {activeToolCall.replace(/_/g, " ")}
               </div>
@@ -247,7 +247,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {/* Streaming text */}
           {streamingText && (
             <div className="flex justify-start">
-              <div className="max-w-full bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-sm text-pawn-text-secondary min-w-0">
+              <div className="max-w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-card px-3 py-2 text-sm text-pawn-text-secondary min-w-0">
                 <div className="prose prose-sm max-w-none prose-p:my-1 prose-pre:my-1 prose-pre:whitespace-pre-wrap prose-pre:break-words prose-ul:my-1 prose-li:my-0 [&_code]:break-words [&_pre]:overflow-x-auto">
                   <ReactMarkdown>{streamingText}</ReactMarkdown>
                 </div>
@@ -259,7 +259,7 @@ export default function GlobalChatPanel({ onClose }: GlobalChatPanelProps) {
           {/* Typing indicator */}
           {isStreaming && !streamingText && !activeToolCall && (
             <div className="flex justify-start">
-              <div className="bg-pawn-surface-800/60 border border-pawn-surface-700/50 rounded-card px-3 py-2 text-sm flex items-center gap-1.5">
+              <div className="bg-pawn-surface-800 border border-pawn-surface-700 rounded-card px-3 py-2 text-sm flex items-center gap-1.5">
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-surface-500 rounded-full animate-pulse" />
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-surface-500 rounded-full animate-pulse [animation-delay:150ms]" />
                 <span className="inline-block w-1.5 h-1.5 bg-pawn-surface-500 rounded-full animate-pulse [animation-delay:300ms]" />

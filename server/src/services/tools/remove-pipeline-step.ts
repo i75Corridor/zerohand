@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
-import { eq } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { pipelineSteps } from "@pawn/db";
 import type { AgentToolContext } from "./context.js";
 
@@ -18,6 +18,15 @@ export function makeRemovePipelineStep(ctx: AgentToolContext): ToolDefinition {
         .where(eq(pipelineSteps.id, params.stepId))
         .returning();
       if (deleted.length === 0) return { content: [{ type: "text" as const, text: "Step not found." }], details: {} };
+
+      // Compact the gap left by the deleted step
+      await ctx.db
+        .update(pipelineSteps)
+        .set({ stepIndex: sql`${pipelineSteps.stepIndex} - 1` })
+        .where(
+          sql`${pipelineSteps.pipelineId} = ${deleted[0].pipelineId} AND ${pipelineSteps.stepIndex} > ${deleted[0].stepIndex}`
+        );
+
       ctx.broadcastDataChanged("step", "deleted", params.stepId);
       ctx.broadcastDataChanged("pipeline", "updated", deleted[0].pipelineId);
       return { content: [{ type: "text" as const, text: `Removed step "${deleted[0].name}".` }], details: {} };

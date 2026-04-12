@@ -55,6 +55,17 @@ export function makeResourceLoader(systemPrompt: string, skillNames: string[]): 
   };
 }
 
+function serializeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const parts = [err.message];
+  if (err.cause instanceof Error) parts.push(`Caused by: ${err.cause.message}`);
+  // Extract HTTP response body if present (common in API SDK errors)
+  const anyErr = err as Record<string, unknown>;
+  if (anyErr["status"]) parts.push(`Status: ${anyErr["status"]}`);
+  if (anyErr["responseBody"]) parts.push(`Response: ${String(anyErr["responseBody"]).slice(0, 500)}`);
+  return parts.join(" | ");
+}
+
 export interface PiRunResult {
   output: string;
   usage: Record<string, unknown>;
@@ -96,16 +107,22 @@ export async function runSkillStep(
     ? SessionManager.create(sessionDir)
     : SessionManager.inMemory();
 
-  const { session } = await createAgentSession({
-    model,
-    thinkingLevel: "off",
-    authStorage,
-    modelRegistry,
-    resourceLoader,
-    tools: [],
-    customTools,
-    sessionManager,
-  });
+  let session: AgentSession;
+  try {
+    ({ session } = await createAgentSession({
+      model,
+      thinkingLevel: "off",
+      authStorage,
+      modelRegistry,
+      resourceLoader,
+      tools: [],
+      customTools,
+      sessionManager,
+    }));
+  } catch (err) {
+    const detail = serializeError(err);
+    throw new Error(`Failed to create agent session with model "${provider}/${name}": ${detail}`, { cause: err });
+  }
 
   const abortHandler = () => { void session.abort(); };
   signal?.addEventListener("abort", abortHandler);
@@ -129,6 +146,9 @@ export async function runSkillStep(
   console.log("[pi-executor] prompt length:", prompt.length, "| preview:", prompt.slice(0, 500));
   try {
     await session.prompt(prompt);
+  } catch (err) {
+    const detail = serializeError(err);
+    throw new Error(`Model "${provider}/${name}" failed during execution: ${detail}`, { cause: err });
   } finally {
     unsub();
     signal?.removeEventListener("abort", abortHandler);
