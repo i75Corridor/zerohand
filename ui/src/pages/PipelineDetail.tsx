@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { ReactFlow, Background, Handle, Position, type Node, type Edge, type NodeProps } from "@xyflow/react";
 import { useChartTheme } from "../hooks/useChartTheme.ts";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square, Download, Upload, X, Trash2, AlertTriangle, ShieldCheck, History, RotateCcw, ChevronDown, ChevronRight, Loader, AlertCircle, Eye } from "lucide-react";
+import { ArrowLeft, Play, Pencil, Clock, CheckSquare, GitBranch, Copy, Check, Square, Download, Upload, X, Trash2, AlertTriangle, ShieldCheck, History, RotateCcw, ChevronDown, ChevronRight, Loader, AlertCircle, Eye, ExternalLink } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { api } from "../lib/api.ts";
 import StatusBadge from "../components/StatusBadge.tsx";
@@ -330,96 +330,136 @@ function PublishModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: (
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-overlay-in" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-pawn-surface-900 border border-pawn-surface-800 rounded-panel p-4 sm:p-6 w-[calc(100%-2rem)] max-w-md shadow-lg animate-scale-in">
-          <div className="flex items-center justify-between mb-4">
-            <Dialog.Title className="text-lg font-semibold text-pawn-text-primary">Publish to GitHub</Dialog.Title>
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 animate-overlay-in" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-2rem)] max-w-lg shadow-2xl animate-scale-in rounded-panel overflow-hidden bg-pawn-surface-950 dark:bg-pawn-surface-900 border border-pawn-surface-800">
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-pawn-surface-800">
+            <Dialog.Title className="text-base font-semibold text-pawn-text-primary">Publish to GitHub</Dialog.Title>
             <Dialog.Close asChild>
-              <button className="text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors" aria-label="Close"><X size={16} /></button>
+              <button className="text-pawn-surface-500 hover:text-pawn-text-primary transition-colors rounded p-0.5" aria-label="Close">
+                <X size={16} />
+              </button>
             </Dialog.Close>
           </div>
 
-          {publishResult ? (
-            <div className="space-y-4">
-              {publishResult.noChanges ? (
-                <p className="text-sm text-pawn-surface-400">No changes detected — the repository is already up to date.</p>
-              ) : publishResult.prUrl ? (
-                <>
-                  <p className="text-sm text-emerald-400">Pull request created!</p>
-                  <a
-                    href={publishResult.prUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-xs font-mono text-pawn-gold-400 hover:text-pawn-gold-300 bg-pawn-surface-800 rounded-card px-4 py-3 truncate"
+          <div className="px-6 py-5">
+            {publishResult ? (
+              <div className="space-y-5">
+                {publishResult.noChanges ? (
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pawn-surface-800 flex items-center justify-center mt-0.5">
+                      <GitBranch size={15} className="text-pawn-surface-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-pawn-text-primary">Already up to date</p>
+                      <p className="text-sm text-pawn-surface-400 mt-0.5">No changes detected — the repository matches the current pipeline.</p>
+                    </div>
+                  </div>
+                ) : publishResult.prUrl ? (
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center mt-0.5">
+                      <GitBranch size={15} className="text-emerald-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-pawn-text-primary">Pull request created</p>
+                      <p className="text-sm text-pawn-surface-400 mt-0.5">Review and merge the changes on GitHub.</p>
+                      <a
+                        href={publishResult.prUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-3 text-sm font-medium text-pawn-gold-500 hover:text-pawn-gold-400 transition-colors break-all"
+                      >
+                        <ExternalLink size={13} className="flex-shrink-0" />
+                        {publishResult.prUrl}
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center mt-0.5">
+                      <Upload size={15} className="text-emerald-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-pawn-text-primary">Published successfully</p>
+                      <p className="text-sm text-pawn-surface-400 mt-0.5">Your blueprint is live on GitHub.</p>
+                      <a
+                        href={publishResult.repoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-3 text-sm font-medium text-pawn-gold-500 hover:text-pawn-gold-400 transition-colors break-all"
+                      >
+                        <ExternalLink size={13} className="flex-shrink-0" />
+                        {publishResult.repoUrl}
+                      </a>
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end pt-1 border-t border-pawn-surface-800">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 text-sm font-medium text-pawn-surface-400 hover:text-pawn-text-primary transition-colors"
                   >
-                    {publishResult.prUrl}
-                  </a>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-emerald-400">Published successfully!</p>
-                  <a
-                    href={publishResult.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-xs font-mono text-pawn-gold-400 hover:text-pawn-gold-300 bg-pawn-surface-800 rounded-card px-4 py-3 truncate"
-                  >
-                    {publishResult.repoUrl}
-                  </a>
-                </>
-              )}
-              <button
-                onClick={onClose}
-                className="w-full px-4 py-2 bg-pawn-surface-800 hover:bg-pawn-surface-700 text-pawn-surface-300 text-sm font-medium rounded-button transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-pawn-surface-400 mb-1">Repository name</label>
-                <input
-                  className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
-                  value={repo}
-                  onChange={(e) => setRepo(e.target.value)}
-                />
-                <p className="text-xs text-pawn-surface-500 mt-1">Use <code>owner/repo</code> for a specific org, or just <code>repo</code> for your personal account.</p>
+                    Close
+                  </button>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center gap-3">
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-pawn-text-primary mb-1.5">Repository name</label>
+                  <input
+                    className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-2 text-sm text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 focus:ring-1 focus:ring-pawn-gold-500/30 font-mono"
+                    value={repo}
+                    onChange={(e) => setRepo(e.target.value)}
+                    placeholder="owner/repo-name"
+                    autoFocus
+                  />
+                  <p className="text-xs text-pawn-surface-500 mt-1.5">
+                    Use <code className="font-mono text-pawn-surface-400">owner/repo</code> to publish to an org, or just <code className="font-mono text-pawn-surface-400">repo</code> for your personal account.
+                  </p>
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     id="private-toggle"
                     checked={isPrivate}
                     onChange={(e) => setIsPrivate(e.target.checked)}
-                    className="rounded"
+                    className="w-4 h-4 rounded accent-pawn-gold-500"
                   />
-                  <label htmlFor="private-toggle" className="text-sm text-pawn-surface-400">Private repository</label>
-                </div>
+                  <span className="text-sm text-pawn-text-primary">Private repository</span>
+                </label>
+
                 {isPrivate && (
-                  <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-card">
-                    <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
-                    <p className="text-xs text-amber-300">Private repos won't be discoverable via <code>pawn blueprints discover</code> and won't appear in the blueprint registry.</p>
+                  <div className="flex items-start gap-2.5 px-3 py-2.5 bg-amber-500/8 border border-amber-500/20 rounded-card">
+                    <AlertTriangle size={13} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-pawn-surface-300">
+                      Private repos won't appear in blueprint discovery or the public registry.
+                    </p>
                   </div>
                 )}
+
+                {publish.isError && (
+                  <p className="text-sm text-rose-400">{(publish.error as Error).message}</p>
+                )}
+
+                <div className="flex items-center justify-end gap-3 pt-1 border-t border-pawn-surface-800">
+                  <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-pawn-text-primary transition-colors" onClick={onClose}>
+                    Cancel
+                  </button>
+                  <button
+                    className="flex items-center gap-1.5 px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-semibold rounded-button disabled:opacity-50 transition-colors"
+                    disabled={!repo || publish.isPending}
+                    onClick={() => publish.mutate()}
+                  >
+                    <Upload size={13} />
+                    {publish.isPending ? "Publishing…" : "Publish"}
+                  </button>
+                </div>
               </div>
-              {publish.isError && (
-                <p className="text-xs text-rose-400">{(publish.error as Error).message}</p>
-              )}
-              <div className="flex gap-3 justify-end">
-                <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-pawn-text-primary" onClick={onClose}>Cancel</button>
-                <button
-                  className="flex items-center gap-1.5 px-4 py-2 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-medium rounded-button disabled:opacity-50"
-                  disabled={!repo || publish.isPending}
-                  onClick={() => publish.mutate()}
-                >
-                  <Upload size={13} />
-                  {publish.isPending ? "Publishing..." : "Publish"}
-                </button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

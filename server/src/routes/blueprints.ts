@@ -513,7 +513,8 @@ export function createBlueprintsRouter(db: Db, ws: WsManager): Router {
           const cloneResult = spawnSync("gh", ["repo", "clone", repoFullName, cloneDir], { encoding: "utf-8", stdio: "pipe" });
           if (cloneResult.status !== 0) return { error: `Failed to clone repository: ${cloneResult.stderr?.trim()}` };
 
-          spawnSync("bash", ["-c", `cp -r ${blueprintDir}/. ${cloneDir}/`], { stdio: "ignore" });
+          // rsync excludes .git so we don't overwrite the cloned repo's git history
+          spawnSync("rsync", ["-a", "--exclude=.git", `${blueprintDir}/`, `${cloneDir}/`], { stdio: "ignore" });
 
           const branch = `update/${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
           spawnSync("git", ["checkout", "-b", branch], { cwd: cloneDir, stdio: "ignore" });
@@ -528,7 +529,7 @@ export function createBlueprintsRouter(db: Db, ws: WsManager): Router {
             "gh", ["pr", "create", "--title", `Update ${blueprintName}`, "--body", `Automated update from Pawn — pipeline "${blueprintName}" was modified.`, "--head", branch, "--base", "main"],
             { cwd: cloneDir, encoding: "utf-8", stdio: "pipe" },
           );
-          return { prUrl: prResult.stdout?.trim() ?? `https://github.com/${repoFullName}/pulls` };
+          return { prUrl: prResult.stdout?.trim() || `https://github.com/${repoFullName}/pulls` };
         } finally {
           if (existsSync(cloneDir)) rmSync(cloneDir, { recursive: true, force: true });
         }
@@ -538,7 +539,9 @@ export function createBlueprintsRouter(db: Db, ws: WsManager): Router {
         // ── Update path: clone existing repo, create feature branch, open PR ──
         // If the user supplied an explicit repo name, prefer it over the stored one
         // (covers org transfers, renames, or first-time org publish).
-        const targetFullName = repo ?? existingPkg.repoFullName;
+        // Only use the user-supplied repo name if it's a full "owner/name" (e.g. org transfer).
+        // A bare slug like "the-daily-absurdist" should not override the stored full name.
+        const targetFullName = (repo && repo.includes("/")) ? repo : existingPkg.repoFullName;
         const targetRepoUrl = `https://github.com/${targetFullName}`;
         // Persist the authoritative name for future publishes
         if (targetFullName !== existingPkg.repoFullName) {

@@ -85,8 +85,10 @@ export default {
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         'scale-in': {
-          from: { opacity: '0', transform: 'scale(0.97)' },
-          to: { opacity: '1', transform: 'scale(1)' },
+          // Include Tailwind's translate CSS vars so fill-mode:both doesn't
+          // overwrite -translate-x-1/2 / -translate-y-1/2 centering on dialogs.
+          from: { opacity: '0', transform: 'translateX(var(--tw-translate-x,0)) translateY(var(--tw-translate-y,0)) scale(0.97)' },
+          to:   { opacity: '1', transform: 'translateX(var(--tw-translate-x,0)) translateY(var(--tw-translate-y,0)) scale(1)' },
         },
         'slide-in-right': {
           from: { opacity: '0', transform: 'translateX(16px)' },
