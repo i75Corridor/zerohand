@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCircle, Loader, Cable, Sun, Moon, Monitor, Palette } from "lucide-react";
+import { Bot, Server, Plus, X, Trash2, ChevronDown, ChevronRight, Check, AlertCircle, Loader, Cable, Sun, Moon, Monitor, Palette, Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "../lib/api.ts";
 import { useTheme } from "../context/ThemeContext.tsx";
@@ -130,6 +130,9 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
   const [tools, setTools] = useState<ApiMcpTool[] | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const isBlueprint = server.source === "blueprint";
 
   // Compute missing required env vars from metadata
   const missingEnvVars = (server.metadata?.envRequirements ?? [])
@@ -145,6 +148,16 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
     mutationFn: () => api.deleteMcpServer(server.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mcp-servers"] }),
   });
+
+  if (editing) {
+    return (
+      <McpServerForm
+        initialServer={server}
+        onSaved={() => { setEditing(false); setTestError(null); }}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  }
 
   async function handleTest() {
     setTesting(true);
@@ -216,6 +229,15 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
           >
             {testing ? <Loader size={11} className="animate-spin inline" /> : "Test"}
           </button>
+          {!isBlueprint && (
+            <button
+              onClick={() => setEditing(true)}
+              className="text-pawn-surface-600 hover:text-pawn-gold-400 transition-colors"
+              title="Edit configuration"
+            >
+              <Pencil size={13} />
+            </button>
+          )}
           <button
             onClick={() => toggleEnabled.mutate()}
             disabled={toggleEnabled.isPending}
@@ -236,7 +258,16 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
 
       {testError && (
         <div className="px-4 py-2 bg-rose-900/20 border-t border-rose-800/30 flex items-center gap-2 text-xs text-rose-300">
-          <AlertCircle size={12} /> {testError}
+          <AlertCircle size={12} />
+          <span className="flex-1 min-w-0 truncate">{testError}</span>
+          {!isBlueprint && (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex-shrink-0 text-xs text-rose-200 hover:text-rose-50 underline"
+            >
+              Edit
+            </button>
+          )}
         </div>
       )}
 
@@ -269,32 +300,61 @@ function McpServerRow({ server }: { server: ApiMcpServer }) {
   );
 }
 
-// ── Add MCP Server form ───────────────────────────────────────────────────────
+// ── MCP Server form (create + edit) ──────────────────────────────────────────
 
-function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+function kvToText(obj: Record<string, string> | undefined): string {
+  if (!obj) return "";
+  return Object.entries(obj).map(([k, v]) => `${k}=${v}`).join("\n");
+}
+
+function McpServerForm({
+  initialServer,
+  onSaved,
+  onCancel,
+}: {
+  initialServer?: ApiMcpServer;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [transport, setTransport] = useState<"stdio" | "sse" | "streamable-http">("stdio");
-  const [command, setCommand] = useState("");
-  const [args, setArgs] = useState("");
-  const [url, setUrl] = useState("");
-  const [headers, setHeaders] = useState("");
-  const [envVars, setEnvVars] = useState("");
+  const isEditing = !!initialServer;
+  const initialOauth = initialServer?.oauthConfig;
+
+  const [name, setName] = useState(initialServer?.name ?? "");
+  const [transport, setTransport] = useState<"stdio" | "sse" | "streamable-http">(
+    initialServer?.transport ?? "stdio",
+  );
+  const [command, setCommand] = useState(initialServer?.command ?? "");
+  const [args, setArgs] = useState((initialServer?.args ?? []).join(" "));
+  const [url, setUrl] = useState(initialServer?.url ?? "");
+  const [headers, setHeaders] = useState(() => kvToText(initialServer?.headers));
+  const [envVars, setEnvVars] = useState(() => kvToText(initialServer?.env));
   const [error, setError] = useState("");
   const [detectedVars, setDetectedVars] = useState<Array<{ name: string; required: boolean; description?: string; docsUrl?: string; detectedFrom: string; value: string }>>([]);
   const [detectionRan, setDetectionRan] = useState(false);
 
   // OAuth config state
-  const [authType, setAuthType] = useState<"none" | "oauth">("none");
-  const [oauthScopes, setOauthScopes] = useState("");
-  const [useCustomCredentials, setUseCustomCredentials] = useState(false);
-  const [clientId, setClientId] = useState("");
+  const [authType, setAuthType] = useState<"none" | "oauth">(initialOauth ? "oauth" : "none");
+  const [oauthScopes, setOauthScopes] = useState(initialOauth?.scopes?.join(" ") ?? "");
+  const [useCustomCredentials, setUseCustomCredentials] = useState(
+    !!initialOauth && initialOauth.clientId !== "default",
+  );
+  const [clientId, setClientId] = useState(
+    initialOauth && initialOauth.clientId !== "default" ? initialOauth.clientId : "",
+  );
   const [clientSecret, setClientSecret] = useState("");
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(
+    !!initialOauth && (initialOauth.clientId !== "default" || (initialOauth.scopes?.length ?? 0) > 0),
+  );
+  // In edit mode, only send oauthConfig in PATCH if the user actually touched an OAuth field;
+  // otherwise the server preserves the stored value (including the clientSecret we can't read back).
+  const [oauthTouched, setOauthTouched] = useState(false);
+  const markOauthTouched = () => { if (isEditing) setOauthTouched(true); };
 
+  const hadClientSecret = !!initialOauth?.hasClientSecret;
   const isHttpTransport = transport === "sse" || transport === "streamable-http";
 
-  const create = useMutation({
+  const save = useMutation({
     mutationFn: () => {
       const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
       const parsedHeaders = parseKV(headers);
@@ -312,7 +372,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           } as any
         : undefined;
 
-      return api.createMcpServer({
+      const basePayload = {
         name,
         transport,
         command: transport === "stdio" ? command || undefined : undefined,
@@ -320,13 +380,27 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
         url: transport !== "stdio" ? url || undefined : undefined,
         headers: parsedHeaders,
         env: parsedEnv,
+      };
+
+      if (isEditing) {
+        // Only touch oauthConfig when the user changed an OAuth field.
+        // authType=none + touched → clear it (null). authType=oauth + touched → replace it.
+        const updatePayload: Partial<ApiMcpServer> & { oauthConfig?: unknown } = { ...basePayload };
+        if (oauthTouched) {
+          updatePayload.oauthConfig = oauthConfig ?? null;
+        }
+        return api.updateMcpServer(initialServer!.id, updatePayload);
+      }
+
+      return api.createMcpServer({
+        ...basePayload,
         enabled: true,
         ...(oauthConfig ? { oauthConfig } : {}),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
-      onCreated();
+      onSaved();
     },
     onError: (e: Error) => setError(e.message),
   });
@@ -370,7 +444,9 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
   return (
     <div className="border border-pawn-surface-700 rounded-card p-4 bg-pawn-surface-900 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-pawn-text-primary">Add MCP Server</span>
+        <span className="text-sm font-medium text-pawn-text-primary">
+          {isEditing ? "Edit MCP Server" : "Add MCP Server"}
+        </span>
         <button onClick={onCancel} className="text-pawn-surface-500 hover:text-pawn-surface-300"><X size={14} /></button>
       </div>
       <div className="space-y-3">
@@ -389,9 +465,11 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           <div>
             <label className="text-xs text-pawn-surface-400 mb-1 block">Transport</label>
             <select
-              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500"
+              className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500 disabled:opacity-60 disabled:cursor-not-allowed"
               value={transport}
               onChange={(e) => setTransport(e.target.value as typeof transport)}
+              disabled={isEditing}
+              title={isEditing ? "Transport cannot be changed after creation" : undefined}
             >
               <option value="stdio">stdio</option>
               <option value="sse">SSE</option>
@@ -442,7 +520,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                 <select
                   className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500"
                   value={authType}
-                  onChange={(e) => setAuthType(e.target.value as "none" | "oauth")}
+                  onChange={(e) => { setAuthType(e.target.value as "none" | "oauth"); markOauthTouched(); }}
                 >
                   <option value="none">None</option>
                   <option value="oauth">OAuth</option>
@@ -468,7 +546,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                           className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                           placeholder="mcp:* or custom scopes separated by spaces"
                           value={oauthScopes}
-                          onChange={(e) => setOauthScopes(e.target.value)}
+                          onChange={(e) => { setOauthScopes(e.target.value); markOauthTouched(); }}
                         />
                         <p className="text-xs text-pawn-surface-500 mt-1">Default: mcp:* (space-separated for multiple scopes)</p>
                       </div>
@@ -478,7 +556,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                           <input
                             type="checkbox"
                             checked={useCustomCredentials}
-                            onChange={(e) => setUseCustomCredentials(e.target.checked)}
+                            onChange={(e) => { setUseCustomCredentials(e.target.checked); markOauthTouched(); }}
                             className="rounded border-pawn-surface-600 bg-pawn-surface-800 text-pawn-gold-500 focus:ring-pawn-gold-500"
                           />
                           <span className="text-sm text-pawn-text-secondary">Use custom OAuth credentials</span>
@@ -494,7 +572,7 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                               className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
                               placeholder="your-client-id"
                               value={clientId}
-                              onChange={(e) => setClientId(e.target.value)}
+                              onChange={(e) => { setClientId(e.target.value); markOauthTouched(); }}
                             />
                           </div>
                           <div>
@@ -502,10 +580,15 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                             <input
                               type="password"
                               className="w-full bg-pawn-surface-800 border border-pawn-surface-700 rounded-button px-3 py-1.5 text-sm font-mono text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
-                              placeholder="your-client-secret"
+                              placeholder={hadClientSecret && !oauthTouched ? "leave blank to keep stored secret" : "your-client-secret"}
                               value={clientSecret}
-                              onChange={(e) => setClientSecret(e.target.value)}
+                              onChange={(e) => { setClientSecret(e.target.value); markOauthTouched(); }}
                             />
+                            {hadClientSecret && (
+                              <p className="text-xs text-pawn-surface-500 mt-1">
+                                A client secret is already stored. Leave blank to keep it; enter a new value to replace.
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -597,11 +680,13 @@ function AddMcpServerForm({ onCreated, onCancel }: { onCreated: () => void; onCa
         <div className="flex justify-end gap-2">
           <button onClick={onCancel} className="px-3 py-1.5 text-sm text-pawn-surface-400 hover:text-pawn-text-primary transition-colors">Cancel</button>
           <button
-            onClick={() => create.mutate()}
-            disabled={!nameValid || create.isPending}
+            onClick={() => save.mutate()}
+            disabled={!nameValid || save.isPending}
             className="px-3 py-1.5 bg-pawn-gold-500 hover:bg-pawn-gold-400 text-pawn-surface-950 text-sm font-semibold rounded-button transition-colors disabled:opacity-40"
           >
-            {create.isPending ? "Adding..." : "Add Server"}
+            {save.isPending
+              ? (isEditing ? "Saving..." : "Adding...")
+              : (isEditing ? "Save Changes" : "Add Server")}
           </button>
         </div>
       </div>
@@ -651,7 +736,7 @@ function McpServersSection() {
       </div>
 
       <div className="p-4 space-y-3">
-        {adding && <AddMcpServerForm onCreated={() => setAdding(false)} onCancel={() => setAdding(false)} />}
+        {adding && <McpServerForm onSaved={() => setAdding(false)} onCancel={() => setAdding(false)} />}
 
         {isLoading && <div className="text-pawn-surface-500 text-sm">Loading...</div>}
 
