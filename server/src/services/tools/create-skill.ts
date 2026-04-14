@@ -3,7 +3,7 @@ import { Type } from "@mariozechner/pi-ai";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentToolContext } from "./context.js";
-import { safeSkillDir, buildSkillMd, validateSkillName, validateDescription, normalizeSkillName } from "./skill-utils.js";
+import { safeSkillDir, buildSkillMd, validateSkillName, validateDescription, normalizeSkillName, type SkillSchemaField } from "./skill-utils.js";
 
 export function makeCreateSkill(ctx: AgentToolContext): ToolDefinition {
   return {
@@ -62,6 +62,22 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
       metadata: Type.Optional(Type.Record(Type.String(), Type.String(), {
         description: "Arbitrary key-value pairs stored in the SKILL.md metadata block. These are NOT automatically passed to scripts — they are documentation. To actually use a metadata value at runtime, the skill body must reference it explicitly and tell the agent to pass it as a tool argument. Example: set metadata { aspectRatio: '16:9' } and then write in the body: 'Call generate with aspectRatio \"16:9\"'. Values must be strings.",
       })),
+      inputSchema: Type.Optional(Type.Array(Type.Object({
+        name: Type.String({ description: "Field name" }),
+        type: Type.Optional(Type.Union([Type.Literal("string"), Type.Literal("number"), Type.Literal("boolean")], { description: "Field type (default: string)" })),
+        description: Type.Optional(Type.String({ description: "What this field is" })),
+        required: Type.Optional(Type.Boolean({ description: "Whether this field is required" })),
+      }), {
+        description: "Advisory: the input fields this skill is designed to receive. Shown in the pipeline editor when this skill is selected for a step — helps authors write correct prompt templates. Not enforced at runtime.",
+      })),
+      outputSchema: Type.Optional(Type.Array(Type.Object({
+        name: Type.String({ description: "Field name" }),
+        type: Type.Optional(Type.Union([Type.Literal("string"), Type.Literal("number"), Type.Literal("boolean")], { description: "Field type (default: string)" })),
+        description: Type.Optional(Type.String({ description: "What this field contains" })),
+        required: Type.Optional(Type.Boolean({ description: "Whether this field is always present in the output" })),
+      }), {
+        description: "Structured output fields this skill produces. When present: (1) output format instructions are automatically appended to the system prompt; (2) the LLM output is JSON-cleaned before storage; (3) downstream steps can reference individual fields via {{steps.N.output.fieldName}}; (4) pipeline validation checks that field references are valid.",
+      })),
     }),
     execute: async (_id, params: {
       skillName: string;
@@ -76,6 +92,8 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
       compatibility?: string;
       allowedTools?: string;
       metadata?: Record<string, string>;
+      inputSchema?: SkillSchemaField[];
+      outputSchema?: SkillSchemaField[];
     }) => {
       const nameErr = validateSkillName(params.skillName);
       if (nameErr) return { content: [{ type: "text" as const, text: `Invalid skill name: ${nameErr}` }], details: {} };
@@ -110,6 +128,8 @@ Keep under 500 lines. Avoid restating general LLM knowledge.`,
         compatibility: params.compatibility,
         allowedTools: params.allowedTools,
         metadata: params.metadata,
+        inputSchema: params.inputSchema,
+        outputSchema: params.outputSchema,
       });
       writeFileSync(join(skillDir, "SKILL.md"), content, "utf-8");
       ctx.broadcastDataChanged("skill", "created", qualifiedName);

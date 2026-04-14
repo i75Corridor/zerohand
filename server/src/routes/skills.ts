@@ -54,6 +54,16 @@ function parseSkillFile(skillDir: string, namespace: string, skillFolderName: st
   const nameSlash = rawName.indexOf("/");
   const skillBaseName = nameSlash > -1 ? rawName.slice(nameSlash + 1) : rawName;
 
+  function parseSchemaFields(raw: unknown) {
+    if (!Array.isArray(raw)) return undefined;
+    return (raw as Array<Record<string, unknown>>).map((p) => ({
+      name: String(p.name ?? ""),
+      type: (p.type as "string" | "number" | "boolean" | undefined) ?? "string",
+      description: p.description !== undefined ? String(p.description) : undefined,
+      required: Boolean(p.required ?? false),
+    }));
+  }
+
   return {
     name: skillBaseName,
     namespace,
@@ -61,6 +71,8 @@ function parseSkillFile(skillDir: string, namespace: string, skillFolderName: st
     description: String(fm.description ?? ""),
     allowedTools,
     scripts,
+    inputSchema: parseSchemaFields(fm.inputSchema),
+    outputSchema: parseSchemaFields(fm.outputSchema),
   };
 }
 

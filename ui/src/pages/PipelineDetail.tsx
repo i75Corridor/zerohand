@@ -202,23 +202,23 @@ function RunModal({ pipeline, onClose }: { pipeline: ApiPipeline; onClose: () =>
             </label>
           </div>
           {hasValidationItems && (
-            <div className="mb-4 border border-amber-800/40 bg-amber-900/10 rounded-card p-3">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-amber-400 mb-2">
+            <div className="mb-4 border border-amber-400/60 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-900/10 rounded-card p-3">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400 mb-2">
                 <AlertTriangle size={12} />
                 {validation.errors.length > 0
                   ? `${validation.errors.length} error(s), ${validation.warnings.length} warning(s)`
                   : `${validation.warnings.length} warning(s)`}
               </div>
               {[...validation.errors, ...validation.warnings].map((e, i) => (
-                <div key={i} className={`text-xs mb-1 ${e.severity === "error" ? "text-rose-300" : "text-amber-300"}`}>
-                  {e.severity === "error" ? "✕" : "⚠"}{e.stepIndex !== undefined ? ` Step ${e.stepIndex}:` : ""} {e.message}
+                <div key={i} className={`text-xs mb-1 ${e.severity === "error" ? "text-rose-700 dark:text-rose-300" : "text-amber-700 dark:text-amber-300"}`}>
+                  {e.severity === "error" ? "✕" : "⚠"}{e.stepIndex !== undefined ? ` Step ${e.stepIndex + 1}:` : ""} {e.message}
                 </div>
               ))}
             </div>
           )}
           <div className="flex gap-3 justify-end items-center">
             {validation && validation.errors.length > 0 && (
-              <span className="text-xs text-rose-400 flex-1">Fix validation errors before running.</span>
+              <span className="text-xs text-rose-700 dark:text-rose-400 flex-1">Fix validation errors before running.</span>
             )}
             <button className="px-4 py-2 text-sm text-pawn-surface-400 hover:text-pawn-text-primary" onClick={onClose}>Cancel</button>
             <button
@@ -575,17 +575,17 @@ function PreviewModal({ pipelineId, onClose }: { pipelineId: string; onClose: ()
 
               {tab === "validation" && (
                 <div>
-                  <div className={`flex items-center gap-2 text-sm font-medium mb-4 ${preview.validation.valid ? "text-emerald-400" : "text-rose-400"}`}>
+                  <div className={`flex items-center gap-2 text-sm font-medium mb-4 ${preview.validation.valid ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
                     {preview.validation.valid ? <Check size={14} /> : <AlertCircle size={14} />}
                     {preview.validation.valid ? "All checks passed" : `${preview.validation.errors.length} error${preview.validation.errors.length !== 1 ? "s" : ""}`}
                     {preview.validation.warnings.length > 0 && (
-                      <span className="text-amber-400 text-xs ml-1">· {preview.validation.warnings.length} warning{preview.validation.warnings.length !== 1 ? "s" : ""}</span>
+                      <span className="text-amber-700 dark:text-amber-400 text-xs ml-1">· {preview.validation.warnings.length} warning{preview.validation.warnings.length !== 1 ? "s" : ""}</span>
                     )}
                   </div>
                   {[...preview.validation.errors, ...preview.validation.warnings].map((e, i) => (
-                    <div key={i} className={`flex items-start gap-2 text-xs mb-1.5 ${e.severity === "error" ? "text-rose-300" : "text-amber-300"}`}>
+                    <div key={i} className={`flex items-start gap-2 text-xs mb-1.5 ${e.severity === "error" ? "text-rose-700 dark:text-rose-300" : "text-amber-700 dark:text-amber-300"}`}>
                       <span className="flex-shrink-0 mt-0.5">{e.severity === "error" ? "✕" : "⚠"}</span>
-                      <span>{e.stepIndex !== undefined ? `Step ${e.stepIndex}: ` : ""}{e.message}</span>
+                      <span>{e.stepIndex !== undefined ? `Step ${e.stepIndex + 1}: ` : ""}{e.message}</span>
                     </div>
                   ))}
                   {[...preview.validation.errors, ...preview.validation.warnings].length === 0 && (
@@ -632,18 +632,18 @@ function ValidationPanel({ pipelineId }: { pipelineId: string }) {
         )}
 
         {result && (
-          <div className={`border rounded-card p-4 ${result.valid ? "border-emerald-800/40 bg-emerald-900/10" : "border-rose-800/40 bg-rose-900/10"}`}>
-            <div className={`flex items-center gap-2 text-sm font-medium mb-3 ${result.valid ? "text-emerald-400" : "text-rose-400"}`}>
+          <div className={`border rounded-card p-4 ${result.valid ? "border-emerald-400/50 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-900/10" : "border-rose-400/50 bg-rose-50 dark:border-rose-800/40 dark:bg-rose-900/10"}`}>
+            <div className={`flex items-center gap-2 text-sm font-medium mb-3 ${result.valid ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
               {result.valid ? <Check size={14} /> : <AlertCircle size={14} />}
               {result.valid ? "All checks passed" : `${result.errors.length} error${result.errors.length !== 1 ? "s" : ""}`}
               {result.warnings.length > 0 && (
-                <span className="text-amber-400 text-xs ml-1">· {result.warnings.length} warning{result.warnings.length !== 1 ? "s" : ""}</span>
+                <span className="text-amber-700 dark:text-amber-400 text-xs ml-1">· {result.warnings.length} warning{result.warnings.length !== 1 ? "s" : ""}</span>
               )}
             </div>
             {[...result.errors, ...result.warnings].map((e, i) => (
-              <div key={i} className={`flex items-start gap-2 text-xs mb-1 ${e.severity === "error" ? "text-rose-300" : "text-amber-300"}`}>
+              <div key={i} className={`flex items-start gap-2 text-xs mb-1 ${e.severity === "error" ? "text-rose-700 dark:text-rose-300" : "text-amber-700 dark:text-amber-300"}`}>
                 <span className="flex-shrink-0 mt-0.5">{e.severity === "error" ? "✕" : "⚠"}</span>
-                <span>{e.stepIndex !== undefined ? `Step ${e.stepIndex}: ` : ""}{e.message}</span>
+                <span>{e.stepIndex !== undefined ? `Step ${e.stepIndex + 1}: ` : ""}{e.message}</span>
               </div>
             ))}
           </div>

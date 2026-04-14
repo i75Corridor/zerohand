@@ -13,13 +13,16 @@ export function useDataChangedListener() {
       case "pipeline":
         queryClient.invalidateQueries({ queryKey: ["pipelines"] });
         queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+        queryClient.invalidateQueries({ queryKey: ["validate-builder"] });
         break;
       case "step":
         queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+        queryClient.invalidateQueries({ queryKey: ["validate-builder"] });
         break;
       case "skill":
         queryClient.invalidateQueries({ queryKey: ["skills"] });
         queryClient.invalidateQueries({ queryKey: ["skill-bundle", msg.id] });
+        queryClient.invalidateQueries({ queryKey: ["validate-builder"] });
         break;
       case "cost":
         queryClient.invalidateQueries({ queryKey: ["costBreakdown"] });

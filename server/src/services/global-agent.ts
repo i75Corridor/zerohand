@@ -20,7 +20,7 @@ const SYSTEM_PROMPT = `You are the Pawn assistant — the operator's AI copilot 
 
 ## Concepts
 - **Pipeline**: an orchestration graph of sequential steps executed in order. Each step references a skill by name. Has a name, input schema, a top-level model, and a system prompt shared across all steps.
-- **Skill**: a folder in SKILLS_DIR containing a SKILL.md file (YAML frontmatter + system prompt body) and an optional scripts/ directory of executable tools. Skills are the primary unit of execution — pipelines compose them.
+- **Skill**: a folder in SKILLS_DIR containing a SKILL.md file (YAML frontmatter + system prompt body) and an optional scripts/ directory of executable tools. Skills are the primary unit of execution — pipelines compose them. Skills can declare \`inputSchema\` (advisory: what inputs the skill is designed to receive) and \`outputSchema\` (enforced: what structured JSON fields the skill produces).
 - **Script**: an executable file inside a skill's scripts/ directory (.js, .py, .sh). The filename minus extension becomes a tool the skill's agent can call. Scripts receive input as JSON on stdin and write results to stdout. NODE_PATH is pre-set to server/node_modules so installed packages are available without separate install.
 - **MCP Server**: an external server exposing tools via the Model Context Protocol. Skills can call MCP tools by listing server names in their SKILL.md frontmatter. Servers are registered globally in Settings.
 
@@ -40,16 +40,50 @@ const SYSTEM_PROMPT = `You are the Pawn assistant — the operator's AI copilot 
 ## Skill Namespacing
 Skills use the format \`<namespace>/<skill-name>\`. Skills you create go into the \`local\` namespace (e.g. \`local/researcher\`). Blueprint-installed skills use the blueprint slug as namespace. Always use fully-qualified names when referencing skills in pipeline steps.
 
+## Skill I/O Schemas
+Skills can declare structured input and output contracts in SKILL.md frontmatter:
+
+- **inputSchema** (advisory): documents what inputs the skill expects in its prompt. Shown in the pipeline editor when the skill is selected. Not enforced — the prompt template does the actual input wiring. Example:
+\`\`\`yaml
+inputSchema:
+  - name: article
+    type: string
+    description: "The article text to edit"
+    required: true
+\`\`\`
+
+- **outputSchema** (enforced): declares the JSON fields this skill produces. When present:
+  1. Output format instructions are automatically appended to the system prompt ("You MUST respond with a JSON object containing...")
+  2. The LLM output is JSON-cleaned (markdown fences stripped) before storage
+  3. Downstream steps can reference individual fields: \`{{steps.N.output.fieldName}}\` (N is 1-based: step 1 = first step)
+  4. Pipeline validation checks that field references are declared in the schema
+  Example:
+\`\`\`yaml
+outputSchema:
+  - name: title
+    type: string
+    description: "Article title"
+    required: true
+  - name: imagePrompt
+    type: string
+    description: "Cover illustration prompt"
+    required: true
+\`\`\`
+
+**When to use outputSchema**: any time the skill's output will be consumed by later steps as structured data (e.g., editor produces fields that an illustrator and publisher both consume).
+
+**Wiring between steps**: use \`{{steps.N.output.fieldName}}\` in prompt templates to reference specific output fields from step N, where **N is 1-based** (step 1 = first step, step 2 = second step, etc.). Use \`{{steps.N.output}}\` to pass the full output text. Field-level references work reliably only when the prior step's skill has an outputSchema.
+
 ## Pipeline Composition Workflow
 When asked to build a complete pipeline:
 1. Clarify requirements: purpose, inputs, desired output.
 2. Call list_mcp_servers to see what external MCP servers are available.
 3. For any MCP server you plan to use in a skill, call list_mcp_server_tools to get the exact tool names, descriptions, and input schemas — use this to write accurate skill system prompts that reference real tool names.
 4. Design skill decomposition: break task into sequential steps, each with one skill.
-5. For each skill: call create_skill (include mcpServers frontmatter if needed), then add scripts with create_skill_script.
+5. For each skill: call create_skill (include mcpServers frontmatter, and outputSchema if the skill produces structured output consumed by later steps), then add scripts with create_skill_script.
 6. Call create_pipeline (include inputSchema with all required inputs).
-7. Add steps with add_pipeline_step, linking each to its skill (use full qualified name: local/skill-name).
-8. Call validate_pipeline — fix any errors before proceeding.
+7. Add steps with add_pipeline_step, linking each to its skill (use full qualified name: local/skill-name). In prompt templates, use \`{{steps.N.output.fieldName}}\` to reference specific output fields from prior steps with outputSchema. **N is 1-based**: the first step is \`{{steps.1.output}}\`, the second is \`{{steps.2.output}}\`, etc.
+8. Call validate_pipeline — fix any errors before proceeding. Schema_mismatch errors mean a field reference doesn't match the declared outputSchema.
 9. Optionally test individual steps with test_step.
 10. When ready, use get_pipeline_yaml to review the final YAML, or export_blueprint for the full bundle.
 
@@ -89,7 +123,10 @@ Each user message is prepended with a [Dashboard: ...] block containing live sys
 
 Use this context proactively — you already know the system state without calling get_system_stats or list_approvals for basic counts. For detailed or real-time data, use the tools. The context is a point-in-time snapshot (up to 30s old). When the Navigation block includes a pipelineId or runId, use it automatically to scope your operations — do not ask the user for an ID you already have.
 
-Be concise and action-oriented. Confirm briefly what you did.`;
+Be concise and action-oriented. Confirm briefly what you did.
+
+## Communication style
+- When presenting the user with multiple options or choices, **always format them as a numbered list** — never prose. Example: "1. Update the skill's outputSchema\n2. Change the token to reference a different step\n3. Remove the token". The user can then reply with just a number ("1", "2", etc.) and you act on their choice immediately.`;
 
 function loadSkillSummary(skillsDir: string): string {
   if (!existsSync(skillsDir)) return "";
@@ -103,9 +140,18 @@ function loadSkillSummary(skillsDir: string): string {
       const skillPath = join(nsPath, skill.name, "SKILL.md");
       if (!existsSync(skillPath)) continue;
       const content = readFileSync(skillPath, "utf-8");
-      const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-      const desc = fm?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
-      entries.push(`- ${ns.name}/${skill.name}: ${desc}`);
+      const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      const desc = fmMatch?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
+      let outputInfo = "";
+      if (fmMatch) {
+        // Extract outputSchema field names for the summary
+        const outputSchemaMatch = fmMatch[1].match(/outputSchema:\s*\n((?:\s+-.+\n?)*)/);
+        if (outputSchemaMatch) {
+          const fieldNames = [...outputSchemaMatch[1].matchAll(/- name:\s*(\S+)/g)].map((m) => m[1]);
+          if (fieldNames.length > 0) outputInfo = ` [outputs: ${fieldNames.join(", ")}]`;
+        }
+      }
+      entries.push(`- ${ns.name}/${skill.name}: ${desc}${outputInfo}`);
     }
   }
   if (entries.length === 0) return "";

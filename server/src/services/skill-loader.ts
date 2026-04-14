@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import { Type } from "@mariozechner/pi-ai";
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
+import type { ApiSkillSchemaField } from "@pawn/shared";
 import { isDockerAvailable, runInSandbox } from "./script-sandbox.js";
 import { outputDir as getOutputDir } from "./paths.js";
 
@@ -31,13 +32,6 @@ function safeChildEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
-export interface ScriptParameter {
-  name: string;
-  type?: "string" | "number" | "boolean";
-  description?: string;
-  required?: boolean;
-}
-
 export interface SkillDef {
   name: string;
   /** Namespace portion of the qualified skill name (e.g. "local", "daily-absurdist") */
@@ -59,9 +53,14 @@ export interface SkillDef {
   /** MCP server names (from the global registry) this skill wants tools from */
   mcpServers?: string[];
   /** Parameter definitions for script tools, parsed from SKILL.md `parameters:` frontmatter */
-  scriptParameters?: ScriptParameter[];
+  scriptParameters?: ApiSkillSchemaField[];
   /** Whether to expose the pi built-in bash tool to the agent (default false) */
   bash?: boolean;
+  /** Advisory: what inputs this skill is designed to receive (shown in the editor, never enforced) */
+  inputSchema?: ApiSkillSchemaField[];
+  /** Enforced: structured output fields this skill produces. When present, output format instructions
+   *  are injected into the system prompt and the LLM output is JSON-cleaned before storage. */
+  outputSchema?: ApiSkillSchemaField[];
 }
 
 export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef | null {
@@ -109,12 +108,25 @@ export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef
   const skillSecrets = (fm.secrets as string[] | undefined) ?? [];
   const skillMcpServers = (fm.mcpServers as string[] | undefined) ?? [];
   const rawParams = fm.parameters as Array<Record<string, unknown>> | undefined;
-  const scriptParameters: ScriptParameter[] | undefined = rawParams?.map((p) => ({
+  const scriptParameters: ApiSkillSchemaField[] | undefined = rawParams?.map((p) => ({
     name: String(p.name ?? ""),
-    type: (p.type as ScriptParameter["type"]) ?? "string",
+    type: (p.type as ApiSkillSchemaField["type"]) ?? "string",
     description: p.description !== undefined ? String(p.description) : undefined,
     required: Boolean(p.required ?? false),
   }));
+
+  function parseSchemaParams(raw: unknown): ApiSkillSchemaField[] | undefined {
+    if (!Array.isArray(raw)) return undefined;
+    return (raw as Array<Record<string, unknown>>).map((p) => ({
+      name: String(p.name ?? ""),
+      type: (p.type as ApiSkillSchemaField["type"]) ?? "string",
+      description: p.description !== undefined ? String(p.description) : undefined,
+      required: Boolean(p.required ?? false),
+    }));
+  }
+
+  const inputSchema = parseSchemaParams(fm.inputSchema);
+  const outputSchema = parseSchemaParams(fm.outputSchema);
 
   // version lives in metadata per spec; fall back to top-level for old skills
   const version = String(skillMetadata?.version ?? fm.version ?? "0.0.0");
@@ -146,6 +158,8 @@ export function loadSkillDef(qualifiedName: string, skillsDir: string): SkillDef
     secrets: skillSecrets,
     mcpServers: skillMcpServers,
     scriptParameters,
+    inputSchema,
+    outputSchema,
   };
 }
 
@@ -234,7 +248,7 @@ async function execScript(
   });
 }
 
-function buildScriptSchema(params?: ScriptParameter[]) {
+function buildScriptSchema(params?: ApiSkillSchemaField[]) {
   if (!params || params.length === 0) {
     return Type.Object({ input: Type.Optional(Type.String({ description: "Input for the script" })) });
   }
@@ -253,7 +267,7 @@ function buildScriptSchema(params?: ScriptParameter[]) {
   return Type.Object(entries as any);
 }
 
-export function makeScriptTools(scriptPaths: string[], execOpts: ExecScriptOpts = {}, scriptParameters?: ScriptParameter[]): ToolDefinition[] {
+export function makeScriptTools(scriptPaths: string[], execOpts: ExecScriptOpts = {}, scriptParameters?: ApiSkillSchemaField[]): ToolDefinition[] {
   const schema = buildScriptSchema(scriptParameters);
   return scriptPaths.map((scriptPath) => {
     const toolName = basename(scriptPath, extname(scriptPath));

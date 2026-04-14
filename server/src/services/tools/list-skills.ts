@@ -2,6 +2,7 @@ import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { Type } from "@mariozechner/pi-ai";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
 import type { AgentToolContext } from "./context.js";
 
 export function makeListSkills(ctx: AgentToolContext): ToolDefinition {
@@ -19,6 +20,7 @@ export function makeListSkills(ctx: AgentToolContext): ToolDefinition {
         qualifiedName: string;
         description: string;
         hasScripts: boolean;
+        outputSchema?: Array<{ name: string; type?: string; description?: string; required?: boolean }>;
       }> = [];
 
       // Scan two levels: SKILLS_DIR/<namespace>/<skill>/SKILL.md
@@ -36,15 +38,32 @@ export function makeListSkills(ctx: AgentToolContext): ToolDefinition {
           if (!existsSync(skillPath)) continue;
 
           const content = readFileSync(skillPath, "utf-8");
-          const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-          const desc = fm?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
+          const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+          const desc = fmMatch?.[1].match(/description:\s*["']?(.+?)["']?\s*$/m)?.[1] ?? "";
           const hasScripts = existsSync(join(nsDir, skillName, "scripts"));
+
+          let outputSchema: Array<{ name: string; type?: string; description?: string; required?: boolean }> | undefined;
+          if (fmMatch) {
+            try {
+              const fm = parseYaml(fmMatch[1]) as Record<string, unknown>;
+              if (Array.isArray(fm.outputSchema)) {
+                outputSchema = (fm.outputSchema as Array<Record<string, unknown>>).map((p) => ({
+                  name: String(p.name ?? ""),
+                  type: p.type as string | undefined,
+                  description: p.description !== undefined ? String(p.description) : undefined,
+                  required: Boolean(p.required ?? false),
+                }));
+              }
+            } catch { /* ignore malformed frontmatter */ }
+          }
+
           results.push({
             name: skillName,
             namespace,
             qualifiedName: `${namespace}/${skillName}`,
             description: desc,
             hasScripts,
+            outputSchema,
           });
         }
       }
