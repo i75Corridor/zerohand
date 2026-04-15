@@ -51,6 +51,33 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Strip markdown code fences from LLM output and attempt to normalize to clean JSON.
+ * Used when a skill declares an outputSchema — the LLM is instructed to output JSON
+ * but often wraps it in ```json ... ``` or adds preamble text.
+ *
+ * If the cleaned text is valid JSON, it is re-serialized as compact JSON.
+ * If not parseable, the raw output is returned unchanged (never throws).
+ */
+export function cleanJsonOutput(raw: string): string {
+  let text = raw.trim();
+  // Strip markdown code fences: ```json ... ``` or ``` ... ```
+  const fenceMatch = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/);
+  if (fenceMatch) text = fenceMatch[1].trim();
+  // If the text doesn't start with { or [, try to find the first JSON object
+  if (!text.startsWith("{") && !text.startsWith("[")) {
+    const objIdx = text.indexOf("{");
+    const arrIdx = text.indexOf("[");
+    const startIdx = objIdx === -1 ? arrIdx : arrIdx === -1 ? objIdx : Math.min(objIdx, arrIdx);
+    if (startIdx > -1) text = text.slice(startIdx).trim();
+  }
+  try {
+    return JSON.stringify(JSON.parse(text));
+  } catch {
+    return raw; // return original if not valid JSON
+  }
+}
+
 export function resolvePrompt(
   template: string,
   inputParams: Record<string, unknown>,
@@ -68,7 +95,10 @@ export function resolvePrompt(
     }
 
     if (parts[0] === "steps" && parts.length >= 3) {
-      const stepIndex = parseInt(parts[1], 10);
+      const tokenIndex = parseInt(parts[1], 10);
+      // Template step indices are 1-based: {{steps.1.output}} = first step, {{steps.2.output}} = second.
+      // Index 0 is accepted for backward compatibility and maps to the first step (stepIndex 0).
+      const stepIndex = tokenIndex >= 1 ? tokenIndex - 1 : 0;
       const output = stepOutputs.get(stepIndex) ?? "";
       if (parts[2] === "output" && parts.length === 3) return output;
       if (parts[2] === "output" && parts.length > 3) {
@@ -492,6 +522,15 @@ export class ExecutionEngine {
           usage = result.usage;
           if (!output) {
             console.warn(`[ExecutionEngine] Step ${step.stepIndex} ("${step.name}") completed with empty output. Skill: ${step.skillName}`);
+          }
+          // When the skill declares an outputSchema, clean the output (strip markdown fences,
+          // normalize JSON) so downstream {{steps.N.output.field}} references work reliably.
+          if (skill.outputSchema && skill.outputSchema.length > 0 && output) {
+            const cleaned = cleanJsonOutput(output);
+            if (cleaned !== output) {
+              logger.debug("json_output_cleaned", { stepIndex: step.stepIndex, originalLength: output.length, cleanedLength: cleaned.length });
+            }
+            output = cleaned;
           }
           const effectiveProvider = skill.modelProvider ?? pipelineModelProvider;
           const effectiveModel = skill.modelName ?? pipelineModelName;

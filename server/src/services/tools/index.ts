@@ -55,6 +55,7 @@ import { makeDiscoverBlueprints } from "./discover-blueprints.js";
 import { makeScanBlueprint } from "./scan-blueprint.js";
 import { makeGetRunLog } from "./get-run-log.js";
 import { makeDetectMcpEnv } from "./detect-mcp-env.js";
+import { makeFixPipelineValidation } from "./fix-pipeline-validation.js";
 
 export type { AgentToolContext } from "./context.js";
 
@@ -83,6 +84,7 @@ export function makeAllTools(ctx: AgentToolContext): ToolDefinition[] {
     makeUpdateSkillScript(ctx),
     makeDeleteSkillScript(ctx),
     makeValidatePipeline(ctx),
+    makeFixPipelineValidation(ctx),
     makeGetPipelineYaml(ctx),
     makeExportBlueprint(ctx),
     makeListMcpServers(ctx),

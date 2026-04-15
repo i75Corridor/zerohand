@@ -169,6 +169,66 @@ Prompt body.`,
     const skill = loadSkillDef("noscripts", skillsDir);
     expect(skill!.scriptPaths).toHaveLength(0);
   });
+
+  // inputSchema / outputSchema
+  it("parses outputSchema from SKILL.md frontmatter", () => {
+    const skillDir = join(skillsDir, "local", "editor");
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(join(skillDir, "SKILL.md"), `---
+name: editor
+description: "Editorial skill"
+outputSchema:
+  - name: title
+    type: string
+    description: "Article title"
+    required: true
+  - name: imagePrompt
+    type: string
+    required: true
+  - name: verdict
+    type: string
+---
+You are an editor.`);
+
+    const skill = loadSkillDef("local/editor", skillsDir);
+    expect(skill).not.toBeNull();
+    expect(skill!.outputSchema).toHaveLength(3);
+    expect(skill!.outputSchema![0]).toMatchObject({ name: "title", type: "string", required: true });
+    expect(skill!.outputSchema![1]).toMatchObject({ name: "imagePrompt", type: "string", required: true });
+    expect(skill!.outputSchema![2]).toMatchObject({ name: "verdict", type: "string" });
+  });
+
+  it("parses inputSchema from SKILL.md frontmatter", () => {
+    const skillDir = join(skillsDir, "local", "writer");
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(join(skillDir, "SKILL.md"), `---
+name: writer
+description: "Writer skill"
+inputSchema:
+  - name: research
+    type: string
+    description: "Research text"
+    required: true
+  - name: tone
+    type: string
+---
+You are a writer.`);
+
+    const skill = loadSkillDef("local/writer", skillsDir);
+    expect(skill!.inputSchema).toHaveLength(2);
+    expect(skill!.inputSchema![0]).toMatchObject({ name: "research", type: "string", required: true });
+    expect(skill!.inputSchema![1]).toMatchObject({ name: "tone", type: "string" });
+  });
+
+  it("returns undefined inputSchema and outputSchema when not present", () => {
+    const skillDir = join(skillsDir, "local", "plain");
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(join(skillDir, "SKILL.md"), `---\nname: plain\ndescription: "Plain skill"\n---\nBody.`);
+
+    const skill = loadSkillDef("local/plain", skillsDir);
+    expect(skill!.inputSchema).toBeUndefined();
+    expect(skill!.outputSchema).toBeUndefined();
+  });
 });
 
 // ── makeScriptTools ───────────────────────────────────────────────────────────

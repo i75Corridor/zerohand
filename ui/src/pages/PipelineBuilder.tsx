@@ -7,7 +7,7 @@ import LoadingState from "../components/LoadingState.tsx";
 import type { ApiPipeline, ApiPipelineStep, ApiSkill, ApiValidationResult, WsMessage } from "@pawn/shared";
 import ModelSelector from "../components/ModelSelector.tsx";
 import { useWebSocket } from "../lib/ws.ts";
-import { parseFrontMatter, serializeFrontMatter, type SkillFm, ScriptEditor, NewScriptForm, TagInput } from "../components/SkillEditor.tsx";
+import { parseFrontMatter, serializeFrontMatter, type SkillFm, ScriptEditor, NewScriptForm, TagInput, SchemaFieldEditor } from "../components/SkillEditor.tsx";
 
 // ── Draft step type (before saving) ───────────────────────────────────────────
 
@@ -163,6 +163,22 @@ function InlineSkillEditor({ skillName }: { skillName: string }) {
 
       {/* MCP Servers */}
       <TagInput label="MCP Servers" icon={Server} tags={fm.mcpServers} onChange={(mcpServers) => update({ mcpServers })} addLabel="+ Attach" addOptions={mcpServers.map((s) => s.name)} />
+
+      {/* I/O Schemas */}
+      <div className="pt-3 border-t border-pawn-surface-800 space-y-4">
+        <SchemaFieldEditor
+          label="Input Schema (advisory)"
+          fields={fm.inputSchema}
+          onChange={(inputSchema) => update({ inputSchema })}
+          addLabel="+ Add input field"
+        />
+        <SchemaFieldEditor
+          label="Output Schema (enforced)"
+          fields={fm.outputSchema}
+          onChange={(outputSchema) => update({ outputSchema })}
+          addLabel="+ Add output field"
+        />
+      </div>
 
       {/* System prompt body */}
       <div>
@@ -452,6 +468,7 @@ function StepTestPanel({
 
 function StepForm({
   step,
+  steps: allSteps,
   skills,
   inputKeys,
   stepIndex,
@@ -459,20 +476,46 @@ function StepForm({
   onChange,
 }: {
   step: DraftStep;
+  steps: DraftStep[];
   skills: ApiSkill[];
   inputKeys: string[];
   stepIndex: number;
   totalSteps: number;
   onChange: (updated: DraftStep) => void;
 }) {
-  const tokenHints = [
-    ...inputKeys.map((k) => `{{input.${k}}}`),
-    ...Array.from({ length: stepIndex }, (_, i) => `{{steps.${i}.output}}`),
+  // Build a lookup map: stepIndex → skill outputSchema field names (for steps before this one)
+  const priorStepOutputSchemas = Array.from({ length: stepIndex }, (_, i) => {
+    const priorSkillName = allSteps[i]?.skillName ?? "";
+    if (!priorSkillName) return [];
+    const skillData = skills.find((s) => {
+      const qn = `${s.namespace ?? "local"}/${s.name}`;
+      return qn === priorSkillName || s.name === priorSkillName;
+    });
+    return skillData?.outputSchema ?? [];
+  });
+
+  // Token hints: input fields + for each prior step, the step-level token and any declared field tokens
+  const tokenHints: Array<{ token: string; isField: boolean; stepIndex?: number }> = [
+    ...inputKeys.map((k) => ({ token: `{{input.${k}}}`, isField: false })),
+    ...Array.from({ length: stepIndex }, (_, i) => {
+      const fields = priorStepOutputSchemas[i];
+      const base = { token: `{{steps.${i + 1}.output}}`, isField: false, stepIndex: i };
+      if (fields.length === 0) return [base];
+      return [base, ...fields.map((f) => ({ token: `{{steps.${i + 1}.output.${f.name}}}`, isField: true, stepIndex: i }))];
+    }).flat(),
   ];
 
   const insertToken = (token: string) => {
     onChange({ ...step, promptTemplate: step.promptTemplate + token });
   };
+
+  // Skill I/O summary for the selected skill
+  const selectedSkillData = step.skillName
+    ? skills.find((s) => {
+        const qn = `${s.namespace ?? "local"}/${s.name}`;
+        return qn === step.skillName || s.name === step.skillName;
+      })
+    : null;
 
   return (
     <div className="space-y-4">
@@ -514,20 +557,46 @@ function StepForm({
             ))
           }
         </select>
+        {/* Skill I/O summary */}
+        {selectedSkillData && (selectedSkillData.inputSchema?.length || selectedSkillData.outputSchema?.length) ? (
+          <div className="mt-1.5 space-y-0.5">
+            {selectedSkillData.inputSchema && selectedSkillData.inputSchema.length > 0 && (
+              <p className="text-[10px] text-pawn-surface-500">
+                <span className="text-pawn-surface-600 font-medium">Expects:</span>{" "}
+                {selectedSkillData.inputSchema.map((f) => (
+                  <span key={f.name} className="font-mono text-pawn-surface-400">{f.name}{f.required ? "" : "?"}{" "}</span>
+                ))}
+              </p>
+            )}
+            {selectedSkillData.outputSchema && selectedSkillData.outputSchema.length > 0 && (
+              <p className="text-[10px] text-pawn-surface-500">
+                <span className="text-emerald-600 font-medium">Produces:</span>{" "}
+                {selectedSkillData.outputSchema.map((f) => (
+                  <span key={f.name} className="font-mono text-emerald-500/70">{f.name}{f.required ? "" : "?"}{" "}</span>
+                ))}
+              </p>
+            )}
+          </div>
+        ) : null}
       </div>
 
       <div>
         <label className="block text-xs text-pawn-surface-400 mb-1">Prompt template</label>
         {tokenHints.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
-            {tokenHints.map((t) => (
+            {tokenHints.map(({ token, isField }) => (
               <button
-                key={t}
+                key={token}
                 type="button"
-                className="text-xs px-2 py-0.5 bg-pawn-gold-500/10 text-pawn-gold-300 border border-pawn-gold-500/20 hover:bg-pawn-gold-500/20 rounded font-mono transition-colors"
-                onClick={() => insertToken(t)}
+                className={`text-xs px-2 py-0.5 border rounded font-mono transition-colors ${
+                  isField
+                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 hover:bg-emerald-500/20 ml-1"
+                    : "bg-pawn-gold-500/10 text-pawn-gold-300 border-pawn-gold-500/20 hover:bg-pawn-gold-500/20"
+                }`}
+                onClick={() => insertToken(token)}
+                title={isField ? "Output field reference" : undefined}
               >
-                {t}
+                {token}
               </button>
             ))}
           </div>
@@ -548,7 +617,9 @@ function StepForm({
             }
             if (token.startsWith("steps.")) {
               const n = parseInt(token.split(".")[1], 10);
-              return isNaN(n) || n >= stepIndex;
+              // Token indices are 1-based (n=1 → first step); 0 is legacy compat for first step.
+              const mapped = n >= 1 ? n - 1 : 0;
+              return isNaN(n) || mapped >= stepIndex;
             }
             return false; // context/secret tokens — no red highlight
           });
@@ -616,13 +687,17 @@ function StepList({
   onRemove: (i: number) => void;
   onMove: (from: number, to: number) => void;
 }) {
-  function stepDot(i: number): React.ReactNode {
-    if (!validationResult) return null;
-    const hasError = validationResult.errors.some((e) => e.stepIndex === i);
-    const hasWarning = validationResult.warnings.some((e) => e.stepIndex === i);
-    if (hasError) return <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" title="Step has errors" />;
-    if (hasWarning) return <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Step has warnings" />;
-    return <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" title="Step is valid" />;
+  function stepMessages(i: number) {
+    if (!validationResult) return [];
+    return [...validationResult.errors, ...validationResult.warnings].filter((e) => e.stepIndex === i);
+  }
+
+  function stepNumberRing(i: number): { boxShadow?: string } {
+    if (!validationResult) return {};
+    const msgs = stepMessages(i);
+    if (msgs.some((m) => m.severity === "error")) return { boxShadow: "0 0 0 2px #ef4444" };
+    if (msgs.some((m) => m.severity === "warning")) return { boxShadow: "0 0 0 2px #fbbf24" };
+    return { boxShadow: "0 0 0 2px #22c55e" };
   }
 
   return (
@@ -638,8 +713,24 @@ function StepList({
             onClick={() => onSelect(i)}
           >
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/80 flex items-center justify-center text-xs font-semibold text-white">
-                {i + 1}
+              <div className="group/badge relative flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-indigo-500/80 flex items-center justify-center text-xs font-semibold text-white" style={stepNumberRing(i)}>
+                  {i + 1}
+                </div>
+                {stepMessages(i).length > 0 && (
+                  <div className="absolute left-8 top-1/2 -translate-y-1/2 z-50 w-72 bg-pawn-surface-800 border border-pawn-surface-700 rounded-card p-3 shadow-xl pointer-events-none hidden group-hover/badge:block">
+                    <div className="space-y-1.5">
+                      {stepMessages(i).map((m, j) => (
+                        <div key={j} className="flex items-start gap-1.5 text-xs">
+                          <span className={`flex-shrink-0 mt-0.5 ${m.severity === "error" ? "text-rose-400" : "text-amber-400"}`}>
+                            {m.severity === "error" ? "✕" : "⚠"}
+                          </span>
+                          <span className="text-pawn-text-primary leading-tight">{m.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-pawn-text-primary truncate">{step.name || "Unnamed step"}</div>
@@ -649,7 +740,6 @@ function StepList({
                   </div>
                 )}
               </div>
-              {stepDot(i)}
             </div>
           </button>
 
@@ -773,6 +863,14 @@ export default function PipelineBuilder() {
     queryKey: ["pipeline", id],
     queryFn: () => api.getPipeline(id!),
     enabled: isEdit,
+  });
+
+  // Auto-validate on load in edit mode so step rings always reflect current state
+  const { data: autoValidation } = useQuery({
+    queryKey: ["validate-builder", id],
+    queryFn: () => api.validatePipeline(id!),
+    enabled: isEdit,
+    staleTime: 30_000,
   });
 
   const { data: skills = [], isLoading: loadingSkills } = useQuery({
@@ -969,6 +1067,7 @@ export default function PipelineBuilder() {
 
       queryClient.invalidateQueries({ queryKey: ["pipelines"] });
       queryClient.invalidateQueries({ queryKey: ["pipeline", id] });
+      queryClient.invalidateQueries({ queryKey: ["validate-builder", id] });
 
       // Run validation and show results before navigating in edit mode
       if (isEdit && existing) {
@@ -1073,7 +1172,7 @@ export default function PipelineBuilder() {
             <StepList
               steps={steps}
               selectedIndex={selectedStep}
-              validationResult={validationResult}
+              validationResult={validationResult ?? autoValidation ?? null}
               onSelect={setSelectedStep}
               onAdd={addStep}
               onRemove={removeStep}
@@ -1121,6 +1220,7 @@ export default function PipelineBuilder() {
                       <StepForm
                         key={selectedStep}
                         step={step}
+                        steps={steps}
                         skills={skills}
                         inputKeys={inputKeys}
                         stepIndex={selectedStep}

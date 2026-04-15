@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Save, Check, Trash2, Plus, X, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { api } from "../lib/api.ts";
-import type { ApiSkillBundleScript } from "@pawn/shared";
+import type { ApiSkillBundleScript, ApiSkillSchemaField } from "@pawn/shared";
 
 // ── Front matter parsing / serialization ──────────────────────────────────────
 
@@ -13,18 +13,22 @@ export interface SkillFm {
   bash: boolean;
   secrets: string[];
   mcpServers: string[];
+  /** Advisory: what inputs this skill is designed to receive */
+  inputSchema: ApiSkillSchemaField[];
+  /** What structured data this skill produces */
+  outputSchema: ApiSkillSchemaField[];
   /** raw lines for keys we don't surface in the form (e.g. version, type, metadata) */
   _preserved: string[];
 }
 
 export function parseFrontMatter(content: string): { fm: SkillFm; body: string } {
-  const fm: SkillFm = { name: "", description: "", model: null, bash: false, secrets: [], mcpServers: [], _preserved: [] };
+  const fm: SkillFm = { name: "", description: "", model: null, bash: false, secrets: [], mcpServers: [], inputSchema: [], outputSchema: [], _preserved: [] };
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)/);
   if (!match) return { fm, body: content };
 
   const body = match[2].trim();
   const lines = match[1].split("\n");
-  const HANDLED = new Set(["name", "description", "model", "bash", "secrets", "mcpServers"]);
+  const HANDLED = new Set(["name", "description", "model", "bash", "secrets", "mcpServers", "inputSchema", "outputSchema"]);
 
   let i = 0;
   while (i < lines.length) {
@@ -49,8 +53,38 @@ export function parseFrontMatter(content: string): { fm: SkillFm; body: string }
       continue;
     }
 
+    // inputSchema / outputSchema: block array of objects
+    if ((key === "inputSchema" || key === "outputSchema") && val === "") {
+      const fields: ApiSkillSchemaField[] = [];
+      i++;
+      while (i < lines.length) {
+        const itemLine = lines[i];
+        // Each field starts with "  - name: <value>"
+        const nameMatch = itemLine.match(/^\s+-\s+name:\s*(.+)$/);
+        if (!nameMatch) break;
+        const field: ApiSkillSchemaField = { name: nameMatch[1].trim().replace(/^['"]|['"]$/g, "") };
+        i++;
+        // Read sub-keys (type, description, required) with deeper indentation
+        while (i < lines.length && /^\s{4}/.test(lines[i])) {
+          const subMatch = lines[i].match(/^\s+(\w+):\s*(.+)$/);
+          if (subMatch) {
+            const subKey = subMatch[1];
+            const subVal = subMatch[2].trim().replace(/^['"]|['"]$/g, "");
+            if (subKey === "type") field.type = subVal as ApiSkillSchemaField["type"];
+            else if (subKey === "description") field.description = subVal;
+            else if (subKey === "required") field.required = subVal === "true";
+          }
+          i++;
+        }
+        fields.push(field);
+      }
+      if (key === "inputSchema") fm.inputSchema = fields;
+      if (key === "outputSchema") fm.outputSchema = fields;
+      continue;
+    }
+
     if (val === "" || val === "[]") {
-      // Block array
+      // Block array (for secrets / mcpServers)
       const arr: string[] = [];
       i++;
       while (i < lines.length && /^\s*-\s+/.test(lines[i])) {
@@ -96,10 +130,99 @@ export function serializeFrontMatter(fm: SkillFm, body: string): string {
     lines.push("mcpServers:");
     fm.mcpServers.forEach((s) => lines.push(`  - ${s}`));
   }
+  function serializeSchemaFields(key: string, fields: ApiSkillSchemaField[]) {
+    if (fields.length === 0) return;
+    lines.push(`${key}:`);
+    for (const f of fields) {
+      lines.push(`  - name: ${f.name}`);
+      if (f.type) lines.push(`    type: ${f.type}`);
+      if (f.description) lines.push(`    description: "${f.description.replace(/"/g, '\\"')}"`);
+      if (f.required) lines.push(`    required: true`);
+    }
+  }
+  serializeSchemaFields("inputSchema", fm.inputSchema);
+  serializeSchemaFields("outputSchema", fm.outputSchema);
   lines.push("---");
   lines.push("");
   lines.push(body);
   return lines.join("\n");
+}
+
+// ── Schema field editor (reusable for inputSchema / outputSchema) ──────────────
+
+export function SchemaFieldEditor({
+  label,
+  fields,
+  onChange,
+  addLabel,
+}: {
+  label: string;
+  fields: ApiSkillSchemaField[];
+  onChange: (fields: ApiSkillSchemaField[]) => void;
+  addLabel: string;
+}) {
+  const add = () => onChange([...fields, { name: "", type: "string", description: "", required: false }]);
+  const remove = (i: number) => onChange(fields.filter((_, j) => j !== i));
+  const update = (i: number, patch: Partial<ApiSkillSchemaField>) =>
+    onChange(fields.map((f, j) => (j === i ? { ...f, ...patch } : f)));
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] font-bold text-pawn-surface-500 uppercase tracking-wider">{label}</label>
+        <button
+          onClick={add}
+          className="text-[10px] text-pawn-gold-400 hover:text-pawn-gold-300 font-medium transition-colors"
+        >
+          {addLabel}
+        </button>
+      </div>
+      {fields.length === 0 && (
+        <p className="text-xs text-pawn-surface-600 italic">None defined</p>
+      )}
+      {fields.map((f, i) => (
+        <div key={i} className="flex items-start gap-2 p-2 bg-pawn-surface-800/50 rounded border border-pawn-surface-700/50">
+          <div className="flex-1 space-y-1.5">
+            <div className="flex gap-1.5">
+              <input
+                className="flex-1 bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500 font-mono"
+                placeholder="field_name"
+                value={f.name}
+                onChange={(e) => update(i, { name: e.target.value })}
+              />
+              <select
+                className="bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-pawn-text-primary focus:outline-none focus:border-pawn-gold-500"
+                value={f.type ?? "string"}
+                onChange={(e) => update(i, { type: e.target.value as ApiSkillSchemaField["type"] })}
+              >
+                <option value="string">string</option>
+                <option value="number">number</option>
+                <option value="boolean">boolean</option>
+              </select>
+              <label className="flex items-center gap-1 text-xs text-pawn-surface-400 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  className="accent-pawn-gold-500"
+                  checked={f.required ?? false}
+                  onChange={(e) => update(i, { required: e.target.checked })}
+                />
+                req
+              </label>
+            </div>
+            <input
+              className="w-full bg-pawn-surface-700 border border-pawn-surface-600 rounded px-2 py-1 text-xs text-pawn-text-primary placeholder-pawn-surface-500 focus:outline-none focus:border-pawn-gold-500"
+              placeholder="Description"
+              value={f.description ?? ""}
+              onChange={(e) => update(i, { description: e.target.value })}
+            />
+          </div>
+          <button className="text-pawn-surface-600 hover:text-rose-400 mt-0.5" onClick={() => remove(i)} aria-label="Remove field">
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ── Script editor ─────────────────────────────────────────────────────────────

@@ -76,9 +76,9 @@ function SecurityErrorPanel({
   }
 
   const levelStyle: Record<SecurityFinding["level"], string> = {
-    HIGH: "text-rose-400 bg-rose-500/10 border-rose-500/20",
-    MEDIUM: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    LOW: "text-pawn-surface-400 bg-pawn-surface-500/10 border-pawn-surface-500/20",
+    HIGH: "text-rose-700 bg-rose-100 border-rose-300 dark:text-rose-400 dark:bg-rose-500/10 dark:border-rose-500/20",
+    MEDIUM: "text-amber-700 bg-amber-100 border-amber-300 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20",
+    LOW: "text-pawn-surface-600 bg-pawn-surface-100 border-pawn-surface-300 dark:text-pawn-surface-400 dark:bg-pawn-surface-500/10 dark:border-pawn-surface-500/20",
   };
 
   return (
@@ -106,7 +106,7 @@ function SecurityErrorPanel({
         <button
           onClick={onForce}
           disabled={forcing}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-medium rounded-button transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/20 text-xs font-medium rounded-button transition-colors disabled:opacity-50"
         >
           <Download size={11} />
           {forcing ? "Installing..." : "Install anyway"}
@@ -126,11 +126,11 @@ function ModelWarningPanel({
   onDismiss: () => void;
 }) {
   return (
-    <div className="mb-4 bg-amber-950/20 border border-amber-500/20 rounded-card p-4">
+    <div className="mb-4 bg-amber-50 border border-amber-300 dark:bg-amber-950/20 dark:border-amber-500/20 rounded-card p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <AlertTriangle size={14} className="text-amber-400 flex-shrink-0" />
-          <span className="text-sm font-semibold text-amber-300">Model API keys missing</span>
+          <AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
+          <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Model API keys missing</span>
         </div>
         <button onClick={onDismiss} className="text-xs text-pawn-surface-500 hover:text-pawn-surface-300 transition-colors">
           Dismiss
@@ -138,8 +138,8 @@ function ModelWarningPanel({
       </div>
       <div className="flex flex-col gap-2 mb-3">
         {warnings.map((w, i) => (
-          <div key={i} className="text-xs text-amber-200/80">
-            <span className="font-mono text-amber-400">{w.model}</span> — {w.message}
+          <div key={i} className="text-xs text-amber-700 dark:text-amber-200/80">
+            <span className="font-mono text-amber-700 dark:text-amber-400">{w.model}</span> — {w.message}
           </div>
         ))}
       </div>
@@ -181,27 +181,27 @@ function InstalledCard({
               <ExternalLink size={11} className="text-pawn-surface-500" />
             </a>
             {(pkg.metadata as Record<string, unknown> | null)?.origin === "authored" && (
-              <span className="text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-badge">
+              <span className="text-xs font-medium text-violet-700 bg-violet-100 border border-violet-300 dark:text-violet-400 dark:bg-violet-500/10 dark:border-violet-500/20 px-1.5 py-0.5 rounded-badge">
                 authored
               </span>
             )}
             {(pkg.metadata as Record<string, unknown> | null)?.isLocal === true && (
-              <span className="text-xs font-medium text-pawn-surface-400 bg-pawn-surface-700/40 border border-pawn-surface-700/50 px-1.5 py-0.5 rounded-badge">
+              <span className="text-xs font-medium text-pawn-surface-500 bg-pawn-surface-100 border border-pawn-surface-300 dark:text-pawn-surface-400 dark:bg-pawn-surface-700/40 dark:border-pawn-surface-700/50 px-1.5 py-0.5 rounded-badge">
                 local
               </span>
             )}
             {pkg.repoNotFound ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-badge" title="The GitHub repository could not be found. It may have been deleted, renamed, or made private.">
+              <span className="flex items-center gap-1 text-xs font-medium text-rose-700 bg-rose-100 border border-rose-300 dark:text-rose-400 dark:bg-rose-500/10 dark:border-rose-500/20 px-1.5 py-0.5 rounded-badge" title="The GitHub repository could not be found. It may have been deleted, renamed, or made private.">
                 <AlertTriangle size={10} />
                 Repo not found
               </span>
             ) : pkg.updateAvailable ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-badge">
+              <span className="flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 border border-amber-300 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20 px-1.5 py-0.5 rounded-badge">
                 <ArrowUpCircle size={10} />
                 Update available
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-badge">
+              <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-300 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-1.5 py-0.5 rounded-badge">
                 <CheckCircle size={10} />
                 Up to date
               </span>
@@ -218,7 +218,7 @@ function InstalledCard({
           {pkg.skills.map((skill) => (
             <span
               key={skill}
-              className="text-xs text-violet-400 bg-violet-900/40 border border-violet-800/50 px-2 py-0.5 rounded-full"
+              className="text-xs text-violet-700 bg-violet-100 border border-violet-300 dark:text-violet-400 dark:bg-violet-900/40 dark:border-violet-800/50 px-2 py-0.5 rounded-full"
             >
               {skill}
             </span>
@@ -237,7 +237,7 @@ function InstalledCard({
             <button
               onClick={onUpdate}
               disabled={updating}
-              className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 disabled:opacity-50 transition-colors"
             >
               <RefreshCw size={12} className={updating ? "animate-spin" : ""} />
               {updating ? "Updating..." : "Update"}

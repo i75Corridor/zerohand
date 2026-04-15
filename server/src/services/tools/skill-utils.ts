@@ -1,4 +1,6 @@
 import { join, resolve, sep } from "node:path";
+import type { ApiSkillSchemaField } from "@pawn/shared";
+export type { ApiSkillSchemaField as SkillSchemaField };
 
 // ── Spec validation ────────────────────────────────────────────────────────────
 // https://agentskills.io/specification
@@ -74,6 +76,8 @@ export interface SkillMdParams {
   model?: string;
   /** Whether scripts need outbound network access (pawn extension) */
   network?: boolean;
+  /** Whether to expose the built-in bash tool to the agent (pawn extension) */
+  bash?: boolean;
   /** Secret keys to inject as env vars (pawn extension) */
   secrets?: string[];
   /** Names of registered MCP servers whose tools this skill can access at runtime */
@@ -88,6 +92,10 @@ export interface SkillMdParams {
   metadata?: Record<string, string>;
   /** Markdown body (system prompt instructions) */
   body: string;
+  /** Advisory: what inputs this skill is designed to receive */
+  inputSchema?: ApiSkillSchemaField[];
+  /** What structured data this skill produces (enforced at runtime when present) */
+  outputSchema?: ApiSkillSchemaField[];
 }
 
 export function buildSkillMd(params: SkillMdParams): string {
@@ -119,6 +127,7 @@ export function buildSkillMd(params: SkillMdParams): string {
   // Pawn-specific runtime fields (extensions, not in spec)
   if (params.model) lines.push(`model: ${params.model}`);
   if (params.network) lines.push(`network: true`);
+  if (params.bash) lines.push(`bash: true`);
   if (params.secrets && params.secrets.length > 0) {
     lines.push(`secrets:`);
     for (const s of params.secrets) lines.push(`  - ${s}`);
@@ -126,6 +135,26 @@ export function buildSkillMd(params: SkillMdParams): string {
   if (params.mcpServers && params.mcpServers.length > 0) {
     lines.push(`mcpServers:`);
     for (const s of params.mcpServers) lines.push(`  - ${s}`);
+  }
+
+  // I/O schema blocks (pawn extensions)
+  if (params.inputSchema && params.inputSchema.length > 0) {
+    lines.push(`inputSchema:`);
+    for (const f of params.inputSchema) {
+      lines.push(`  - name: ${f.name}`);
+      if (f.type) lines.push(`    type: ${f.type}`);
+      if (f.description) lines.push(`    description: ${serializeScalar(f.description)}`);
+      if (f.required) lines.push(`    required: true`);
+    }
+  }
+  if (params.outputSchema && params.outputSchema.length > 0) {
+    lines.push(`outputSchema:`);
+    for (const f of params.outputSchema) {
+      lines.push(`  - name: ${f.name}`);
+      if (f.type) lines.push(`    type: ${f.type}`);
+      if (f.description) lines.push(`    description: ${serializeScalar(f.description)}`);
+      if (f.required) lines.push(`    required: true`);
+    }
   }
 
   // metadata block — version lives here per spec (no top-level version field)

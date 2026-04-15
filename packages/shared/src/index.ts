@@ -66,6 +66,13 @@ export interface ApiStepRun {
   finishedAt: string | null;
 }
 
+export interface ApiSkillSchemaField {
+  name: string;
+  type?: "string" | "number" | "boolean";
+  description?: string;
+  required?: boolean;
+}
+
 export interface ApiSkill {
   name: string;
   /** Namespace this skill belongs to (e.g. "local", "daily-absurdist") */
@@ -77,6 +84,10 @@ export interface ApiSkill {
   allowedTools: string[];
   scripts: string[];
   content?: string;
+  /** Advisory: what inputs this skill is designed to receive */
+  inputSchema?: ApiSkillSchemaField[];
+  /** What structured data this skill produces (enforced at runtime when present) */
+  outputSchema?: ApiSkillSchemaField[];
 }
 
 export interface ApiPipeline {
@@ -240,8 +251,15 @@ export interface ApiPipelineVersion {
 }
 
 export interface ApiValidationError {
-  /** Known types: missing_skill, invalid_template, broken_step_ref, schema_mismatch, missing_mcp_server, missing_secret, missing_model */
-  type: string;
+  type:
+    | "missing_skill"
+    | "invalid_template"
+    | "broken_step_ref"
+    | "schema_mismatch"
+    | "missing_mcp_server"
+    | "missing_secret"
+    | "missing_model"
+    | "bash_not_enabled";
   stepIndex?: number;
   field: string;
   message: string;

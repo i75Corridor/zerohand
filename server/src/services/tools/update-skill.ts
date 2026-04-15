@@ -4,7 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import type { AgentToolContext } from "./context.js";
-import { safeSkillDir, buildSkillMd, validateDescription, validateQualifiedSkillName } from "./skill-utils.js";
+import { safeSkillDir, buildSkillMd, validateDescription, validateQualifiedSkillName, type SkillSchemaField } from "./skill-utils.js";
 
 export function makeUpdateSkill(ctx: AgentToolContext): ToolDefinition {
   return {
@@ -49,6 +49,22 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       metadata: Type.Optional(Type.Record(Type.String(), Type.String(), {
         description: "Arbitrary key-value pairs in the metadata block. NOT automatically passed to scripts — to use a value at runtime, the skill body must tell the agent to pass it as a tool argument explicitly. Merged with existing metadata — keys you provide are updated, keys you omit are preserved. Values must be strings.",
       })),
+      inputSchema: Type.Optional(Type.Array(Type.Object({
+        name: Type.String({ description: "Field name" }),
+        type: Type.Optional(Type.Union([Type.Literal("string"), Type.Literal("number"), Type.Literal("boolean")], { description: "Field type (default: string)" })),
+        description: Type.Optional(Type.String({ description: "What this field is" })),
+        required: Type.Optional(Type.Boolean({ description: "Whether this field is required" })),
+      }), {
+        description: "Advisory: the input fields this skill is designed to receive. Replaces the existing inputSchema. Pass an empty array to remove.",
+      })),
+      outputSchema: Type.Optional(Type.Array(Type.Object({
+        name: Type.String({ description: "Field name" }),
+        type: Type.Optional(Type.Union([Type.Literal("string"), Type.Literal("number"), Type.Literal("boolean")], { description: "Field type (default: string)" })),
+        description: Type.Optional(Type.String({ description: "What this field contains" })),
+        required: Type.Optional(Type.Boolean({ description: "Whether this field is always present in the output" })),
+      }), {
+        description: "Structured output fields this skill produces. Replaces the existing outputSchema. Pass an empty array to remove.",
+      })),
     }),
     execute: async (_id, params: {
       skillName: string;
@@ -62,6 +78,8 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       compatibility?: string;
       allowedTools?: string;
       metadata?: Record<string, string>;
+      inputSchema?: SkillSchemaField[];
+      outputSchema?: SkillSchemaField[];
     }) => {
       const nameErr = validateQualifiedSkillName(params.skillName);
       if (nameErr) return { content: [{ type: "text" as const, text: `Invalid skill name: ${nameErr}` }], details: {} };
@@ -111,6 +129,23 @@ Replaces the existing body entirely. Keep under 500 lines.`,
       const existingMeta = (existingFm.metadata as Record<string, string> | undefined) ?? {};
       const mergedMeta = params.metadata ? { ...existingMeta, ...params.metadata } : existingMeta;
 
+      // inputSchema / outputSchema: use provided value if given, fall back to existing
+      function parseExistingSchema(raw: unknown): SkillSchemaField[] | undefined {
+        if (!Array.isArray(raw)) return undefined;
+        return (raw as Array<Record<string, unknown>>).map((p) => ({
+          name: String(p.name ?? ""),
+          type: (p.type as SkillSchemaField["type"]) ?? "string",
+          description: p.description !== undefined ? String(p.description) : undefined,
+          required: Boolean(p.required ?? false),
+        }));
+      }
+      const inputSchema = params.inputSchema !== undefined
+        ? (params.inputSchema.length > 0 ? params.inputSchema : undefined)
+        : parseExistingSchema(existingFm.inputSchema);
+      const outputSchema = params.outputSchema !== undefined
+        ? (params.outputSchema.length > 0 ? params.outputSchema : undefined)
+        : parseExistingSchema(existingFm.outputSchema);
+
       // Use only the base name (after the namespace slash) — never write "local/foo" into name:
       const slashIdx = params.skillName.indexOf("/");
       const baseName = slashIdx > -1 ? params.skillName.slice(slashIdx + 1) : params.skillName;
@@ -127,6 +162,8 @@ Replaces the existing body entirely. Keep under 500 lines.`,
         compatibility,
         allowedTools,
         metadata: mergedMeta,
+        inputSchema,
+        outputSchema,
       });
 
       writeFileSync(skillPath, content, "utf-8");

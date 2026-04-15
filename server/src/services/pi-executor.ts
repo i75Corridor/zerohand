@@ -14,7 +14,7 @@ import {
 } from "@mariozechner/pi-coding-agent";
 import { getProviders, getEnvApiKey } from "@mariozechner/pi-ai";
 import { resolveModel } from "./ollama-provider.js";
-import type { StepRunEventType } from "@pawn/shared";
+import type { StepRunEventType, ApiSkillSchemaField } from "@pawn/shared";
 import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { skillsDir as getSkillsDir } from "./paths.js";
@@ -73,6 +73,26 @@ export interface PiRunResult {
   usage: Record<string, unknown>;
 }
 
+/**
+ * Build an output format instruction block for skills that declare an outputSchema.
+ * Returns empty string when no schema is declared (no-op for existing skills).
+ */
+function buildOutputFormatBlock(outputSchema: ApiSkillSchemaField[] | undefined): string {
+  if (!outputSchema || outputSchema.length === 0) return "";
+  const fieldLines = outputSchema.map((f) => {
+    const typeLabel = f.type ?? "string";
+    const reqLabel = f.required !== false ? "required" : "optional";
+    const desc = f.description ? `: ${f.description}` : "";
+    return `- ${f.name} (${typeLabel}, ${reqLabel})${desc}`;
+  });
+  return `## Required Output Format
+
+You MUST respond with a valid JSON object containing these fields:
+${fieldLines.join("\n")}
+
+Respond ONLY with the JSON object. Do not wrap it in markdown code fences, do not add any explanation before or after.`;
+}
+
 export async function runSkillStep(
   skill: import("./skill-loader.js").SkillDef,
   pipelineSystemPrompt: string | null,
@@ -94,7 +114,8 @@ export async function runSkillStep(
 
   const { interpolateContext, makeScriptTools } = await import("./skill-loader.js");
   const skillBody = interpolateContext(skill.systemPrompt, context);
-  const fullSystemPrompt = [pipelineSystemPrompt, skillBody].filter(Boolean).join("\n\n---\n\n");
+  const outputFormatBlock = buildOutputFormatBlock(skill.outputSchema);
+  const fullSystemPrompt = [pipelineSystemPrompt, skillBody, outputFormatBlock].filter(Boolean).join("\n\n---\n\n");
 
   console.log("[pi-executor] systemPrompt length:", fullSystemPrompt.length, "| preview:", fullSystemPrompt.slice(0, 300));
   const authStorage = makeAuthStorage();

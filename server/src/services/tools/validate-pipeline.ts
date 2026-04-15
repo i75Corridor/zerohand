@@ -3,36 +3,16 @@ import { Type, getEnvApiKey } from "@mariozechner/pi-ai";
 import { isOllamaAvailable } from "../ollama-provider.js";
 import { eq, asc } from "drizzle-orm";
 import { pipelines, pipelineSteps, mcpServers } from "@pawn/db";
+import type { ApiValidationError, ApiValidationResult } from "@pawn/shared";
 import type { AgentToolContext } from "./context.js";
 import { loadSkillDef } from "../skill-loader.js";
-
-export interface ValidationError {
-  type:
-    | "missing_skill"
-    | "invalid_template"
-    | "broken_step_ref"
-    | "schema_mismatch"
-    | "missing_mcp_server"
-    | "missing_secret"
-    | "missing_model";
-  stepIndex?: number;
-  field: string;
-  message: string;
-  severity: "error" | "warning";
-}
-
-export interface ValidationResult {
-  valid: boolean;
-  errors: ValidationError[];
-  warnings: ValidationError[];
-}
 
 export async function validatePipeline(
   pipelineId: string,
   ctx: AgentToolContext,
-): Promise<ValidationResult> {
-  const errors: ValidationError[] = [];
-  const warnings: ValidationError[] = [];
+): Promise<ApiValidationResult> {
+  const errors: ApiValidationError[] = [];
+  const warnings: ApiValidationError[] = [];
 
   const pipeline = await ctx.db.query.pipelines.findFirst({ where: eq(pipelines.id, pipelineId) });
   if (!pipeline) {
@@ -57,6 +37,19 @@ export async function validatePipeline(
 
   const TOKEN_RE = /\{\{([^}]+)\}\}/g;
 
+  // Pre-load skill outputSchemas for all steps so we can cross-reference field tokens
+  const stepSkillOutputSchemas = new Map<number, Set<string> | null>();
+  for (const step of steps) {
+    if (step.skillName) {
+      const skill = loadSkillDef(step.skillName, ctx.skillsDir);
+      if (skill?.outputSchema && skill.outputSchema.length > 0) {
+        stepSkillOutputSchemas.set(step.stepIndex, new Set(skill.outputSchema.map((f) => f.name)));
+      } else {
+        stepSkillOutputSchemas.set(step.stepIndex, null); // skill exists but no outputSchema
+      }
+    }
+  }
+
   for (const step of steps) {
     const si = step.stepIndex;
 
@@ -66,7 +59,7 @@ export async function validatePipeline(
         type: "missing_skill",
         stepIndex: si,
         field: "skillName",
-        message: `Step ${si} has no skill assigned.`,
+        message: `Step ${si + 1} has no skill assigned.`,
         severity: "error",
       });
     } else {
@@ -104,6 +97,17 @@ export async function validatePipeline(
               severity: "warning",
             });
           }
+        }
+
+        // Check bash usage without bash: true
+        if (!skill.bash && /\bbash\b/i.test(skill.systemPrompt)) {
+          warnings.push({
+            type: "bash_not_enabled",
+            stepIndex: si,
+            field: "bash",
+            message: `Skill "${step.skillName}" mentions "bash" in its system prompt but bash: true is not set — the bash tool will not be available at runtime.`,
+            severity: "warning",
+          });
         }
 
         // Check model API key availability
@@ -151,14 +155,41 @@ export async function validatePipeline(
         }
       } else if (parts[0] === "steps" && parts.length >= 3) {
         const refIdx = parseInt(parts[1], 10);
-        if (isNaN(refIdx) || refIdx >= si) {
+        // Template step indices are 1-based: {{steps.1.output}} = first step (stepIndex 0).
+        // Index 0 is accepted as a legacy alias for the first step.
+        const mappedStepIdx = refIdx >= 1 ? refIdx - 1 : 0;
+        if (isNaN(refIdx) || mappedStepIdx >= si) {
           errors.push({
             type: "broken_step_ref",
             stepIndex: si,
             field: "promptTemplate",
-            message: `Token "{{${path}}}" references step ${refIdx}, which does not precede step ${si}.`,
+            message: `Token "{{${path}}}" references step ${refIdx}, which does not precede step ${si + 1}.`,
             severity: "error",
           });
+        } else if (parts[2] === "output" && parts.length > 3) {
+          // Field-level reference: {{steps.N.output.fieldName}} — validate against outputSchema
+          const fieldName = parts[3];
+          const declaredFields = stepSkillOutputSchemas.get(mappedStepIdx);
+          if (declaredFields !== undefined) {
+            // declaredFields is null → skill exists but no outputSchema
+            if (declaredFields === null) {
+              warnings.push({
+                type: "schema_mismatch",
+                stepIndex: si,
+                field: "promptTemplate",
+                message: `Token "{{${path}}}" references field "${fieldName}" from step ${refIdx}, but that skill has no outputSchema — cannot validate the field reference.`,
+                severity: "warning",
+              });
+            } else if (!declaredFields.has(fieldName)) {
+              errors.push({
+                type: "schema_mismatch",
+                stepIndex: si,
+                field: "promptTemplate",
+                message: `Token "{{${path}}}" references field "${fieldName}" which is not declared in step ${refIdx}'s outputSchema. Declared fields: ${[...declaredFields].join(", ") || "(none)"}.`,
+                severity: "error",
+              });
+            }
+          }
         }
       } else if (parts[0] === "secret") {
         // secrets warnings already handled above

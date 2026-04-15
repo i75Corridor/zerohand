@@ -6,7 +6,7 @@ import { api } from "../lib/api.ts";
 import LoadingState from "../components/LoadingState.tsx";
 import EmptyState from "../components/EmptyState.tsx";
 import ModelSelector from "../components/ModelSelector.tsx";
-import { parseFrontMatter, serializeFrontMatter, type SkillFm, ScriptEditor, NewScriptForm, TagInput } from "../components/SkillEditor.tsx";
+import { parseFrontMatter, serializeFrontMatter, type SkillFm, ScriptEditor, NewScriptForm, TagInput, SchemaFieldEditor } from "../components/SkillEditor.tsx";
 
 // ── Split skill editor ────────────────────────────────────────────────────────
 
@@ -169,6 +169,22 @@ function SplitSkillEditor({
               addLabel="+ Attach"
               addOptions={mcpServers.map((s) => s.name)}
             />
+
+            {/* I/O Schemas */}
+            <div className="pt-2 border-t border-pawn-surface-800/60 space-y-5">
+              <SchemaFieldEditor
+                label="Input Schema (advisory)"
+                fields={fm.inputSchema}
+                onChange={(inputSchema) => update({ inputSchema })}
+                addLabel="+ Add input field"
+              />
+              <SchemaFieldEditor
+                label="Output Schema (enforced)"
+                fields={fm.outputSchema}
+                onChange={(outputSchema) => update({ outputSchema })}
+                addLabel="+ Add output field"
+              />
+            </div>
 
           </div>
         </aside>
